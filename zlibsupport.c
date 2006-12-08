@@ -31,16 +31,23 @@ void *grab_contents(gzFile *gzfd, unsigned long *size)
 	while ((ret = gzread(gzfd, buffer + *size, max - *size)) > 0) {
 		*size += ret;
 		if (*size == max) {
-			buffer = realloc(buffer, max *= 2);
-			if (!buffer)
-				return NULL;
+			void *p;
+
+			p = realloc(buffer, max *= 2);
+			if (!p)
+				goto out_err;
+
+			buffer = p;
 		}
 	}
-	if (ret < 0) {
-		free(buffer);
-		buffer = NULL;
-	}
+	if (ret < 0)
+		goto out_err;
+
 	return buffer;
+
+out_err:
+	free(buffer);
+	return NULL;
 }
 
 void *grab_fd(int fd, unsigned long *size)
