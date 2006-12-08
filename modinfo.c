@@ -376,12 +376,16 @@ int main(int argc, char *argv[])
 		}
 
 		info = get_section(mod, modulesize, &infosize, ".modinfo");
-		if (!info)
+		if (!info) {
+			release_file(mod, modulesize);
+			free(filename);
 			continue;
+		}
 		if (field)
 			print_tag(field, info, infosize, filename, sep);
 		else
 			print_all(info, infosize, filename, sep);
+		release_file(mod, modulesize);
 		free(filename);
 	}
 	return ret;
