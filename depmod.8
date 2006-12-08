@@ -87,9 +87,14 @@ current kernel version (as returned by "uname -r").
  
 .PP 
 \fBdepmod\fP will also generate various map files 
-in this directory, for use by the hotplug infrastructure. 
- 
-.SH "OPTIONS" 
+in this directory, for use by the hotplug infrastructure.
+
+.SH "OPTIONS"
+.IP "\fB-a\fP \fB--all\fP         " 10
+Probe all modules. This option is enabled
+by default if no file names are given in the
+command-line.
+
 .IP "\fB-b \fIbasedir\fP\fP \fB--basedir \fIbasedir\fP\fP 	  " 10 
 If your modules are not currently in the (normal) 
 directory 
@@ -123,7 +128,19 @@ the module directory.
 This option scans to see if any modules are newer the 
 \fBmodules.dep\fP file before any work is 
 done: if not, it silently exits rather than regenerating 
-the files. 
+the files.
+
+.IP "\fB-v\fP \fB--verbose\fP         " 10
+In verbose mode \fBdepmod\fP will print (to
+stdout) all the symbols each module depends on and
+the module's file name which provides that symbol.
+
+.IP "\fB-V\fP \fB--version\fP         " 10
+Show version of program, and exit. See below for
+caveats when run on older kernels.
+
+.IP "\fB-h\fP \fB--help\fP         " 10
+Print the help message, and exit.
  
 .SH "BACKWARDS COMPATIBILITY" 
 .PP 
