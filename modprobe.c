@@ -270,7 +270,7 @@ static int add_modules_dep_line(char *line,
 	char *modname;
 
 	/* Ignore lines without : or which start with a # */
-	ptr = index(line, ':');
+	ptr = strchr(line, ':');
 	if (ptr == NULL || line[strspn(line, "\t ")] == '#')
 		return 0;
 
