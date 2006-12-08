@@ -76,8 +76,14 @@ static void *grab_file(const char *filename, unsigned long *size)
 	*size = 0;
 	while ((ret = read(fd, buffer + *size, max - *size)) > 0) {
 		*size += ret;
-		if (*size == max)
-			buffer = realloc(buffer, max *= 2);
+		if (*size == max) {
+			void *p;
+
+			p = realloc(buffer, max *= 2);
+			if (!p)
+				goto out_error;
+			buffer = p;
+		}
 	}
 	if (ret < 0) {
 		free(buffer);
