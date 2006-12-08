@@ -88,8 +88,11 @@ void *grab_fd(int fd, unsigned long *size)
 {
 	struct stat st;
 	void *map;
+	int ret;
 
-	fstat(fd, &st);
+	ret = fstat(fd, &st);
+	if (ret < 0)
+		return NULL;
 	*size = st.st_size;
 	map = mmap(0, *size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
 	if (map == MAP_FAILED)
