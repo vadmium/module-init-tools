@@ -184,6 +184,8 @@ static void load_system_map(const char *filename)
 			add_symbol(ptr+1+strlen("__ksymtab_"), NULL);
 	}
 
+	fclose(system_map);
+
 	/* __this_module is magic inserted by kernel loader. */
 	add_symbol("__this_module", NULL);
 	/* On S390, this is faked up too */
