@@ -270,8 +270,8 @@ int main(int argc, char *argv[])
 	/* remove each specified module */
 	for (i = optind; i < argc; i++) {
 		ret = rmmod(log, verbose, argv[i], flags);
-		if (ret!=0)
-			err = ret;
+		if (ret != 0)
+			err = 1;
 	}
 
 	if (log)
