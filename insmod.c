@@ -60,7 +60,7 @@ static const char *moderror(int err)
 static void *grab_file(const char *filename, unsigned long *size)
 {
 	unsigned int max = 16384;
-	int ret, fd;
+	int ret, fd, err_save;
 	void *buffer = malloc(max);
 	if (!buffer)
 		return NULL;
@@ -85,12 +85,18 @@ static void *grab_file(const char *filename, unsigned long *size)
 			buffer = p;
 		}
 	}
-	if (ret < 0) {
-		free(buffer);
-		buffer = NULL;
-	}
+	if (ret < 0)
+		goto out_error;
+
 	close(fd);
 	return buffer;
+
+out_error:
+	err_save = errno;
+	free(buffer);
+	close(fd);
+	errno = err_save;
+	return NULL;
 }
 
 int main(int argc, char *argv[])
