@@ -119,7 +119,7 @@ static void *do_nofail(void *ptr, const char *file, int line, const char *expr)
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
-		"Usage: %s [-v] [-V] [-C config-file] [-n] [-i] [-q] [-b] [-o <modname>] <modname> [parameters...]\n"
+		"Usage: %s [-v] [-V] [-C config-file] [-n] [-i] [-q] [-b] [-o <modname>] [ --dump-modversions ] <modname> [parameters...]\n"
 		"%s -r [-n] [-i] [-v] <modulename> ...\n"
 		"%s -l -t <dirname> [ -a <modulename> ...]\n",
 		progname, progname, progname);
