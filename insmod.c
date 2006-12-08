@@ -128,6 +128,12 @@ int main(int argc, char *argv[])
 	for (i = 2; i < argc; i++) {
 		options = realloc(options,
 				  strlen(options) + 1 + strlen(argv[i]) + 1);
+		if (!options) {
+			fprintf(stderr,
+				"insmod: can't allocate memory: %s\n",
+				strerror(errno));
+			exit(1);
+		}
 		strcat(options, argv[i]);
 		strcat(options, " ");
 	}
