@@ -173,7 +173,8 @@ static void load_system_map(const char *filename)
 
 		/* Snip \n */
 		ptr = strchr(line, '\n');
-		*ptr = '\0';
+		if (ptr)
+			*ptr = '\0';
 
 		ptr = strchr(line, ' ');
 		if (!ptr || !(ptr = strchr(ptr + 1, ' ')))
