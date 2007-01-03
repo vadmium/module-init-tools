@@ -782,7 +782,7 @@ static void do_command(const char *modname,
 	while ((p = strstr(replaced_cmd, "$CMDLINE_OPTS")) != NULL) {
 		char *new;
 		asprintf(&new, "%.*s%s%s",
-			 p - replaced_cmd, replaced_cmd, cmdline_opts,
+			 (int)(p - replaced_cmd), replaced_cmd, cmdline_opts,
 			 p + strlen("$CMDLINE_OPTS"));
 		NOFAIL(new);
 		free(replaced_cmd);
