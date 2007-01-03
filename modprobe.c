@@ -830,7 +830,7 @@ static void insmod(struct list_head *list,
 	if (!list_empty(list)) {
 		insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
 		       dry_run, verbose, options, commands, 0, ignore_proc,
-		       strip_vermagic, strip_modversion, cmdline_opts);
+		       strip_vermagic, strip_modversion, "");
 	}
 
 	/* Lock before we look, in case it's initializing. */
@@ -967,7 +967,7 @@ static void rmmod(struct list_head *list,
 	/* Now do things we depend. */
 	if (!list_empty(list))
 		rmmod(list, NULL, 0, warn, dry_run, verbose, commands,
-		      0, 1, cmdline_opts);
+		      0, 1, "");
 	return;
 
 nonexistent_module:
