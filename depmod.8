@@ -110,7 +110,12 @@ but in a staging area, you can specify a
 the directory name.  This 
 \fIbasedir\fP is stripped from the 
 resulting \fBmodules.dep\fP file, so it 
-is ready to be moved into the normal location. 
+is ready to be moved into the normal location.
+
+.IP "\fB-C \fB--config \fIfile or directory\fP\fP 	  " 10
+This option overrides the default configuration file
+(\fI/etc/depmod.conf\fR or 
+\fI/etc/depmod.d/\fR if that isn't found).
  
 .IP "\fB-e\fP \fB--errsyms\fP         " 10 
 When combined with the \fB-F\fP option, this 
