@@ -95,6 +95,12 @@ Probe all modules. This option is enabled
 by default if no file names are given in the
 command-line.
 
+.IP "\fB-A\fP \fB--quick\fP         " 10 
+This option scans to see if any modules are newer the 
+\fBmodules.dep\fP file before any work is 
+done: if not, it silently exits rather than regenerating 
+the files.
+
 .IP "\fB-b \fIbasedir\fP\fP \fB--basedir \fIbasedir\fP\fP 	  " 10 
 If your modules are not currently in the (normal) 
 directory 
@@ -117,19 +123,16 @@ perfect world).
 .IP "\fB-F\fP \fB--filesyms \fISystem.map\fP\fP         " 10 
 Supplied with the \fBSystem.map\fP produced 
 when the kernel was built, this allows the 
-\fB-e\fP option to report unresolved symbols. 
+\fB-e\fP option to report unresolved symbols.
+
+.IP "\fB-h\fP \fB--help\fP         " 10
+Print the help message, and exit.
  
 .IP "\fB-n\fP \fB--dry-run\fP         " 10 
 This sends the resulting modules.dep, then the various 
 map files, to standard output, rather than writing them into 
 the module directory. 
  
-.IP "\fB-A\fP \fB--quick\fP         " 10 
-This option scans to see if any modules are newer the 
-\fBmodules.dep\fP file before any work is 
-done: if not, it silently exits rather than regenerating 
-the files.
-
 .IP "\fB-v\fP \fB--verbose\fP         " 10
 In verbose mode \fBdepmod\fP will print (to
 stdout) all the symbols each module depends on and
@@ -139,9 +142,6 @@ the module's file name which provides that symbol.
 Show version of program, and exit. See below for
 caveats when run on older kernels.
 
-.IP "\fB-h\fP \fB--help\fP         " 10
-Print the help message, and exit.
- 
 .SH "BACKWARDS COMPATIBILITY" 
 .PP 
 This version of \fBdepmod\fP is for kernels 
