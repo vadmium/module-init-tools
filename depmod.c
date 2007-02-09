@@ -935,8 +935,12 @@ static int read_config_file(const char *filename,
 	FILE *cfile;
 
 	cfile = fopen(filename, "r");
-	if (!cfile)
+	if (!cfile) {
+		if (errno != ENOENT)
+			fatal("could not open '%s', reason: %s\n", filename,
+			      strerror(errno));
 		return 0;
+	}
 
 	while ((line = getline_wrapped(cfile, &linenum)) != NULL) {
 		char *ptr = line;
