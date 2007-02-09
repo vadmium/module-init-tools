@@ -612,6 +612,10 @@ static struct module *do_module(const char *dirname,
 			if (is_higher_priority(newpath, (*i)->pathname,search,
 					       overrides)) {
 				new->next = (*i)->next;
+
+				release_file((*i)->data, (*i)->len);
+				free(*i);
+
 				*i = new;
 			} else
 				free(new);
