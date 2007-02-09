@@ -1129,12 +1129,12 @@ int main(int argc, char *argv[])
 
 	/* They can specify the version naked on the command line */
 	if (optind < argc && is_version_number(argv[optind])) {
-		version = strdup(argv[optind]);
+		version = NOFAIL(strdup(argv[optind]));
 		optind++;
 	} else {
 		struct utsname buf;
 		uname(&buf);
-		version = strdup(buf.release);
+		version = NOFAIL(strdup(buf.release));
 	}
 
 	/* Run old version if required. */
