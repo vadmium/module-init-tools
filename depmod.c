@@ -593,20 +593,18 @@ static struct module *do_module(const char *dirname,
 				       struct module_overrides *overrides)
 {
 	struct module *new, **i;
-	
+
 	new = grab_module(dirname, filename);
 	if (!new)
 		return list;
-	
+
 	/* Check if module is already in the list. */
 	for (i = &list; *i; i = &(*i)->next) {
 
 		if (streq(basename((*i)->pathname), filename)) {
+			char newpath[strlen(dirname) + strlen("/")
+				      + strlen(filename) + 1];
 
-			char *newpath = NOFAIL(malloc(strlen(dirname)
-					      + strlen("/")
-					      + strlen(filename)
-					      + 1));
 			sprintf(newpath, "%s/%s", dirname, filename);
 
 			if (is_higher_priority(newpath, (*i)->pathname,search,
@@ -620,13 +618,11 @@ static struct module *do_module(const char *dirname,
 			} else
 				free(new);
 
-			free(newpath);
 			return list;
 		}
 	}
-	
+
 	/* Not in the list already. Just prepend. */
-	
 	new->next = list;
 	return new;
 }
