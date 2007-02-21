@@ -162,6 +162,8 @@ static void load_system_map(const char *filename)
 {
 	FILE *system_map;
 	char line[10240];
+	const char ksymstr[] = "__ksymtab_";
+	const int ksymstr_len = strlen(ksymstr);
 
 	system_map = fopen(filename, "r");
 	if (!system_map)
@@ -173,15 +175,16 @@ static void load_system_map(const char *filename)
 
 		/* Snip \n */
 		ptr = strchr(line, '\n');
-		*ptr = '\0';
+		if (ptr)
+			*ptr = '\0';
 
 		ptr = strchr(line, ' ');
 		if (!ptr || !(ptr = strchr(ptr + 1, ' ')))
 			continue;
 
 		/* Covers gpl-only and normal symbols. */
-		if (strncmp(ptr+1, "__ksymtab_", strlen("__ksymtab_")) == 0)
-			add_symbol(ptr+1+strlen("__ksymtab_"), NULL);
+		if (strncmp(ptr+1, ksymstr, ksymstr_len) == 0)
+			add_symbol(ptr+1+ksymstr_len, NULL);
 	}
 
 	fclose(system_map);
