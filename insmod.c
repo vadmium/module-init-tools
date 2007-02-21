@@ -106,9 +106,17 @@ int main(int argc, char *argv[])
 	unsigned long len;
 	void *file;
 	char *filename, *options = strdup("");
-	char *progname = argv[0];
+	char *p, *progname = argv[0];
 
-	if (strstr(argv[0], "insmod.static"))
+	if (!options) {
+		fprintf(stderr,
+			"insmod: can't allocate memory: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+
+	(p = strrchr(argv[0], '/')) ? p++ : argv[0];
+	if (strstr(p, "insmod.static"))
 		try_old_version("insmod.static", argv);
 	else
 		try_old_version("insmod", argv);
