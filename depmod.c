@@ -593,36 +593,36 @@ static struct module *do_module(const char *dirname,
 				       struct module_overrides *overrides)
 {
 	struct module *new, **i;
-	
+
 	new = grab_module(dirname, filename);
 	if (!new)
 		return list;
-	
+
 	/* Check if module is already in the list. */
 	for (i = &list; *i; i = &(*i)->next) {
 
 		if (streq(basename((*i)->pathname), filename)) {
+			char newpath[strlen(dirname) + strlen("/")
+				      + strlen(filename) + 1];
 
-			char *newpath = NOFAIL(malloc(strlen(dirname)
-					      + strlen("/")
-					      + strlen(filename)
-					      + 1));
 			sprintf(newpath, "%s/%s", dirname, filename);
 
 			if (is_higher_priority(newpath, (*i)->pathname,search,
 					       overrides)) {
 				new->next = (*i)->next;
+
+				release_file((*i)->data, (*i)->len);
+				free(*i);
+
 				*i = new;
 			} else
 				free(new);
 
-			free(newpath);
 			return list;
 		}
 	}
-	
+
 	/* Not in the list already. Just prepend. */
-	
 	new->next = list;
 	return new;
 }
@@ -935,8 +935,12 @@ static int read_config_file(const char *filename,
 	FILE *cfile;
 
 	cfile = fopen(filename, "r");
-	if (!cfile)
+	if (!cfile) {
+		if (errno != ENOENT)
+			fatal("could not open '%s', reason: %s\n", filename,
+			      strerror(errno));
 		return 0;
+	}
 
 	while ((line = getline_wrapped(cfile, &linenum)) != NULL) {
 		char *ptr = line;
@@ -1121,12 +1125,12 @@ int main(int argc, char *argv[])
 
 	/* They can specify the version naked on the command line */
 	if (optind < argc && is_version_number(argv[optind])) {
-		version = strdup(argv[optind]);
+		version = NOFAIL(strdup(argv[optind]));
 		optind++;
 	} else {
 		struct utsname buf;
 		uname(&buf);
-		version = strdup(buf.release);
+		version = NOFAIL(strdup(buf.release));
 	}
 
 	/* Run old version if required. */
