@@ -1,6 +1,11 @@
 3.3 Version:
 o lsmod: modprobe: Comment fixes (thanks Satoru Takeuchi)
 o modprobe: don't mangle - in wildcards within [ ] (patch from Sam Morris)
+o new mintainer: Jon Masters <jcm@jonmasters.org>
+o switch to using git for project maintainance
+o misc. memory leakage/build/docs fixes (Luiz Fernando N. Capitulino)
+o correct error handling and insmod.static handling (Tobias Stoeckmann)
+o various other fixes to build/development process.
 	
 3.2.2 Version:
 o depmod: Try to generate correct input tables for 2.6.14 and above (thanks to report from Scott James Remnant)
