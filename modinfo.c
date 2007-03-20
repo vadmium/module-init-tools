@@ -272,7 +272,8 @@ static char *next_line(char *p, const char *end)
 	return (char *)end + 1;
 }
 
-static void *grab_module(const char *name, unsigned long *size, char**filename)
+static void *grab_module(const char *name, unsigned long *size, char**filename,
+	const char *kernel)
 {
 	char *data;
 	struct utsname buf;
@@ -290,8 +291,13 @@ static void *grab_module(const char *name, unsigned long *size, char**filename)
 	}
 
 	/* Search for it in modules.dep. */
-	uname(&buf);
-	asprintf(&depname, "%s/%s/modules.dep", MODULE_DIR, buf.release);
+	if (kernel) {
+		asprintf(&depname, "%s/%s/modules.dep", MODULE_DIR, kernel);
+	} else {
+		uname(&buf);
+		asprintf(&depname, "%s/%s/modules.dep", MODULE_DIR,
+			 buf.release);
+	}
 	data = grab_file(depname, size);
 	if (!data) {
 		fprintf(stderr, "modinfo: could not open %s\n", depname);
@@ -322,7 +328,7 @@ static void *grab_module(const char *name, unsigned long *size, char**filename)
 
 static void usage(const char *name)
 {
-	fprintf(stderr, "Usage: %s [-0][-F field] module...\n"
+	fprintf(stderr, "Usage: %s [-0][-F field][-k kernelversion] module...\n"
 		" Prints out the information about one or more module(s).\n"
 		" If a fieldname is given, just print out that field (or nothing if not found).\n"
 		" Otherwise, print all information out in a readable form\n"
@@ -334,6 +340,7 @@ int main(int argc, char *argv[])
 {
 	union { short s; char c[2]; } endian_test;
 	const char *field = NULL;
+	const char *kernel = NULL;
 	char sep = '\n';
 	unsigned long infosize;
 	int opt, ret = 0;
@@ -347,7 +354,7 @@ int main(int argc, char *argv[])
 	else
 		abort();
 
-	while ((opt = getopt_long(argc,argv,"adlpVhn0F:",options,NULL)) >= 0){
+	while ((opt = getopt_long(argc,argv,"adlpVhn0F:k:",options,NULL)) >= 0){
 		switch (opt) {
 		case 'a': field = "author"; break;
 		case 'd': field = "description"; break;
@@ -357,6 +364,7 @@ int main(int argc, char *argv[])
 		case 'V': printf(PACKAGE " version " VERSION "\n"); exit(0);
 		case 'F': field = optarg; break;
 		case '0': sep = '\0'; break;
+		case 'k': kernel = optarg; break;
 		default:
 			usage(argv[0]); exit(0);
 		}
@@ -369,7 +377,7 @@ int main(int argc, char *argv[])
 		unsigned long modulesize;
 		char *filename;
 
-		mod = grab_module(argv[opt], &modulesize, &filename);
+		mod = grab_module(argv[opt], &modulesize, &filename, kernel);
 		if (!mod) {
 			ret = 1;
 			continue;
