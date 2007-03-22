@@ -1,4 +1,5 @@
 3.3 Version:
+o modinfo: add a kernel parameter for info on modules used by other kernels.
 o lsmod: modprobe: Comment fixes (thanks Satoru Takeuchi)
 o modprobe: don't mangle - in wildcards within [ ] (patch from Sam Morris)
 o new mintainer: Jon Masters <jcm@jonmasters.org>

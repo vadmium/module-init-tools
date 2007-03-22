@@ -58,6 +58,10 @@
       <command>modprobe</command>
       <arg>-c</arg>
     </cmdsynopsis>
+    <cmdsynopsis>
+      <command>modprobe</command>
+      <arg>--dump-modversions</arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
     <title>Description</title>
@@ -389,6 +393,17 @@
 	    did something: this option makes modprobe fail for that
 	    case.
 	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--dump-modversions</option>
+        </term>
+        <listitem>
+          <para>
+            Print out a list of module versioning information required by a
+            module. This option is commonly used by distributions in order to
+            package up a Linuxx kernel module using module versioning deps.
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>

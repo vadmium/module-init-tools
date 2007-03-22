@@ -32,6 +32,7 @@
       <command>modinfo</command>
       <arg><option>-0</option></arg>
       <arg><option>-F <replaceable>field</replaceable></option></arg>
+      <arg><option>-k <replaceable>kernel</replaceable></option></arg>
       <arg rep='repeat'>modulename|filename</arg>
     </cmdsynopsis>
     <cmdsynopsis>
@@ -93,6 +94,19 @@
 	    lists the filename of the module.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-k <replaceable>kernel</replaceable></option>
+        </term>
+          <para>
+            Provide information about a kernel other than the running one. This
+            is particularly useful for distributions needing to extract
+            information from a newly installed (but not yet running) set of
+            kernel modules. For example, you wish to find which firmware files
+            are needed by various modules in a new kernel for which you must
+            make an initrd image prior to booting.
+          </para>
+        </term>
       </varlistentry>
       <varlistentry>
         <term><option>-0</option> <option>--null</option>
