@@ -957,10 +957,10 @@ static int read_config_file(const char *filename,
 			while ((search_path = strsep_skipspace(&ptr, "\t ")))
 				*search = add_search(search_path, *search);
 		} else if (strcmp(cmd, "override") == 0) {
-			char *pathname = NULL;
+			char *pathname = NULL, *version, *subdir;
 			modname = strsep_skipspace(&ptr, "\t ");
-			char * version = strsep_skipspace(&ptr, "\t ");
-			char * subdir = strsep_skipspace(&ptr, "\t ");
+			version = strsep_skipspace(&ptr, "\t ");
+			subdir = strsep_skipspace(&ptr, "\t ");
 
 			pathname = NOFAIL(malloc(strlen(basedir)
 				               + strlen(MODULE_DIR)
