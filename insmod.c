@@ -115,7 +115,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	(p = strrchr(argv[0], '/')) ? p++ : argv[0];
+	p = strrchr(argv[0], '/');
+	if (p)
+		p++;
+	else
+		p=argv[0];
 	if (strstr(p, "insmod.static"))
 		try_old_version("insmod.static", argv);
 	else
