@@ -406,6 +406,16 @@
           </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>--use-blacklist</option>
+        </term>
+        <listitem>
+          <para>
+            Apply a matchin blacklist entry also to a request by module name,
+            not only to a request by an alias.
+	  </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
