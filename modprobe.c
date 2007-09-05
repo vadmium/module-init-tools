@@ -913,7 +913,8 @@ static void rmmod(struct list_head *list,
 		  struct module_command *commands,
 		  int ignore_commands,
 		  int ignore_inuse,
-		  const char *cmdline_opts)
+		  const char *cmdline_opts,
+		  int flags)
 {
 	const char *command;
 	unsigned int usecount = 0;
@@ -967,7 +968,7 @@ static void rmmod(struct list_head *list,
 	/* Now do things we depend. */
 	if (!list_empty(list))
 		rmmod(list, NULL, 0, warn, dry_run, verbose, commands,
-		      0, 1, "");
+		      0, 1, "", flags);
 	return;
 
 nonexistent_module:
@@ -1333,7 +1334,8 @@ static void handle_module(const char *modname,
 			  int strip_vermagic,
 			  int strip_modversion,
 			  int unknown_silent,
-			  const char *cmdline_opts)
+			  const char *cmdline_opts,
+			  int flags)
 {
 	if (list_empty(todo_list)) {
 		const char *command;
@@ -1355,7 +1357,7 @@ static void handle_module(const char *modname,
 
 	if (remove)
 		rmmod(todo_list, newname, first_time, error, dry_run, verbose,
-		      commands, ignore_commands, 0, cmdline_opts);
+		      commands, ignore_commands, 0, cmdline_opts, flags);
 	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
 		       first_time, error, dry_run, verbose, modoptions,
@@ -1368,6 +1370,7 @@ static struct option options[] = { { "verbose", 0, NULL, 'v' },
 				   { "config", 1, NULL, 'C' },
 				   { "name", 1, NULL, 'o' },
 				   { "remove", 0, NULL, 'r' },
+				   { "wait", 0, NULL, 'w' },
 				   { "showconfig", 0, NULL, 'c' },
 				   { "autoclean", 0, NULL, 'k' },
 				   { "quiet", 0, NULL, 'q' },
@@ -1430,6 +1433,7 @@ int main(int argc, char *argv[])
 	char *newname = NULL;
 	char *aliasfilename, *symfilename;
 	errfn_t error = fatal;
+	int flags = O_NONBLOCK|O_EXCL;
 
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
@@ -1444,7 +1448,7 @@ int main(int argc, char *argv[])
 		try_old_version("modprobe", argv);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifb", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifbw", options, NULL)) != -1){
 		switch (opt) {
 		case 'v':
 			add_to_env_var("-v");
@@ -1528,6 +1532,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'b':
 			use_blacklist = 1;
+			break;
+		case 'w':
+			flags &= ~O_NONBLOCK;
 			break;
 		case 1:
 			strip_vermagic = 1;
@@ -1651,7 +1658,7 @@ int main(int argc, char *argv[])
 					      ignore_proc, strip_vermagic,
 					      strip_modversion,
 					      unknown_silent,
-					      optstring);
+					      optstring, flags);
 
 				aliases = aliases->next;
 				INIT_LIST_HEAD(&list);
@@ -1666,7 +1673,7 @@ int main(int argc, char *argv[])
 				      verbose, modoptions, commands,
 				      ignore_commands, ignore_proc,
 				      strip_vermagic, strip_modversion,
-				      unknown_silent, optstring);
+				      unknown_silent, optstring, flags);
 		}
 	}
 	if (log)
