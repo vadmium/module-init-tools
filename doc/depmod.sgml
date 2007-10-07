@@ -125,7 +125,7 @@
         <listitem>
           <para>
             This option overrides the default configuration file
-            (/etc/depmod.conf or /etc/depmod.d/ if that isn’t found).
+            (/etc/depmod.conf or /etc/depmod.d/ if that is not found).
           </para>
         </listitem>
       </varlistentry>
@@ -180,7 +180,7 @@
         <listitem>
           <para>
 	    In verbose mode <command>depmod</command> will print (to stdout)
-            all the symbols each module depends on and the module’s file name
+            all the symbols each module depends on and the module's file name
             which provides that symbol.
 	  </para>
         </listitem>

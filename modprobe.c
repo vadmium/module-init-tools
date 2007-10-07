@@ -1634,10 +1634,10 @@ int main(int argc, char *argv[])
 				read_config(aliasfilename, modulearg, 0,
 					    remove, &modoptions, &commands,
 					    &aliases, &blacklist);
-				aliases = apply_blacklist(aliases, blacklist);
 			}
 		}
 
+		aliases = apply_blacklist(aliases, blacklist);
 		if (aliases) {
 			errfn_t err = error;
 
