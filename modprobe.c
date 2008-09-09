@@ -1257,6 +1257,46 @@ static void read_toplevel_config(const char *filename,
 	}
 }
 
+/* Read possible module arguments from the kernel command line. */
+static int read_kcmdline(int dump_only, struct module_options **options)
+{
+	char *line;
+	unsigned int linenum = 0;
+	FILE *kcmdline;
+
+	kcmdline = fopen("/proc/cmdline", "r");
+	if (!kcmdline)
+		return 0;
+
+	while ((line = getline_wrapped(kcmdline, &linenum)) != NULL) {
+		char *ptr = line;
+		char *arg;
+
+		while ((arg = strsep_skipspace(&ptr, "\t ")) != NULL) {
+			char *sep, *modname, *opt;
+
+			sep = strchr(arg, '.');
+			if (sep) {
+				if (!strchr(sep, '='))
+					continue;
+				modname = arg;
+				*sep = '\0';
+				opt = ++sep;
+
+				if (dump_only)
+					printf("options %s %s\n", modname, opt);
+
+				*options = add_options(underscores(modname),
+						       opt, *options);
+			}
+		}
+
+		free(line);
+	}
+	fclose(kcmdline);
+	return 1;
+}
+
 static void add_to_env_var(const char *option)
 {
 	const char *oldenv;
@@ -1586,6 +1626,7 @@ int main(int argc, char *argv[])
 
 		read_toplevel_config(config, "", 1, 0,
 			     &modoptions, &commands, &aliases, &blacklist);
+		read_kcmdline(1, &modoptions);
 		read_config(aliasfilename, "", 1, 0,&modoptions, &commands,
 			    &aliases, &blacklist);
 		read_config(symfilename, "", 1, 0, &modoptions, &commands,
@@ -1616,6 +1657,9 @@ int main(int argc, char *argv[])
 		/* Returns the resolved alias, options */
 		read_toplevel_config(config, modulearg, 0,
 		     remove, &modoptions, &commands, &aliases, &blacklist);
+
+		/* Read module options from kernel command line */
+		read_kcmdline(0, &modoptions);
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
 		if (!aliases

@@ -77,7 +77,9 @@
       <filename>/etc/modprobe.d</filename> directory
       (see <citerefentry>
 	<refentrytitle>modprobe.conf</refentrytitle><manvolnum>5</manvolnum>
-      </citerefentry>).
+      </citerefentry>). <command>modprobe</command> will also use module
+      options specified on the kernel command line in the form of
+      &lt;module&gt;.option&gt;.
     </para>
     <para>
       Note that this version of <command>modprobe</command> does not
