@@ -1,3 +1,6 @@
+3.4 Version:
+o modprobe: add ability to parse kernel command line for module options.
+
 3.3 Version:
 o modinfo: add a kernel parameter for info on modules used by other kernels.
 o lsmod: modprobe: Comment fixes (thanks Satoru Takeuchi)
