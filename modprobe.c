@@ -1300,9 +1300,8 @@ static void read_toplevel_config(const char *filename,
 
 	/* Try defaults. */
 	for (i = 0; i < ARRAY_SIZE(default_configs); i++) {
-		if (read_config(default_configs[i], name, dump_only, removing,
-				options, commands, aliases, blacklist))
-			return;
+		read_config(default_configs[i], name, dump_only, removing,
+				options, commands, aliases, blacklist);
 	}
 }
 
