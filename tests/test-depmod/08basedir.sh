@@ -118,6 +118,30 @@ MODTEST_OVERRIDE28=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.ofmap.temp
 MODTEST_OVERRIDE_WITH28=tests/tmp/modules.ofmap.temp
 export MODTEST_OVERRIDE28 MODTEST_OVERRIDE_WITH28
 
+MODTEST_OVERRIDE29=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH29=tests/tmp/modules.dep.bin
+export MODTEST_OVERRIDE29 MODTEST_OVERRIDE_WITH29
+
+MODTEST_OVERRIDE30=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.dep.bin.temp
+MODTEST_OVERRIDE_WITH30=tests/tmp/modules.dep.bin.temp
+export MODTEST_OVERRIDE30 MODTEST_OVERRIDE_WITH30
+
+MODTEST_OVERRIDE31=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.alias.bin.temp
+MODTEST_OVERRIDE_WITH31=tests/tmp/modules.alias.bin.temp
+export MODTEST_OVERRIDE31 MODTEST_OVERRIDE_WITH31
+
+MODTEST_OVERRIDE32=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.alias.bin
+MODTEST_OVERRIDE_WITH32=tests/tmp/modules.alias.bin
+export MODTEST_OVERRIDE32 MODTEST_OVERRIDE_WITH32
+
+MODTEST_OVERRIDE33=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.symbols.bin
+MODTEST_OVERRIDE_WITH33=tests/tmp/modules.symbols.bin
+export MODTEST_OVERRIDE33 MODTEST_OVERRIDE_WITH33
+
+MODTEST_OVERRIDE34=/BASEDIR/lib/modules/$MODTEST_UNAME/modules.symbols.bin.temp
+MODTEST_OVERRIDE_WITH34=tests/tmp/modules.symbols.bin.temp
+export MODTEST_OVERRIDE34 MODTEST_OVERRIDE_WITH34
+
 # Expect no output.
 [ "`./depmod -b /BASEDIR 2>&1`" = "" ]
 

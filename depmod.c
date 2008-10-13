@@ -3,7 +3,8 @@
 
    (C) 2002 Rusty Russell IBM Corporation
  */
-#include <stdarg.h>
+#define _GNU_SOURCE /* asprintf */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -23,6 +24,7 @@
 #include "zlibsupport.h"
 #include "depmod.h"
 #include "logging.h"
+#include "index.h"
 #include "moduleops.h"
 #include "tables.h"
 
@@ -177,6 +179,7 @@ static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "verbose", 0, NULL, 'v' },
 				   { "version", 0, NULL, 'V' },
 				   { "config", 1, NULL, 'C' },
+				   { "warn", 1, NULL, 'w' },
 				   { NULL, 0, NULL, 0 } };
 
 /* Version number or module name?  Don't assume extension. */
@@ -243,9 +246,9 @@ static void print_usage(const char *name)
 {
 	fprintf(stderr,
 	"%s " VERSION " -- part of " PACKAGE "\n"
-	"%s -[aA] [-n -e -v -q -V -r -u]\n"
+	"%s -[aA] [-n -e -v -q -V -r -u -w]\n"
 	"      [-b basedirectory] [forced_version]\n"
-	"depmod [-n -e -v -q -r -u] [-F kernelsyms] module1.ko module2.ko ...\n"
+	"depmod [-n -e -v -q -r -u -w] [-F kernelsyms] module1.ko module2.ko ...\n"
 	"If no arguments (except options) are given, \"depmod -a\" is assumed\n"
 	"\n"
 	"depmod will output a dependancy list suitable for the modprobe utility.\n"
@@ -258,6 +261,7 @@ static void print_usage(const char *name)
 	"\t-e, --errsyms        Report not supplied symbols\n"
 	"\t-V, --version        Print the release version\n"
 	"\t-v, --verbose        Enable verbose mode\n"
+	"\t-w, --warn		Warn on duplicates\n"
 	"\t-h, --help           Print this usage message\n"
 	"\n"
 	"The following options are useful for people managing distributions:\n"
@@ -296,7 +300,7 @@ int needconv(const char *elfhdr)
 		abort();
 }
 
-static char *basename(const char *name)
+static char *my_basename(const char *name)
 {
 	const char *base = strrchr(name, '/');
 	if (base) return (char *)base + 1;
@@ -313,7 +317,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 		sprintf(new->pathname, "%s/%s", dirname, filename);
 	else
 		strcpy(new->pathname, filename);
-	new->basename = basename(new->pathname);
+	new->basename = my_basename(new->pathname);
 
 	INIT_LIST_HEAD(&new->dep_list);
 
@@ -446,26 +450,33 @@ static void del_module(struct module **modules, struct module *delme)
 	deleted = delme;
 }
 
+/* Convert filename to the module name.  Works if filename == modname, too. */
+static void filename2modname(char *modname, const char *filename)
+{
+	const char *afterslash;
+	unsigned int i;
+
+	afterslash = strrchr(filename, '/');
+	if (!afterslash)
+		afterslash = filename;
+	else
+		afterslash++;
+
+	/* Convert to underscores, stop at first . */
+	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
+		if (afterslash[i] == '-')
+			modname[i] = '_';
+		else
+			modname[i] = afterslash[i];
+	}
+	modname[i] = '\0';
+}
+
 static void output_deps(struct module *modules,
 			FILE *out)
 {
 	struct module *i;
 
-	for (i = modules; i; i = i->next)
-		i->ops->calculate_deps(i, verbose);
-
-	/* Strip out loops. */
- again:
-	for (i = modules; i; i = i->next) {
-		if (has_dep_loop(i, NULL)) {
-			warn("Module %s ignored, due to loop\n",
-			     i->pathname + skipchars);
-			del_module(&modules, i);
-			goto again;
-		}
-	}
-
-	/* Now dump them out. */
 	for (i = modules; i; i = i->next) {
 		struct list_head *j, *tmp;
 		order_dep_list(i, i);
@@ -480,6 +491,46 @@ static void output_deps(struct module *modules,
 		fprintf(out, "\n");
 	}
 }
+
+/* warn whenever duplicate module aliases, deps, or symbols are found. */
+int warn_dups = 0;
+
+static void output_deps_bin(struct module *modules,
+			FILE *out)
+{
+	struct module *i;
+	struct index_node *index;
+	char *line;
+	char *p;
+
+	index = index_create();
+
+	for (i = modules; i; i = i->next) {
+		struct list_head *j, *tmp;
+		char modname[strlen(i->pathname)+1];
+		
+		order_dep_list(i, i);
+		
+		filename2modname(modname, i->pathname + skipchars);
+		asprintf(&line, "%s %s:", modname, i->pathname + skipchars);
+		p = line;
+		list_for_each_safe(j, tmp, &i->dep_list) {
+			struct module *dep
+				= list_entry(j, struct module, dep_list);
+			asprintf(&line, "%s %s", p, dep->pathname + skipchars);
+			free(p);
+			p = line;
+			list_del_init(j);
+		}
+		if (index_insert(index, line) && warn_dups)
+			warn("duplicate module deps:\n%s\n",line);
+		free(line);
+	}
+	
+	index_write(index, out);
+	index_destroy(index);
+}
+
 
 static int smells_like_module(const char *name)
 {
@@ -655,7 +706,7 @@ static struct module *grab_basedir(const char *dirname,
 	return list;
 }
 
-static void parse_modules(struct module *list)
+static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
 
@@ -663,28 +714,22 @@ static void parse_modules(struct module *list)
 		i->ops->load_symbols(i);
 		i->ops->fetch_tables(i);
 	}
-}
-
-/* Convert filename to the module name.  Works if filename == modname, too. */
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
+	
+	for (i = list; i; i = i->next)
+		i->ops->calculate_deps(i, verbose);
+	
+	/* Strip out modules with dependency loops. */
+ again:
+	for (i = list; i; i = i->next) {
+		if (has_dep_loop(i, NULL)) {
+			warn("Module %s ignored, due to loop\n",
+			     i->pathname + skipchars);
+			del_module(&list, i);
+			goto again;
+		}
 	}
-	modname[i] = '\0';
+	
+	return list;
 }
 
 /* Simply dump hash table. */
@@ -707,6 +752,35 @@ static void output_symbols(struct module *unused, FILE *out)
 	}
 }
 
+static void output_symbols_bin(struct module *unused, FILE *out)
+{
+	struct index_node *index;
+	unsigned int i;
+	char *line;
+
+	index = index_create();
+	
+	for (i = 0; i < SYMBOL_HASH_SIZE; i++) {
+		struct symbol *s;
+
+		for (s = symbolhash[i]; s; s = s->next) {
+			if (s->owner) {
+				char modname[strlen(s->owner->pathname)+1];
+				filename2modname(modname, s->owner->pathname);
+				asprintf(&line, "symbol:%s %s",
+					s->name, modname);
+				if (index_insert(index, line) && warn_dups)
+					warn("duplicate module syms:\n%s\n",
+						line);
+				free(line);
+			}
+		}
+	}
+	
+	index_write(index, out);
+	index_destroy(index);
+}
+
 static const char *next_string(const char *string, unsigned long *secsize)
 {
 	/* Skip non-zero chars */
@@ -721,6 +795,29 @@ static const char *next_string(const char *string, unsigned long *secsize)
 		string++;
 		if ((*secsize)-- <= 1)
 			return NULL;
+	}
+	return string;
+}
+
+/* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
+static char *underscores(char *string)
+{
+	unsigned int i;
+
+	if (!string)
+		return NULL;
+		
+	for (i = 0; string[i]; i++) {
+		switch (string[i]) {
+		case '-':
+			string[i] = '_';
+			break;
+		
+		case '[':
+			i += strcspn(&string[i], "]");
+			if (!string[i])
+				warn("Unmatched bracket in %s\n", string);
+		}
 	}
 	return string;
 }
@@ -754,6 +851,52 @@ static void output_aliases(struct module *modules, FILE *out)
 	}
 }
 
+static void output_aliases_bin(struct module *modules, FILE *out)
+{
+	struct module *i;
+	const char *p;
+	char *line;
+	unsigned long size;
+	struct index_node *index;
+
+	index = index_create();
+	
+	for (i = modules; i; i = i->next) {
+		char modname[strlen(i->pathname)+1];
+
+		filename2modname(modname, i->pathname);
+
+		/* Grab from old-style .modalias section. */
+		for (p = i->ops->get_aliases(i, &size);
+		     p;
+		     p = next_string(p, &size)) {
+			asprintf(&line, "%s %s", p, modname);
+			underscores(line);
+			if (index_insert(index, line) && warn_dups)
+				warn("duplicate module alias:\n%s\n", line);
+			free(line);
+		}
+
+		/* Grab from new-style .modinfo section. */
+		for (p = i->ops->get_modinfo(i, &size);
+		     p;
+		     p = next_string(p, &size)) {
+			if (strncmp(p, "alias=", strlen("alias=")) == 0) {
+				asprintf(&line, "%s %s",
+					p + strlen("alias="), modname);
+				underscores(line);
+				if (index_insert(index, line) && warn_dups)
+					warn("duplicate module alias:\n%s\n",
+						line);
+				free(line);
+			}
+		}
+	}
+	
+	index_write(index, out);
+	index_destroy(index);
+}
+
 struct depfile {
 	char *name;
 	void (*func)(struct module *, FILE *);
@@ -761,6 +904,7 @@ struct depfile {
 
 static struct depfile depfiles[] = {
 	{ "modules.dep", output_deps }, /* This is what we check for '-A'. */
+	{ "modules.dep.bin", output_deps_bin },
 	{ "modules.pcimap", output_pci_table },
 	{ "modules.usbmap", output_usb_table },
 	{ "modules.ccwmap", output_ccw_table },
@@ -770,7 +914,9 @@ static struct depfile depfiles[] = {
 	{ "modules.ofmap", output_of_table },
 	{ "modules.seriomap", output_serio_table },
 	{ "modules.alias", output_aliases },
+	{ "modules.alias.bin", output_aliases_bin },
 	{ "modules.symbols", output_symbols },
+	{ "modules.symbols.bin", output_symbols_bin }
 };
 
 /* If we can't figure it out, it's safe to say "true". */
@@ -1062,7 +1208,7 @@ int main(int argc, char *argv[])
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */
 	opterr = 0;
-	while ((opt = getopt_long(argc, argv, "ab:ArehnqruvVF:C:", options, NULL))
+	while ((opt = getopt_long(argc, argv, "ab:ArehnqruvVF:C:w", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
@@ -1101,6 +1247,9 @@ int main(int argc, char *argv[])
 		case 'V':
 			printf("%s %s\n", PACKAGE, VERSION);
 			exit(0);
+		case 'w':
+			warn_dups = 1;
+			break;
 		default:
 			badopt = argv[optind-1];
 		}
@@ -1169,7 +1318,7 @@ int main(int argc, char *argv[])
 	} else {
 		list = grab_basedir(dirname,search,overrides);
 	}
-	parse_modules(list);
+	list = parse_modules(list);
 
 	for (i = 0; i < sizeof(depfiles)/sizeof(depfiles[0]); i++) {
 		FILE *out;
@@ -1185,8 +1334,11 @@ int main(int argc, char *argv[])
 			if (!out)
 				fatal("Could not open %s for writing: %s\n",
 					tmpname, strerror(errno));
-		} else
+		} else {
 			out = stdout;
+			if (ends_in(depname, ".bin"))
+				continue;
+		}
 		d->func(list, out);
 		if (!doing_stdout) {
 			fclose(out);

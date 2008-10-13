@@ -118,6 +118,30 @@ MODTEST_OVERRIDE32=/lib/modules/$MODTEST_UNAME/modules.ofmap
 MODTEST_OVERRIDE_WITH32=tests/tmp/modules.ofmap
 export MODTEST_OVERRIDE32 MODTEST_OVERRIDE_WITH32
 
+MODTEST_OVERRIDE33=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH33=tests/tmp/modules.dep.bin
+export MODTEST_OVERRIDE33 MODTEST_OVERRIDE_WITH33
+
+MODTEST_OVERRIDE34=/lib/modules/$MODTEST_UNAME/modules.dep.bin.temp
+MODTEST_OVERRIDE_WITH34=tests/tmp/modules.dep.bin.temp
+export MODTEST_OVERRIDE34 MODTEST_OVERRIDE_WITH34
+
+MODTEST_OVERRIDE35=/lib/modules/$MODTEST_UNAME/modules.alias.bin.temp
+MODTEST_OVERRIDE_WITH35=tests/tmp/modules.alias.bin.temp
+export MODTEST_OVERRIDE35 MODTEST_OVERRIDE_WITH35
+
+MODTEST_OVERRIDE36=/lib/modules/$MODTEST_UNAME/modules.alias.bin
+MODTEST_OVERRIDE_WITH36=tests/tmp/modules.alias.bin
+export MODTEST_OVERRIDE36 MODTEST_OVERRIDE_WITH36
+
+MODTEST_OVERRIDE37=/lib/modules/$MODTEST_UNAME/modules.symbols.bin
+MODTEST_OVERRIDE_WITH37=tests/tmp/modules.symbols.bin
+export MODTEST_OVERRIDE37 MODTEST_OVERRIDE_WITH37
+
+MODTEST_OVERRIDE38=/lib/modules/$MODTEST_UNAME/modules.symbols.bin.temp
+MODTEST_OVERRIDE_WITH38=tests/tmp/modules.symbols.bin.temp
+export MODTEST_OVERRIDE38 MODTEST_OVERRIDE_WITH38
+
 # More inputs
 MODTEST_OVERRIDE27=/lib/modules/$MODTEST_UNAME/build
 MODTEST_OVERRIDE_WITH27=tests/tmp/modules/build

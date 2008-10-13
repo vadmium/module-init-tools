@@ -2,7 +2,7 @@ insmod_SOURCES = insmod.c testing.h
 lsmod_SOURCES = lsmod.c testing.h
 modprobe_SOURCES = modprobe.c logging.c zlibsupport.c logging.h testing.h zlibsupport.h
 rmmod_SOURCES = rmmod.c testing.h
-depmod_SOURCES = depmod.c logging.c moduleops.c tables.c zlibsupport.c depmod.h logging.h moduleops.h tables.h list.h testing.h  zlibsupport.h
+depmod_SOURCES = depmod.c logging.c index.c moduleops.c tables.c zlibsupport.c depmod.h logging.h index.h moduleops.h tables.h list.h testing.h  zlibsupport.h
 modinfo_SOURCES = modinfo.c zlibsupport.c testing.h zlibsupport.h
 
 insmod_static_SOURCES = insmod.c

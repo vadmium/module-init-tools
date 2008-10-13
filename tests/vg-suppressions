@@ -19,3 +19,15 @@
     fun:output_aliases
     fun:main
 }
+{
+    GCC strlen() builtin generates questionable reads
+    Memcheck:Addr4
+    fun:output_symbols_bin
+    fun:main
+}
+{
+    GCC strlen() builtin generates questionable reads
+    Memcheck:Addr4
+    fun:output_aliases_bin
+    fun:main
+}
