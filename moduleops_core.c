@@ -149,91 +149,105 @@ static void PERBIT(calculate_deps)(struct module *module, int verbose)
 	}
 }
 
-static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr, const char *name,
+static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr,
+			       ElfPERBIT(Shdr) *sechdrs,
+			       ElfPERBIT(Sym) *sym,
 			       unsigned int *secsize,
 			       int conv)
 {
-	unsigned int i;
-	unsigned long size;
-	char *strings;
-	ElfPERBIT(Sym) *syms;
-	ElfPERBIT(Shdr) *sechdrs;
-
-	sechdrs = (void *)hdr + END(hdr->e_shoff, conv);
-	strings = PERBIT(load_section)(hdr, ".strtab", &size, conv);
-	syms = PERBIT(load_section)(hdr, ".symtab", &size, conv);
-
-	/* Don't warn again: we already have above */
-	if (!strings || !syms)
+	/* In BSS?  Happens for empty device tables on
+	 * recent GCC versions. */
+	if (END(sechdrs[END(sym->st_shndx, conv)].sh_type,conv) == SHT_NOBITS)
 		return NULL;
-
-	for (i = 0; i < size / sizeof(syms[0]); i++) {
-		if (streq(strings + END(syms[i].st_name, conv), name)) {
-			/* In BSS?  Happens for empty device tables on
-			 * recent GCC versions. */
-			if (END(sechdrs[END(syms[i].st_shndx, conv)].sh_type,
-				conv) == SHT_NOBITS)
-				return NULL;
-			if (secsize)
-				*secsize = END(syms[i].st_size, conv);
-			return (void *)hdr
-				+ END(sechdrs[END(syms[i].st_shndx, conv)]
-				      .sh_offset, conv)
-				+ END(syms[i].st_value, conv);
-		}
-	}
-	return NULL;
+	
+	if (secsize)
+		*secsize = END(sym->st_size, conv);
+	return (void *)hdr
+		+ END(sechdrs[END(sym->st_shndx, conv)].sh_offset, conv)
+		+ END(sym->st_value, conv);
 }
 
 /* FIXME: Check size, unless we end up using aliases anyway --RR */
 static void PERBIT(fetch_tables)(struct module *module)
 {
-	module->pci_size = PERBIT(PCI_DEVICE_SIZE);
-	module->pci_table = PERBIT(deref_sym)(module->data,
-					"__mod_pci_device_table",
-					NULL, module->conv);
+	unsigned int i;
+	unsigned long size;
+	char *strings;
+	ElfPERBIT(Ehdr) *hdr;
+	ElfPERBIT(Sym) *syms;
+	ElfPERBIT(Shdr) *sechdrs;
+	
+	hdr = module->data;
 
-	module->usb_size = PERBIT(USB_DEVICE_SIZE);
-	module->usb_table = PERBIT(deref_sym)(module->data,
-					"__mod_usb_device_table",
-					NULL, module->conv);
+	sechdrs = (void *)hdr + END(hdr->e_shoff, module->conv);
+	strings = PERBIT(load_section)(hdr, ".strtab", &size, module->conv);
+	syms = PERBIT(load_section)(hdr, ".symtab", &size, module->conv);
 
-	module->ccw_size = PERBIT(CCW_DEVICE_SIZE);
-	module->ccw_table = PERBIT(deref_sym)(module->data,
-					"__mod_ccw_device_table",
-					NULL, module->conv);
+	/* Don't warn again: we already have above */
+	if (!strings || !syms)
+		return;
+		
+	module->pci_table = NULL;
+	module->usb_table = NULL;
+	module->ccw_table = NULL;
+	module->ieee1394_table = NULL;
+	module->pnp_table = NULL;
+	module->pnp_card_table = NULL;
+	module->input_table = NULL;
+	module->serio_table = NULL;
+	module->of_table = NULL;
 
-	module->ieee1394_size = PERBIT(IEEE1394_DEVICE_SIZE);
-	module->ieee1394_table = PERBIT(deref_sym)(module->data,
-					"__mod_ieee1394_device_table",
-					NULL, module->conv);
-
-	module->pnp_size = PERBIT(PNP_DEVICE_SIZE);
-	module->pnp_table = PERBIT(deref_sym)(module->data,
-					"__mod_pnp_device_table",
-					NULL, module->conv);
-
-	module->pnp_card_size = PERBIT(PNP_CARD_DEVICE_SIZE);
-	module->pnp_card_table = PERBIT(deref_sym)(module->data,
-					"__mod_pnp_card_device_table",
-					NULL, module->conv);
-	module->pnp_card_offset = PERBIT(PNP_CARD_DEVICE_OFFSET);
-
-	module->input_size = PERBIT(INPUT_DEVICE_SIZE);
-	module->input_table = PERBIT(deref_sym)(module->data,
-					"__mod_input_device_table",
-					&module->input_table_size,
-						module->conv);
-
-	module->serio_size = PERBIT(SERIO_DEVICE_SIZE);
-	module->serio_table = PERBIT(deref_sym)(module->data,
-					"__mod_serio_device_table",
-					NULL, module->conv);
-
-	module->of_size = PERBIT(OF_DEVICE_SIZE);
-	module->of_table = PERBIT(deref_sym)(module->data,
-					"__mod_of_device_table",
-					NULL, module->conv);
+	for (i = 0; i < size / sizeof(syms[0]); i++) {
+		char *name = strings + END(syms[i].st_name, module->conv);
+		
+		if (!module->pci_table && streq(name, "__mod_pci_device_table")) {
+			module->pci_size = PERBIT(PCI_DEVICE_SIZE);
+			module->pci_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							      NULL, module->conv);
+		}
+		else if (!module->usb_table && streq(name, "__mod_usb_device_table")) {
+			module->usb_size = PERBIT(USB_DEVICE_SIZE);
+			module->usb_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							      NULL, module->conv);
+		}
+		else if (!module->ccw_table && streq(name, "__mod_ccw_device_table")) {
+			module->ccw_size = PERBIT(CCW_DEVICE_SIZE);
+			module->ccw_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							      NULL, module->conv);
+		}
+		else if (!module->ieee1394_table && streq(name, "__mod_ieee1394_device_table")) {
+			module->ieee1394_size = PERBIT(IEEE1394_DEVICE_SIZE);
+			module->ieee1394_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+								   NULL, module->conv);
+		}
+		else if (!module->pnp_table && streq(name, "__mod_pnp_device_table")) {
+			module->pnp_size = PERBIT(PNP_DEVICE_SIZE);
+			module->pnp_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							      NULL, module->conv);
+		}
+		else if (!module->pnp_card_table && streq(name, "__mod_pnp_card_device_table")) {
+			module->pnp_card_size = PERBIT(PNP_CARD_DEVICE_SIZE);
+			module->pnp_card_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+								   NULL, module->conv);
+			module->pnp_card_offset = PERBIT(PNP_CARD_DEVICE_OFFSET);
+		}
+		else if (!module->input_table && streq(name, "__mod_input_device_table")) {
+			module->input_size = PERBIT(INPUT_DEVICE_SIZE);
+			module->input_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							        &module->input_table_size,
+							        module->conv);
+		}
+		else if (!module->serio_table && streq(name, "__mod_serio_device_table")) {
+			module->serio_size = PERBIT(SERIO_DEVICE_SIZE);
+			module->serio_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+								NULL, module->conv);
+		}
+		else if (!module->of_table && streq(name, "__mod_of_device_table")) {
+			module->of_size = PERBIT(OF_DEVICE_SIZE);
+			module->of_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							     NULL, module->conv);
+		}
+	}
 }
 
 struct module_ops PERBIT(mod_ops) = {
