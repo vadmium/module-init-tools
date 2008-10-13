@@ -18,6 +18,10 @@ MODTEST_OVERRIDE4=/proc/modules
 MODTEST_OVERRIDE_WITH4=tests/tmp/proc
 export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
 
+MODTEST_OVERRIDE5=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH5=FILE-WHICH-DOES-NOT-EXIST
+export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
+
 # Set up modules.dep file.
 echo "# A comment" > tests/tmp/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep

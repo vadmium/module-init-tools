@@ -15,6 +15,9 @@ MODTEST_OVERRIDE3=/etc/modules.conf
 MODTEST_OVERRIDE_WITH3=FILE-WHICH-DOESNT-EXIST
 export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
 
+MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH4=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
 # Ignores explicit -C when it's -C modules.conf, and a /dev/*.
 [ "`./modprobe -C /etc/modules.conf /dev/foo 2>&1`" = "" ]
 

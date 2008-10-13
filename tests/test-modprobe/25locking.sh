@@ -27,6 +27,10 @@ MODTEST_OVERRIDE5=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH5=tests/tmp/modprobe.conf
 export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
 
+MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOES-NOT-EXIST
+export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
+
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
 /lib/modules/2.5.52/export_nodep-$BITNESS.ko:

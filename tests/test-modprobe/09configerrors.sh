@@ -9,6 +9,10 @@ MODTEST_OVERRIDE2=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH2=tests/tmp/modprobe.conf
 export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
 
+MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH3=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+
 # Test bad alias syntax
 cat > tests/tmp/modprobe.conf <<EOF
 alias

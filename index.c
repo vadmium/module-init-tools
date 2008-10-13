@@ -1,3 +1,20 @@
+/* index.c: module index file shared functions for modprobe and depmod
+    Copyright (C) 2008  Alan Jenkins <alan-jenkins@tuffmail.co.uk>.
+
+    These programs are free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with these programs.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -210,6 +227,34 @@ void index_write(const struct index_node *node, FILE *out)
 }
 
 
+
+static void read_error()
+{
+	fatal("Module index: unexpected error: %s\n"
+			"Try re-running depmod\n", errno ? strerror(errno) : "EOF");
+}
+
+static int read_char(FILE *in)
+{
+	int ch;
+
+	errno = 0;
+	ch = getc_unlocked(in);
+	if (ch == EOF)
+		read_error();
+	return ch;
+}
+
+static uint32_t read_long(FILE *in)
+{
+	uint32_t l;
+
+	errno = 0;
+	if (fread(&l, sizeof(uint32_t), 1, in) <= 0)
+		read_error();
+	return ntohl(l);
+}
+
 /*
  * Buffer abstract data type
  *
@@ -237,6 +282,526 @@ static struct buffer *buf_create()
 	struct buffer *buf;
 	 
 	buf = NOFAIL(calloc(sizeof(struct buffer), 1));
-	buf__realloc(buf, 1024);
+	buf__realloc(buf, 256);
 	return buf;
+}
+
+static void buf_destroy(struct buffer *buf)
+{
+	free(buf->bytes);
+	free(buf);
+}
+
+/* Destroy buffer and return a copy as a C string */
+static char *buf_detach(struct buffer *buf)
+{
+	char *bytes;
+
+	bytes = NOFAIL(realloc(buf->bytes, buf->used + 1));
+	bytes[buf->used] = '\0';
+
+	free(buf);
+	return bytes;
+}
+
+/* Return a C string owned by the buffer
+   (invalidated if the buffer is changed).
+ */
+static const char *buf_str(struct buffer *buf)
+{
+	buf__realloc(buf, buf->used + 1);
+	buf->bytes[buf->used] = '\0';
+	return buf->bytes;
+}
+
+static int buf_fwrite(struct buffer *buf, FILE *out)
+{
+	return fwrite(buf->bytes, 1, buf->used, out);
+}
+
+static struct index_value *add_value(struct buffer *buf,
+				     struct index_value *values)
+{
+	struct index_value *n = malloc(sizeof(struct index_value) + buf->used + 1);
+
+	memcpy(n->value, buf->bytes, buf->used);
+	n->value[buf->used] = '\0';
+	n->next = values;
+
+	return n;
+}
+
+static void buf_popchars(struct buffer *buf, unsigned n)
+{
+	buf->used -= n;
+}
+
+static void buf_pushchar(struct buffer *buf, char ch)
+{
+	buf__realloc(buf, buf->used + 1);
+	buf->bytes[buf->used] = ch;
+	buf->used++;
+}
+
+static unsigned buf_pushchars(struct buffer *buf, const char *str)
+{
+	unsigned i = 0;
+	int ch;
+
+	while ((ch = str[i])) {
+		buf_pushchar(buf, ch);
+		i++;
+	}
+	return i;
+}
+
+/* like buf_pushchars(), but the string comes from a file */
+static unsigned buf_freadchars(struct buffer *buf, FILE *in)
+{
+	unsigned i = 0;
+	int ch;
+
+	while ((ch = read_char(in))) {
+		buf_pushchar(buf, ch);
+		i++;
+	}
+
+	return i;
+}
+
+static void buf_popchar(struct buffer *buf)
+{
+	buf->used--;
+}
+
+/*
+ * Index file searching (used only by modprobe)
+ */
+
+struct index_node_f {
+	FILE *file;
+	char *prefix;		/* path compression */
+	char isendpoint;	/* does this node represent a string? */
+	unsigned char first;	/* range of child nodes */
+	unsigned char last;
+	uint32_t children[0];
+};
+
+static void index_fatal(const char *why)
+{
+	fatal("Module index corrupt: %s\n"
+	      "Try re-running depmod\n", why);
+}
+
+static struct index_node_f *index_read(FILE *in, uint32_t offset)
+{
+	struct index_node_f *node;
+	char *prefix;
+	int i, child_count = 0;
+
+	if ((offset & INDEX_NODE_MASK) == 0)
+		return NULL;
+
+	fseek(in, offset & INDEX_NODE_MASK, SEEK_SET);
+	
+	if (offset & INDEX_NODE_PREFIX) {
+		struct buffer *buf = buf_create();
+		buf_freadchars(buf, in);
+		prefix = buf_detach(buf);
+	} else
+		prefix = NOFAIL(strdup(""));
+		
+	if (offset & INDEX_NODE_CHILDS) {
+		char first = read_char(in);
+		char last = read_char(in);
+		child_count = last - first + 1;
+		
+		node = NOFAIL(malloc(sizeof(struct index_node_f) +
+				     sizeof(uint32_t) * child_count));
+		
+		node->first = first;
+		node->last = last;
+
+		for (i = 0; i < child_count; i++)
+			node->children[i] = read_long(in);
+	} else {
+		node = NOFAIL(malloc(sizeof(struct index_node_f)));
+		node->first = INDEX_CHILDMAX;
+		node->last = 0;
+	}
+	
+	node->prefix = prefix;
+	node->isendpoint = !!(offset & INDEX_NODE_ENDPOINT);
+	node->file = in;
+	return node;
+}
+
+static void index_close(struct index_node_f *node)
+{
+	free(node->prefix);
+	free(node);
+}
+
+static struct index_node_f *index_readchild(const struct index_node_f *parent,
+					    int ch)
+{
+	if (parent->first <= ch && ch <= parent->last)
+		return index_read(parent->file,
+		                  parent->children[ch - parent->first]);
+	else
+		return NULL;
+}
+
+static struct index_node_f *index_readroot(FILE *in)
+{
+	uint32_t offset;
+
+	fseek(in, 0, SEEK_SET);
+	
+	if (read_long(in) != INDEX_MAGIC)
+		index_fatal("Bad magic number");
+
+	offset = read_long(in);
+	return index_read(in, offset);
+}
+
+/*
+ * Dump all strings as lines in a plain text file.
+ */
+
+static void index_dump_node(struct index_node_f *node,
+			    struct buffer *buf,
+			    FILE *out,
+			    const char *prefix)
+{
+	int ch, pushed;
+	
+	pushed = buf_pushchars(buf, node->prefix);
+	
+	if (node->isendpoint) {
+		fputs(prefix, out);
+		buf_fwrite(buf, out);
+		fputc('\n', out);
+	}
+	
+	for (ch = node->first; ch <= node->last; ch++) {
+		struct index_node_f *child = index_readchild(node, ch);
+		
+		if (!child)
+			continue;
+			
+		buf_pushchar(buf, ch);
+		index_dump_node(child, buf, out, prefix);
+		buf_popchar(buf);
+	}
+	
+	buf_popchars(buf, pushed);
+	index_close(node);
+}
+
+void index_dump(FILE *in, FILE *out, const char *prefix)
+{
+	struct index_node_f *root;
+	struct buffer *buf;
+	
+	buf = buf_create();
+	root = index_readroot(in);
+	index_dump_node(root, buf, out, prefix);
+	buf_destroy(buf);
+}
+
+/*
+ * Search the index for a key
+ *
+ * Returns the value of the first match
+ *
+ * The calling convention for the inner functions
+ * is for the callee to free the node argument (using index_close).
+ */
+
+/* Level 1: interface function */
+char *index_search(FILE *in, const char *key);
+
+/* Level 2: descend the tree */
+static char *index_search__node(struct index_node_f *node, const char *key, int i);
+
+/* Level 3: return the first value in the subtree.
+   The first character of the value is node->prefix[j] */
+static char *index_search__firstvalue(struct index_node_f *node, int j);
+
+char *index_search(FILE *in, const char *key)
+{
+	struct index_node_f *root;
+	char *value;
+	
+	root = index_readroot(in);
+	value = index_search__node(root, key, 0);
+	
+	return value;
+}
+
+static char *index_search__node(struct index_node_f *node, const char *key, int i)
+{
+	struct index_node_f *child;
+	int ch;
+	int j;
+
+	while(node) {
+		for (j = 0; node->prefix[j]; j++) {
+			ch = node->prefix[j];
+			
+			if (ch == ' ' && key[i+j] == '\0')
+				return index_search__firstvalue(node, j+1);
+			
+			if (ch != key[i+j]) {
+				index_close(node);
+				return NULL;
+			}
+		}
+		i += j;
+		
+		if (key[i] == '\0') {
+			child = index_readchild(node, ' ');
+			index_close(node);
+			if (child)
+				return index_search__firstvalue(child, 0);
+			else
+				return NULL;
+		}
+		
+		child = index_readchild(node, key[i]);
+		index_close(node);
+		node = child;
+		i++;
+	}
+	
+	return NULL;
+}
+
+static char *index_search__firstvalue(struct index_node_f *node, int j)
+{
+	struct index_node_f *child;
+	struct buffer *buf;
+	 
+	buf = buf_create();
+	buf_pushchars(buf, &node->prefix[j]);
+
+	while (!node->isendpoint) {
+		if (node->first == INDEX_CHILDMAX)
+			index_fatal("Index node is neither parent nor endpoint");
+		
+		buf_pushchar(buf, node->first);
+		child = index_readchild(node, node->first);
+		index_close(node);
+		node = child;
+		if (!node)
+			index_fatal("Index node has non-existent first child");
+ 	
+		buf_pushchars(buf, node->prefix);
+	}
+	
+	index_close(node);
+	return buf_detach(buf);
+}
+
+/*
+ * Search the index for a key.  The index may contain wildcards.
+ *
+ * Returns a list of all the values of matching keys.
+ */
+
+/* Level 1: interface function */
+struct index_value *index_searchwild(FILE *in, const char *key);
+
+/* Level 2: descend the tree (until we hit a wildcard) */
+static void index_searchwild__node(struct index_node_f *node,
+				   struct buffer *buf,
+				   const char *key, int i,
+				   struct index_value **out);
+
+/* Level 3: traverse a sub-keyspace which starts with a wildcard,
+            generating all subkeys.
+*/
+static void index_searchwild__all(struct index_node_f *node, int j,
+				  struct buffer *buf,
+				  const char *subkey,
+				  struct index_value **out);
+
+/* Level 4: check for a subkey match */
+static void index_searchwild__match(struct index_node_f *node, int j,
+				    struct buffer *buf,
+				    const char *subkey,
+				    struct index_value **out);
+
+/* Level 5: add all values for a matching subkey */
+static void index_searchwild__allvalues(struct index_node_f *node, int j,
+					struct buffer *value_buf,
+					struct index_value **out);
+
+
+struct index_value *index_searchwild(FILE *in, const char *key)
+{
+	struct index_node_f *root = index_readroot(in);
+	struct buffer *buf = buf_create();
+	struct index_value *out = NULL;
+	
+	index_searchwild__node(root, buf, key, 0, &out);
+ 	buf_destroy(buf);
+	return out;
+}
+
+static void index_searchwild__node(struct index_node_f *node,
+				   struct buffer *buf,
+				   const char *key, int i,
+				   struct index_value **out)
+{
+	struct index_node_f *child;
+	int j;
+	int ch;
+
+	while(node) {
+		for (j = 0; node->prefix[j]; j++) {
+			ch = node->prefix[j];
+			
+			if (ch == '*' || ch == '?' || ch == '[') {
+				index_searchwild__all(node, j, buf,
+						      &key[i+j], out);
+				return;
+			}
+			
+			if (ch == ' ' && key[i+j] == '\0') {
+				/* Note: buf matches &key[i+j] - both are empty */
+				index_searchwild__match(node, j+1, buf,
+						        &key[i+j], out);
+				return;
+			}
+				
+			if (ch != key[i+j]) {
+				index_close(node);
+				return;
+			}
+		}
+		i += j;
+		
+		child = index_readchild(node, '*');
+		if (child) {
+			buf_pushchar(buf, '*');
+			index_searchwild__all(child, 0, buf, &key[i], out);
+			buf_popchar(buf);
+		}
+		
+		child = index_readchild(node, '?');
+		if (child) {
+			buf_pushchar(buf, '*');
+			index_searchwild__all(child, 0, buf, &key[i], out);
+			buf_popchar(buf);
+		}
+		
+		child = index_readchild(node, '[');
+		if (child) {
+			buf_pushchar(buf, '[');
+			index_searchwild__all(child, 0, buf, &key[i], out);
+			buf_popchar(buf);
+		}
+		
+		if (key[i] == '\0') {
+			child = index_readchild(node, ' ');
+			index_close(node);
+			/* Note: buf matches &key[i] - both are empty */
+			if(child)
+				index_searchwild__match(child, 0,
+					                buf, &key[i], out);
+			return;
+		}
+		
+		child = index_readchild(node, key[i]);
+		index_close(node);
+		node = child;
+		i++;
+	}
+}
+
+static void index_searchwild__all(struct index_node_f *node, int j,
+				  struct buffer *buf,
+				  const char *subkey,
+				  struct index_value **out)
+{
+	int pushed = 0;
+	int ch;
+	
+	while (node->prefix[j]) {
+		ch = node->prefix[j];
+		
+		if (ch == ' ') {
+			index_searchwild__match(node, j+1, buf, subkey, out);
+			goto out_popchars;
+		}
+		buf_pushchar(buf, ch);
+		pushed++;
+		j++;
+	}
+
+	for (ch = node->first; ch <= node->last; ch++) {
+		struct index_node_f *child = index_readchild(node, ch);
+		
+		if (!child)
+			continue;
+			
+		if (ch == ' ') {
+			index_searchwild__match(child, 0, buf, subkey, out);
+		} else {
+			buf_pushchar(buf, ch);
+			index_searchwild__all(child, 0, buf, subkey, out);
+			buf_popchar(buf);
+		}
+	}
+	
+	index_close(node);
+	
+out_popchars:
+	buf_popchars(buf, pushed);
+}
+
+static void index_searchwild__match(struct index_node_f *node, int j,
+				    struct buffer *buf,
+				    const char *subkey,
+				    struct index_value **out)
+{
+	struct buffer *value_buf;
+	const char *pattern;
+	
+	pattern = buf_str(buf);
+	if (fnmatch(pattern, subkey, 0) == 0) {
+		value_buf = buf_create();
+		index_searchwild__allvalues(node, j, value_buf, out);
+		buf_destroy(value_buf);
+	} else
+		index_close(node);
+}
+
+static void index_searchwild__allvalues(struct index_node_f *node, int j,
+					struct buffer *value_buf,
+					struct index_value **out)
+{
+	int pushed = 0;
+	int ch;
+
+	pushed = buf_pushchars(value_buf, &node->prefix[j]);
+
+	if (node->isendpoint)
+		*out = add_value(value_buf, *out);
+	
+	for (ch = node->first; ch <= node->last; ch++) {
+		struct index_node_f *child = index_readchild(node, ch);
+		
+		if (!child)
+			continue;
+		
+		buf_pushchar(value_buf, ch);
+		index_searchwild__allvalues(child, 0, value_buf, out);
+		buf_popchar(value_buf);
+	}
+
+	index_close(node);
+	buf_popchars(value_buf, pushed);
 }

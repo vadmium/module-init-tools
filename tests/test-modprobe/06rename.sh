@@ -27,6 +27,10 @@ MODTEST_OVERRIDE5=/proc/modules
 MODTEST_OVERRIDE_WITH5=tests/tmp/modules
 export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
 
+MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
+
 # Set up modules.dep file (neither has dependencies).
 echo "# A comment" > tests/tmp/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/rename-new-$BITNESS.ko:" >> tests/tmp/modules.dep

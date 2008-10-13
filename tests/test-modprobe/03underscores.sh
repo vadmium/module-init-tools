@@ -27,6 +27,10 @@ MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
 MODTEST_OVERRIDE_WITH6=tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko
 export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
 
+MODTEST_OVERRIDE7=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
+
 # Set up modules.dep file.
 echo "# A comment" > tests/tmp/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep

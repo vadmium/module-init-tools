@@ -14,6 +14,10 @@ MODTEST_OVERRIDE3=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH3=tests/tmp/DOES_NOT_EXIST
 export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
 
+MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH4=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
+
 # Set up modules.dep file.
 echo "# A comment" > tests/tmp/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep

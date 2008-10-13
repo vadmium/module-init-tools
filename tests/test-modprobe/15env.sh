@@ -26,6 +26,9 @@ MODTEST_OVERRIDE6=/etc/modprobe2.conf
 MODTEST_OVERRIDE_WITH6=tests/tmp/modprobe2.conf
 export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
 
+MODTEST_OVERRIDE7=/lib/modules/2.5.53/modules.dep.bin
+MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
+export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
 # Now create modules.dep and modules.conf
 echo /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko: > tests/tmp/modules.dep
 echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/modprobe.conf

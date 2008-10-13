@@ -11,6 +11,10 @@ MODTEST_OVERRIDE2=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH2=tests/tmp/modprobe.conf
 export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
 
+MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH3=FILE_WHICH_DOESNT_EXIST
+export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+
 # Create a simple config file.
 cat > tests/tmp/modprobe.conf <<EOF
 # Various aliases

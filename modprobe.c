@@ -44,6 +44,7 @@
 
 #include "zlibsupport.h"
 #include "logging.h"
+#include "index.h"
 #include "list.h"
 #include "backwards_compat.c"
 
@@ -261,6 +262,35 @@ static int add_modules_dep_line(char *line,
 	return 1;
 }
 
+static int read_depends_bin(const char *dirname,
+			 const char *start_name,
+			 struct list_head *list)
+{
+	char *modules_dep_name;
+	char *line;
+	FILE *modules_dep;
+
+	asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep.bin");
+	modules_dep = fopen(modules_dep_name, "r");
+	if (!modules_dep) {
+		free(modules_dep_name);
+		return 0;
+	}
+
+	line = index_search(modules_dep, start_name);
+	if (line) {
+		/* Value is standard dependency line format */
+		if (!add_modules_dep_line(line, start_name, list))
+			fatal("Module index is inconsistent\n");
+		free(line);
+	}
+	
+	fclose(modules_dep);
+	free(modules_dep_name);
+	
+	return 1;
+}
+
 static void read_depends(const char *dirname,
 			 const char *start_name,
 			 struct list_head *list)
@@ -269,6 +299,9 @@ static void read_depends(const char *dirname,
 	char *line;
 	FILE *modules_dep;
 	int done = 0;
+
+	if (read_depends_bin(dirname, start_name, list))
+		return;
 
 	asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep");
 	modules_dep = fopen(modules_dep_name, "r");
@@ -1184,6 +1217,50 @@ static int read_config(const char *filename,
 	return ret;
 }
 
+/* Read binary index file containing aliases only */
+static int read_config_file_bin(const char *filename,
+			    const char *name,
+			    int dump_only,
+			    int removing,
+			    struct module_options **options,
+			    struct module_command **commands,
+			    struct module_alias **aliases,
+			    struct module_blacklist **blacklist)
+{
+	struct index_value *realname;
+	char *binfile;
+	FILE *cfile;
+
+	asprintf(&binfile, "%s.bin", filename);
+	cfile = fopen(binfile, "r");
+	if (!cfile) {
+		free(binfile);
+		
+		return read_config_file(filename, name, dump_only, removing,
+					options, commands, aliases, blacklist);
+	}
+
+	if (dump_only) {
+		index_dump(cfile, stdout, "alias ");
+		free(binfile);
+		fclose(cfile);
+		return 1;
+	}
+	
+	realname = index_searchwild(cfile, name);
+	while(realname) {
+		struct index_value *next = realname->next;
+		*aliases = add_alias(realname->value, *aliases);
+		
+		free(realname);
+		realname = next;
+	}
+	
+	free(binfile);
+	fclose(cfile);
+	return 1;
+}
+
 static const char *default_configs[] = 
 {
 	"/etc/modprobe.conf",
@@ -1587,10 +1664,10 @@ int main(int argc, char *argv[])
 		read_toplevel_config(config, "", 1, 0,
 			     &modoptions, &commands, &aliases, &blacklist);
 		read_kcmdline(1, &modoptions);
-		read_config(aliasfilename, "", 1, 0,&modoptions, &commands,
-			    &aliases, &blacklist);
-		read_config(symfilename, "", 1, 0, &modoptions, &commands,
-			    &aliases, &blacklist);
+		read_config_file_bin(aliasfilename, "", 1, 0,&modoptions,
+			     &commands, &aliases, &blacklist);
+		read_config_file_bin(symfilename, "", 1, 0, &modoptions,
+			     &commands, &aliases, &blacklist);
 		exit(0);
 	}
 
@@ -1624,7 +1701,7 @@ int main(int argc, char *argv[])
 		/* No luck?  Try symbol names, if starts with symbol:. */
 		if (!aliases
 		    && strncmp(modulearg, "symbol:", strlen("symbol:")) == 0)
-			read_config(symfilename, modulearg, 0,
+			read_config_file_bin(symfilename, modulearg, 0,
 			    remove, &modoptions, &commands,
 			    	&aliases, &blacklist);
 
@@ -1636,9 +1713,10 @@ int main(int argc, char *argv[])
 			if (list_empty(&list)
 			    && !find_command(modulearg, commands))
 			{
-				read_config(aliasfilename, modulearg, 0,
-					    remove, &modoptions, &commands,
-					    &aliases, &blacklist);
+				read_config_file_bin(aliasfilename, modulearg,
+						     0, remove, &modoptions,
+						     &commands, &aliases, 
+						     &blacklist);
 			}
 		}
 

@@ -27,6 +27,10 @@ MODTEST_OVERRIDE5=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH5=tests/tmp/DOES_NOT_EXIST
 export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
 
+MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOES-NOT-EXIST
+export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
+
 # Set up modules.dep file.
 echo "# A comment" > tests/tmp/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep

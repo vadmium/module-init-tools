@@ -23,6 +23,10 @@ MODTEST_OVERRIDE5=/proc/modules
 MODTEST_OVERRIDE_WITH5=tests/tmp/proc
 export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
 
+MODTEST_OVERRIDE6=/lib/modules/2.5.53/modules.dep.bin
+MODTEST_OVERRIDE_WITH6=tests/tmp/modules.dep.bin
+export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
+
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
 # Should handle comments.
