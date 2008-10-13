@@ -328,6 +328,13 @@ int needconv(const char *elfhdr)
 		abort();
 }
 
+static char *basename(const char *name)
+{
+	const char *base = strrchr(name, '/');
+	if (base) return (char *)base + 1;
+	return (char *)name;
+}
+
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;
@@ -338,6 +345,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 		sprintf(new->pathname, "%s/%s", dirname, filename);
 	else
 		strcpy(new->pathname, filename);
+	new->basename = basename(new->pathname);
 
 	INIT_LIST_HEAD(&new->dep_list);
 
@@ -393,13 +401,6 @@ static int in_loop(struct module *mod, const struct module_traverse *traverse)
 	return 0;
 }
 
-static char *basename(const char *name)
-{
-	const char *base = strrchr(name, '/');
-	if (base) return (char *)base + 1;
-	return (char *)name;
-}
-
 /* Assume we are doing all the modules, so only report each loop once. */
 static void report_loop(const struct module *mod,
 			const struct module_traverse *traverse)
@@ -421,8 +422,8 @@ static void report_loop(const struct module *mod,
 
 	warn("Loop detected: %s ", mod->pathname);
 	for (i = traverse->prev; i->prev; i = i->prev)
-		fprintf(stderr, "needs %s ", basename(i->mod->pathname));
-	fprintf(stderr, "which needs %s again!\n", basename(mod->pathname));
+		fprintf(stderr, "needs %s ", i->mod->basename);
+	fprintf(stderr, "which needs %s again!\n", i->mod->basename);
 }
 
 /* This is damn slow, but loops actually happen, and we don't want to
@@ -610,7 +611,7 @@ static struct module *do_module(const char *dirname,
 	/* Check if module is already in the list. */
 	for (i = &list; *i; i = &(*i)->next) {
 
-		if (streq(basename((*i)->pathname), filename)) {
+		if (streq((*i)->basename, filename)) {
 			char newpath[strlen(dirname) + strlen("/")
 				      + strlen(filename) + 1];
 

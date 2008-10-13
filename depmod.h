@@ -62,6 +62,7 @@ struct module
 	void *data;
 	unsigned long len;
 
+	char *basename; /* points into pathname */
 	char pathname[0];
 };
 
