@@ -1677,9 +1677,10 @@ int main(int argc, char *argv[])
 			    	&aliases, &blacklist);
 
 		if (!aliases) {
-			/* We only use canned aliases as last resort. */
-			read_depends(dirname, modulearg, &list);
+			if(!strchr(modulearg, ':'))
+				read_depends(dirname, modulearg, &list);
 
+			/* We only use canned aliases as last resort. */
 			if (list_empty(&list)
 			    && !find_command(modulearg, commands))
 			{
