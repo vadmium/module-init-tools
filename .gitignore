@@ -33,3 +33,7 @@ manpage.refs
 # quilt's files
 patches
 series
+
+# test output
+tests/data/32
+tests/data/64
