@@ -159,8 +159,8 @@ int main(int argc, char *argv[])
 {
 	char opt;
 	char mode = 0;
-	char *filename;
-	char *key;
+	char *filename = NULL;
+	char *key = NULL;
 	
 	while ((opt = getopt_long(argc, argv, "odsw", options, NULL))
 		       != -1) {
