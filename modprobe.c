@@ -43,6 +43,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #include "zlibsupport.h"
+#include "logging.h"
 #include "list.h"
 #include "backwards_compat.c"
 
@@ -61,60 +62,11 @@ struct module {
 
 typedef void (*errfn_t)(const char *fmt, ...);
 
-/* Do we use syslog or stderr for messages? */
-static int log;
-
-static void message(const char *prefix, const char *fmt, va_list *arglist)
-{
-	char *buf, *buf2;
-
-	vasprintf(&buf, fmt, *arglist);
-	asprintf(&buf2, "%s%s", prefix, buf);
-
-	if (log)
-		syslog(LOG_NOTICE, "%s", buf2);
-	else
-		fprintf(stderr, "%s", buf2);
-	free(buf2);
-	free(buf);
-}
-
-static int warned = 0;
-static void warn(const char *fmt, ...)
-{
-	va_list arglist;
-	warned++;
-	va_start(arglist, fmt);
-	message("WARNING: ", fmt, &arglist);
-	va_end(arglist);
-}
-
-static void fatal(const char *fmt, ...)
-{
-	va_list arglist;
-	va_start(arglist, fmt);
-	message("FATAL: ", fmt, &arglist);
-	va_end(arglist);
-	exit(1);
-}
-
-
 static void grammar(const char *cmd, const char *filename, unsigned int line)
 {
 	warn("%s line %u: ignoring bad line starting with '%s'\n",
 	     filename, line, cmd);
 }
-
-static void *do_nofail(void *ptr, const char *file, int line, const char *expr)
-{
-	if (!ptr) {
-		fatal("Memory allocation failure %s line %d: %s.\n",
-		      file, line, expr);
-	}
-	return ptr;
-}
-
-#define NOFAIL(ptr)	do_nofail((ptr), __FILE__, __LINE__, #ptr)
 
 static void print_usage(const char *progname)
 {
@@ -1569,7 +1521,7 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			add_to_env_var("-s");
-			log = 1;
+			logging = 1;
 			break;
 		case 'i':
 			ignore_commands = 1;
@@ -1599,9 +1551,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* If stderr not open, go to syslog */
-	if (log || fstat(STDERR_FILENO, &statbuf) != 0) {
+	if (logging || fstat(STDERR_FILENO, &statbuf) != 0) {
 		openlog("modprobe", LOG_CONS, LOG_DAEMON);
-		log = 1;
+		logging = 1;
 	}
 
 	if (argc < optind + 1 && !dump_only && !list_only && !remove)
@@ -1729,7 +1681,7 @@ int main(int argc, char *argv[])
 				      unknown_silent, optstring, flags);
 		}
 	}
-	if (log)
+	if (logging)
 		closelog();
 
 	free(dirname);

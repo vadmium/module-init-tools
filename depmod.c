@@ -22,6 +22,7 @@
 
 #include "zlibsupport.h"
 #include "depmod.h"
+#include "logging.h"
 #include "moduleops.h"
 #include "tables.h"
 
@@ -55,39 +56,6 @@ struct module_search
 
 static int verbose;
 static unsigned int skipchars;
-
-void fatal(const char *fmt, ...)
-{
-	va_list arglist;
-
-	fprintf(stderr, "FATAL: ");
-
-	va_start(arglist, fmt);
-	vfprintf(stderr, fmt, arglist);
-	va_end(arglist);
-
-	exit(1);
-}
-
-void warn(const char *fmt, ...)
-{
-	va_list arglist;
-
-	fprintf(stderr, "WARNING: ");
-
-	va_start(arglist, fmt);
-	vfprintf(stderr, fmt, arglist);
-	va_end(arglist);
-}
-
-void *do_nofail(void *ptr, const char *file, int line, const char *expr)
-{
-	if (!ptr) {
-		fatal("Memory allocation failure %s line %d: %s.\n",
-		      file, line, expr);
-	}
-	return ptr;
-}
 
 #define SYMBOL_HASH_SIZE 1024
 struct symbol

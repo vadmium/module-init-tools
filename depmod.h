@@ -5,12 +5,6 @@
 struct module;
 
 /* Functions provided by depmod.c */
-void fatal(const char *fmt, ...) __attribute__ ((noreturn,
-						 format (printf, 1, 2)));
-void warn(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void *do_nofail(void *ptr, const char *file, int line, const char *expr);
-#define NOFAIL(ptr)	do_nofail((ptr), __FILE__, __LINE__, #ptr)
-
 void add_symbol(const char *name, struct module *owner);
 struct module *find_symbol(const char *name, const char *modname, int weak);
 void add_dep(struct module *mod, struct module *depends_on);
