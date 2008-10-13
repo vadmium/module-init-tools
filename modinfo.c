@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 	const char *field = NULL;
 	const char *kernel = NULL;
 	char sep = '\n';
-	unsigned long infosize;
+	unsigned long infosize = 0;
 	int opt, ret = 0;
 
 	if (!getenv("NEW_MODINFO"))
