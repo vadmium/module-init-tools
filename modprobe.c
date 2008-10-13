@@ -884,8 +884,12 @@ static void insmod(struct list_head *list,
 				      newname ?: mod->modname);
 			goto out_unlock;
 		}
-		error("Error inserting %s (%s): %s\n",
-		      mod->modname, mod->filename, insert_moderror(errno));
+		/* don't warn noisely if we're loading multiple aliases. */
+		/* one of the aliases may try to use hardware we don't have. */
+		if ((error != warn) || (verbose))
+			error("Error inserting %s (%s): %s\n",
+			      mod->modname, mod->filename,
+			      insert_moderror(errno));
 	}
  out:
 	release_file(map, len);
