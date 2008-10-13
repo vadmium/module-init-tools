@@ -60,10 +60,10 @@ touch tests/tmp/proc
 [ "`./modprobe -r -v noexport-nodep-$BITNESS 2>&1; echo $?`" = "0" ]
 [ "`./modprobe -r -v export-nodep-$BITNESS 2>&1; echo $?`" = "0" ]
 # ... unless --first-time is specified (won't print status due to set -e).
-[ "`./modprobe --first-time -r noexport_nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module noexport_nodep_$BITNESS is not in kernel." ]
-[ "`./modprobe --first-time -r export_nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module export_nodep_$BITNESS is not in kernel." ]
-[ "`./modprobe --first-time -r noexport-nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module noexport_nodep_$BITNESS is not in kernel." ]
-[ "`./modprobe --first-time -r export-nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module export_nodep_$BITNESS is not in kernel." ]
+[ "`./modprobe --first-time -r noexport_nodep-$BITNESS 2>&1`" = "FATAL: Module noexport_nodep_$BITNESS is not in kernel." ]
+[ "`./modprobe --first-time -r export_nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS is not in kernel." ]
+[ "`./modprobe --first-time -r noexport-nodep-$BITNESS 2>&1`" = "FATAL: Module noexport_nodep_$BITNESS is not in kernel." ]
+[ "`./modprobe --first-time -r export-nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS is not in kernel." ]
 
 # Old-style /proc (no unload support).
 echo "noexport_nodep_$BITNESS $SIZE_NOEXPORT_NODEP" > tests/tmp/proc
@@ -75,10 +75,10 @@ echo "export_nodep_$BITNESS $SIZE_EXPORT_NODEP" >> tests/tmp/proc
 [ "`./modprobe -v noexport-nodep-$BITNESS 2>&1; echo $?`" = "0" ]
 [ "`./modprobe -v export-nodep-$BITNESS 2>&1; echo $?`" = "0" ]
 # .. unless --first-time is specified.
-[ "`./modprobe --first-time noexport_nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module noexport_nodep_$BITNESS already in kernel." ]
-[ "`./modprobe --first-time export_nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module export_nodep_$BITNESS already in kernel." ]
-[ "`./modprobe --first-time noexport-nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module noexport_nodep_$BITNESS already in kernel." ]
-[ "`./modprobe --first-time export-nodep-$BITNESS 2>&1; echo $?`" = "FATAL: Module export_nodep_$BITNESS already in kernel." ]
+[ "`./modprobe --first-time noexport_nodep-$BITNESS 2>&1`" = "FATAL: Module noexport_nodep_$BITNESS already in kernel." ]
+[ "`./modprobe --first-time export_nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS already in kernel." ]
+[ "`./modprobe --first-time noexport-nodep-$BITNESS 2>&1`" = "FATAL: Module noexport_nodep_$BITNESS already in kernel." ]
+[ "`./modprobe --first-time export-nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS already in kernel." ]
 
 # Removal should still try.
 [ "`./modprobe -r noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]
