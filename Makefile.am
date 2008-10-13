@@ -4,6 +4,7 @@ modprobe_SOURCES = modprobe.c logging.c index.c zlibsupport.c logging.h index.h 
 rmmod_SOURCES = rmmod.c testing.h
 depmod_SOURCES = depmod.c logging.c index.c moduleops.c tables.c zlibsupport.c depmod.h logging.h index.h moduleops.h tables.h list.h testing.h  zlibsupport.h
 modinfo_SOURCES = modinfo.c zlibsupport.c testing.h zlibsupport.h
+modindex_SOURCES = modindex.c logging.c index.c logging.h index.h
 
 insmod_static_SOURCES = insmod.c
 insmod_static_LDFLAGS = -static
@@ -32,6 +33,7 @@ EXTRA_DIST = generate-modprobe.conf modprobe.devfs FAQ CODING stress_modules.sh 
 sbin_PROGRAMS = insmod modprobe rmmod depmod modinfo insmod.static
 bin_PROGRAMS = lsmod
 sbin_SCRIPTS = generate-modprobe.conf
+noinst_PROGRAMS=modindex
 INSTALL = $(SHELL) $(top_srcdir)/install-with-care
 
 TESTS = tests/runtests

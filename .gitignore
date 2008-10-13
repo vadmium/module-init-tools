@@ -21,6 +21,7 @@ insmod
 insmod.static
 lsmod
 modinfo
+modindex
 modprobe
 rmmod
 
