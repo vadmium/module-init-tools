@@ -7,3 +7,15 @@
    obj:/lib/ld-2.3.5.so
    obj:/lib/ld-2.3.5.so
 }
+{
+    GCC strlen() builtin generates questionable reads
+    Memcheck:Addr4
+    fun:output_symbols
+    fun:main
+}
+{
+    GCC strlen() builtin generates questionable reads
+    Memcheck:Addr4
+    fun:output_aliases
+    fun:main
+}

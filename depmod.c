@@ -458,14 +458,23 @@ static void order_dep_list(struct module *start, struct module *mod)
 	}
 }
 
+static struct module *deleted = NULL;
+
 static void del_module(struct module **modules, struct module *delme)
 {
 	struct module **i;
 
 	/* Find pointer to it. */ 
-	for (i = modules; *i != delme; i = &(*i)->next);
-
-	*i = delme->next;
+	if (modules) {
+		for (i = modules; *i != delme; i = &(*i)->next);
+		
+		*i = delme->next;
+	}
+	
+	/* Save on a list to quiet valgrind.
+	   Can't free - other modules may depend on them */
+	delme->next = deleted;
+	deleted = delme;
 }
 
 static void output_deps(struct module *modules,
@@ -609,14 +618,12 @@ static struct module *do_module(const char *dirname,
 
 			if (is_higher_priority(newpath, (*i)->pathname,search,
 					       overrides)) {
-				new->next = (*i)->next;
-
-				release_file((*i)->data, (*i)->len);
-				free(*i);
-
+				del_module(i, *i);
+				
+				new->next = *i;
 				*i = new;
 			} else
-				free(new);
+				del_module(NULL, new);
 
 			return list;
 		}
@@ -1064,17 +1071,18 @@ static void read_toplevel_config(const char *filename,
 	}
 }
 
+/* Local to main, but not freed on exit.  Keep valgrind quiet. */
+struct module *list = NULL;
+struct module_search *search = NULL;
+struct module_overrides *overrides = NULL;
 
 int main(int argc, char *argv[])
 {
 	int opt, all = 0, maybe_all = 0, doing_stdout = 0;
 	char *basedir = "", *dirname, *version, *badopt = NULL,
 		*system_map = NULL;
-	struct module *list = NULL;
 	int i;
 	const char *config = NULL;
-	struct module_search *search = NULL;
-	struct module_overrides *overrides = NULL;
 
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */
