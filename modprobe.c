@@ -974,6 +974,67 @@ nonexistent_module:
 	goto remove_rest;
 }
 
+struct modver32_info
+{
+       uint32_t crc;
+       char name[64 - sizeof(uint32_t)];
+};
+
+struct modver64_info
+{
+       uint64_t crc;
+       char name[64 - sizeof(uint64_t)];
+};
+
+const char *skip_dot(const char *str)
+{
+       /* For our purposes, .foo matches foo.  PPC64 needs this. */
+       if (str && str[0] == '.')
+               return str + 1;
+       return str;
+}
+
+void dump_modversions(const char *filename, errfn_t error)
+{
+       unsigned long size, secsize;
+       void *file = grab_file(filename, &size);
+       struct modver32_info *info32;
+       struct modver64_info *info64;
+       int n;
+
+       if (!file) {
+               error("%s: %s\n", filename, strerror(errno));
+               return;
+       }
+       switch (elf_ident(file, size)) {
+       case ELFCLASS32:
+               info32 = get_section32(file, size, "__versions", &secsize);
+               if (!info32)
+                       return;  /* Does not seem to be a kernel module */
+               if (secsize % sizeof(struct modver32_info))
+                       error("Wrong section size in %s\n", filename);
+               for (n = 0; n < secsize / sizeof(struct modver32_info); n++)
+                       printf("0x%08lx\t%s\n", (unsigned long)
+                              info32[n].crc, skip_dot(info32[n].name));
+               break;
+
+       case ELFCLASS64:
+               info64 = get_section64(file, size, "__versions", &secsize);
+               if (!info64)
+                       return;  /* Does not seem to be a kernel module */
+               if (secsize % sizeof(struct modver64_info))
+                       error("Wrong section size in %s\n", filename);
+               for (n = 0; n < secsize / sizeof(struct modver64_info); n++)
+                       printf("0x%08llx\t%s\n", (unsigned long long)
+                              info64[n].crc, skip_dot(info64[n].name));
+               break;
+
+       default:
+               error("%s: ELF class not recognized\n", filename);
+       }
+}
+
+
 /* Does path contain directory(s) subpath? */
 static int type_matches(const char *path, const char *subpath)
 {
@@ -1480,6 +1541,7 @@ static struct option options[] = { { "verbose", 0, NULL, 'v' },
 				   { "set-version", 1, NULL, 'S' },
 				   { "show-depends", 0, NULL, 'D' },
 				   { "first-time", 0, NULL, 3 },
+				   { "dump-modversions", 0, NULL, 4 },
 				   { "use-blacklist", 0, NULL, 'b' },
 				   { NULL, 0, NULL, 0 } };
 
@@ -1517,6 +1579,7 @@ int main(int argc, char *argv[])
 	int strip_modversion = 0;
 	int ignore_proc = 0;
 	int first_time = 0;
+	int dump_modver = 0;
 	int use_blacklist = 0;
 	unsigned int i, num_modules;
 	char *type = NULL;
@@ -1637,6 +1700,9 @@ int main(int argc, char *argv[])
 		case 3:
 			first_time = 1;
 			break;
+		case 4:
+			dump_modver = 1;
+			break;
 		default:
 			print_usage(argv[0]);
 		}
@@ -1709,6 +1775,11 @@ int main(int argc, char *argv[])
 		struct module_blacklist *blacklist = NULL;
 		LIST_HEAD(list);
 		char *modulearg = argv[optind + i];
+
+		if (dump_modver) {
+			dump_modversions(modulearg, error);
+			continue;
+		}
 
 		/* Convert name we are looking for */
 		underscores(modulearg);
