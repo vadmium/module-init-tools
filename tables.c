@@ -529,6 +529,10 @@ static void output_of_entry(struct of_device_id *dev, char *name, FILE *out)
         fprintf (out, "%-20s %-20s %-20s %s\n",
                 name, ofname ? ofname : "*", type ? type : "*",
                 compatible ? compatible : "*");
+	
+	free(ofname);
+	free(type);
+	free(compatible);
 }
 
 void output_of_table(struct module *modules, FILE *out)

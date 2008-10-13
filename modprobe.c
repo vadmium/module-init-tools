@@ -1103,8 +1103,10 @@ static int read_config_file(const char *filename,
 			printf("%s\n", line);
 
 		cmd = strsep_skipspace(&ptr, "\t ");
-		if (cmd == NULL || cmd[0] == '#' || cmd[0] == '\0')
+		if (cmd == NULL || cmd[0] == '#' || cmd[0] == '\0') {
+			free(line);
 			continue;
+		}
 
 		if (strcmp(cmd, "alias") == 0) {
 			char *wildcard
@@ -1723,5 +1725,10 @@ int main(int argc, char *argv[])
 	if (log)
 		closelog();
 
+	free(dirname);
+	free(aliasfilename);
+	free(symfilename);
+	free(optstring);
+	
 	return 0;
 }

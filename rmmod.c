@@ -72,6 +72,8 @@ static void message(int log, const char *prefix, const char *fmt, ...)
 		syslog(LOG_INFO, "%s", buf);
 	else
 		fprintf(stderr, "%s", buf);
+	
+	free(buf);
 }
 
 static char *next_field(const char *line)

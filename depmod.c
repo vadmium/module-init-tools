@@ -816,18 +816,22 @@ static int any_modules_newer(const char *dirname, time_t mtime)
 
 		sprintf(file, "%s/%s", dirname, dirent->d_name);
 		if (lstat(file, &st) != 0)
-			return 1;
+			goto ret_true;
 
 		if (smells_like_module(dirent->d_name)) {
 			if (st.st_mtime > mtime)
-				return 1;
+				goto ret_true;
 		} else if (S_ISDIR(st.st_mode)) {
 			if (any_modules_newer(file, mtime))
-				return 1;
+				goto ret_true;
 		}
 	}
 	closedir(dir);
 	return 0;
+
+ret_true:
+	closedir(dir);
+	return 1;
 }
 
 static int depfile_out_of_date(const char *dirname)
@@ -948,8 +952,10 @@ static int read_config_file(const char *filename,
 
 		cmd = strsep_skipspace(&ptr, "\t ");
 
-		if (cmd == NULL || cmd[0] == '#' || cmd[0] == '\0')
+		if (cmd == NULL || cmd[0] == '#' || cmd[0] == '\0') {
+			free(line);
 			continue;
+		}
 
 		if (strcmp(cmd, "search") == 0) {
 			char *search_path;
