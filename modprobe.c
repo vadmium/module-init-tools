@@ -48,6 +48,8 @@
 #include "list.h"
 #include "backwards_compat.c"
 
+int use_binary_indexes = 1; /* default to enabled. */
+
 extern long init_module(void *, unsigned long, const char *);
 extern long delete_module(const char *, unsigned int);
 
@@ -1165,6 +1167,15 @@ static int read_config_file(const char *filename,
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
 			}
+		} else if (strcmp(cmd, "config") == 0) {
+			char *tmp = strsep_skipspace(&ptr, "\t ");
+			if (strcmp(tmp, "binary_indexes") == 0) {
+				tmp = strsep_skipspace(&ptr, "\t ");
+				if (strcmp(tmp, "yes") == 0)
+					use_binary_indexes = 1;
+				if (strcmp(tmp, "no") == 0)
+					use_binary_indexes = 0;
+			}
 		} else
 			grammar(cmd, filename, linenum);
 
@@ -1218,6 +1229,7 @@ static int read_config(const char *filename,
 }
 
 /* Read binary index file containing aliases only */
+/* fallback to legacy aliases file as necessary */
 static int read_config_file_bin(const char *filename,
 			    const char *name,
 			    int dump_only,
@@ -1664,10 +1676,17 @@ int main(int argc, char *argv[])
 		read_toplevel_config(config, "", 1, 0,
 			     &modoptions, &commands, &aliases, &blacklist);
 		read_kcmdline(1, &modoptions);
-		read_config_file_bin(aliasfilename, "", 1, 0,&modoptions,
-			     &commands, &aliases, &blacklist);
-		read_config_file_bin(symfilename, "", 1, 0, &modoptions,
-			     &commands, &aliases, &blacklist);
+		if (use_binary_indexes) {
+			read_config_file_bin(aliasfilename, "", 1, 0,
+			     &modoptions, &commands, &aliases, &blacklist);
+			read_config_file_bin(symfilename, "", 1, 0,
+			     &modoptions, &commands, &aliases, &blacklist);
+		} else {
+			read_config(aliasfilename, "", 1, 0,
+			     &modoptions, &commands, &aliases, &blacklist);
+			read_config(symfilename, "", 1, 0,
+			     &modoptions, &commands, &aliases, &blacklist);
+		}
 		exit(0);
 	}
 
@@ -1700,11 +1719,16 @@ int main(int argc, char *argv[])
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
 		if (!aliases
-		    && strncmp(modulearg, "symbol:", strlen("symbol:")) == 0)
-			read_config_file_bin(symfilename, modulearg, 0,
-			    remove, &modoptions, &commands,
-			    	&aliases, &blacklist);
-
+		    && strncmp(modulearg, "symbol:", strlen("symbol:")) == 0) {
+			if (use_binary_indexes)
+				read_config_file_bin(symfilename, modulearg, 0,
+					remove, &modoptions, &commands,
+					&aliases, &blacklist);
+			else
+				read_config(symfilename, modulearg, 0,
+					remove, &modoptions, &commands,
+					&aliases, &blacklist);
+		}
 		if (!aliases) {
 			if(!strchr(modulearg, ':'))
 				read_depends(dirname, modulearg, &list);
@@ -1713,10 +1737,16 @@ int main(int argc, char *argv[])
 			if (list_empty(&list)
 			    && !find_command(modulearg, commands))
 			{
-				read_config_file_bin(aliasfilename, modulearg,
-						     0, remove, &modoptions,
-						     &commands, &aliases, 
-						     &blacklist);
+				if (use_binary_indexes)
+					read_config_file_bin(aliasfilename,
+						modulearg, 0, remove,
+						&modoptions, &commands,
+						&aliases, &blacklist);
+				else
+					read_config(aliasfilename,
+						modulearg, 0, remove,
+						&modoptions, &commands,
+						&aliases, &blacklist);
 			}
 		}
 
