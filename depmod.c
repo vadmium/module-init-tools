@@ -58,6 +58,8 @@ struct module_search
 
 static int verbose;
 static unsigned int skipchars;
+static unsigned int make_map_files = 1; /* default to on */
+static unsigned int force_map_files = 0; /* default to on */
 
 #define SYMBOL_HASH_SIZE 1024
 struct symbol
@@ -180,6 +182,7 @@ static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "version", 0, NULL, 'V' },
 				   { "config", 1, NULL, 'C' },
 				   { "warn", 1, NULL, 'w' },
+				   { "map", 0, NULL, 'm' },
 				   { NULL, 0, NULL, 0 } };
 
 /* Version number or module name?  Don't assume extension. */
@@ -246,7 +249,7 @@ static void print_usage(const char *name)
 {
 	fprintf(stderr,
 	"%s " VERSION " -- part of " PACKAGE "\n"
-	"%s -[aA] [-n -e -v -q -V -r -u -w]\n"
+	"%s -[aA] [-n -e -v -q -V -r -u -w -m]\n"
 	"      [-b basedirectory] [forced_version]\n"
 	"depmod [-n -e -v -q -r -u -w] [-F kernelsyms] module1.ko module2.ko ...\n"
 	"If no arguments (except options) are given, \"depmod -a\" is assumed\n"
@@ -257,8 +260,9 @@ static void print_usage(const char *name)
 	"Options:\n"
 	"\t-a, --all            Probe all modules\n"
 	"\t-A, --quick          Only does the work if there's a new module\n"
-	"\t-n, --show           Write the dependency file on stdout only\n"
 	"\t-e, --errsyms        Report not supplied symbols\n"
+	"\t-m, --map            Create the legacy map files\n"
+	"\t-n, --show           Write the dependency file on stdout only\n"
 	"\t-V, --version        Print the release version\n"
 	"\t-v, --verbose        Enable verbose mode\n"
 	"\t-w, --warn		Warn on duplicates\n"
@@ -900,23 +904,24 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 struct depfile {
 	char *name;
 	void (*func)(struct module *, FILE *, char *dirname);
+	int map_file;
 };
 
 static struct depfile depfiles[] = {
-	{ "modules.dep", output_deps }, /* This is what we check for '-A'. */
-	{ "modules.dep.bin", output_deps_bin },
-	{ "modules.pcimap", output_pci_table },
-	{ "modules.usbmap", output_usb_table },
-	{ "modules.ccwmap", output_ccw_table },
-	{ "modules.ieee1394map", output_ieee1394_table },
-	{ "modules.isapnpmap", output_isapnp_table },
-	{ "modules.inputmap", output_input_table },
-	{ "modules.ofmap", output_of_table },
-	{ "modules.seriomap", output_serio_table },
-	{ "modules.alias", output_aliases },
-	{ "modules.alias.bin", output_aliases_bin },
-	{ "modules.symbols", output_symbols },
-	{ "modules.symbols.bin", output_symbols_bin }
+	{ "modules.dep", output_deps, 0 }, /* This is what we check for '-A'. */
+	{ "modules.dep.bin", output_deps_bin, 0 },
+	{ "modules.pcimap", output_pci_table, 1 },
+	{ "modules.usbmap", output_usb_table, 1 },
+	{ "modules.ccwmap", output_ccw_table, 1 },
+	{ "modules.ieee1394map", output_ieee1394_table, 1 },
+	{ "modules.isapnpmap", output_isapnp_table, 1 },
+	{ "modules.inputmap", output_input_table, 1 },
+	{ "modules.ofmap", output_of_table, 1 },
+	{ "modules.seriomap", output_serio_table, 1 },
+	{ "modules.alias", output_aliases, 0 },
+	{ "modules.alias.bin", output_aliases_bin, 0 },
+	{ "modules.symbols", output_symbols, 0 },
+	{ "modules.symbols.bin", output_symbols_bin, 0 }
 };
 
 /* If we can't figure it out, it's safe to say "true". */
@@ -1120,6 +1125,21 @@ static int read_config_file(const char *filename,
 					     " config file %s: %s\n",
 					     newfilename, strerror(errno));
                         }
+
+		} else if (strcmp(cmd, "make_map_files") == 0) {
+			char *option;
+
+			option = strsep_skipspace(&ptr, "\t ");
+			if (!option)
+				grammar(cmd, filename, linenum);
+			else {
+				if (0 == strncmp(option, "yes", 3))
+					make_map_files = 1;
+				else if (0 == strncmp(option, "no", 2))
+					make_map_files = 0;
+				else
+					grammar(cmd, filename, linenum);
+			}
                 } else
                         grammar(cmd, filename, linenum);
 
@@ -1207,7 +1227,7 @@ int main(int argc, char *argv[])
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */
 	opterr = 0;
-	while ((opt = getopt_long(argc, argv, "ab:ArehnqruvVF:C:w", options, NULL))
+	while ((opt = getopt_long(argc, argv, "ab:ArehnqruvVF:C:wm", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
@@ -1248,6 +1268,9 @@ int main(int argc, char *argv[])
 			exit(0);
 		case 'w':
 			warn_dups = 1;
+			break;
+		case 'm':
+			force_map_files = 1;
 			break;
 		default:
 			badopt = argv[optind-1];
@@ -1325,6 +1348,9 @@ int main(int argc, char *argv[])
 		char depname[strlen(dirname) + 1 + strlen(d->name) + 1];
 		char tmpname[strlen(dirname) + 1 + strlen(d->name) +
 						strlen(".temp") + 1];
+
+		if (d->map_file && !make_map_files && !force_map_files)
+			continue;
 
 		sprintf(depname, "%s/%s", dirname, d->name);
 		sprintf(tmpname, "%s/%s.temp", dirname, d->name);
