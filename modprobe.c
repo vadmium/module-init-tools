@@ -73,7 +73,7 @@ static void grammar(const char *cmd, const char *filename, unsigned int line)
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
-		"Usage: %s [-v] [-V] [-C config-file] [-n] [-i] [-q] [-b] [-o <modname>] [ --dump-modversions ] <modname> [parameters...]\n"
+		"Usage: %s [-v] [-V] [-C config-file] [-d <dirname> ] [-n] [-i] [-q] [-b] [-o <modname>] [ --dump-modversions ] <modname> [parameters...]\n"
 		"%s -r [-n] [-i] [-v] <modulename> ...\n"
 		"%s -l -t <dirname> [ -a <modulename> ...]\n",
 		progname, progname, progname);
@@ -223,11 +223,12 @@ static int modname_equal(const char *a, const char *b, unsigned int len)
 /* Fills in list of modules if this is the line we want. */
 static int add_modules_dep_line(char *line,
 				const char *name,
-				struct list_head *list)
+				struct list_head *list,
+				const char *dirname)
 {
 	char *ptr;
 	int len;
-	char *modname;
+	char *modname, *fullpath;
 
 	/* Ignore lines without : or which start with a # */
 	ptr = strchr(line, ':');
@@ -248,7 +249,13 @@ static int add_modules_dep_line(char *line,
 		return 0;
 
 	/* Create the list. */
-	add_module(line, ptr - line, list);
+	if (line == strstr(line, dirname)) {	/* old style deps */
+		add_module(line, ptr - line, list);
+	} else {
+		nofail_asprintf(&fullpath, "%s/%s", dirname, line);
+		add_module(fullpath, strlen(dirname)+1+(ptr - line), list);
+		free(fullpath);
+	}
 
 	ptr++;
 	for(;;) {
@@ -258,7 +265,15 @@ static int add_modules_dep_line(char *line,
 			break;
 		dep_start = ptr;
 		ptr += strcspn(ptr, " \t");
-		add_module(dep_start, ptr - dep_start, list);
+		if (dep_start == strstr(dep_start, dirname)) {
+							/* old style deps */
+			add_module(dep_start, ptr - dep_start, list);
+		} else {
+			nofail_asprintf(&fullpath, "%s/%s", dirname, dep_start);
+			add_module(fullpath,
+				   strlen(dirname)+1+(ptr - dep_start), list);
+			free(fullpath);
+		}
 	}
 	return 1;
 }
@@ -281,7 +296,7 @@ static int read_depends_bin(const char *dirname,
 	line = index_search(modules_dep, start_name);
 	if (line) {
 		/* Value is standard dependency line format */
-		if (!add_modules_dep_line(line, start_name, list))
+		if (!add_modules_dep_line(line, start_name, list, dirname))
 			fatal("Module index is inconsistent\n");
 		free(line);
 	}
@@ -313,7 +328,7 @@ static void read_depends(const char *dirname,
 	/* Stop at first line, as we can have duplicates (eg. symlinks
            from boot/ */
 	while (!done && (line = getline_wrapped(modules_dep, NULL)) != NULL) {
-		done = add_modules_dep_line(line, start_name, list);
+		done = add_modules_dep_line(line, start_name, list, dirname);
 		free(line);
 	}
 	fclose(modules_dep);
@@ -1554,6 +1569,7 @@ static struct option options[] = { { "verbose", 0, NULL, 'v' },
 				   { "force-modversion", 0, NULL, 2 },
 				   { "set-version", 1, NULL, 'S' },
 				   { "show-depends", 0, NULL, 'D' },
+				   { "dirname", 1, NULL, 'd' },
 				   { "first-time", 0, NULL, 3 },
 				   { "dump-modversions", 0, NULL, 4 },
 				   { "use-blacklist", 0, NULL, 'b' },
@@ -1581,7 +1597,8 @@ int main(int argc, char *argv[])
 	unsigned int i, num_modules;
 	char *type = NULL;
 	const char *config = NULL;
-	char *dirname, *optstring;
+	char *dirname = NULL;
+	char *optstring = NULL;
 	char *newname = NULL;
 	char *aliasfilename, *symfilename;
 	errfn_t error = fatal;
@@ -1591,7 +1608,7 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifbw", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifbwd:", options, NULL)) != -1){
 		switch (opt) {
 		case 'v':
 			add_to_env_var("-v");
@@ -1661,6 +1678,10 @@ int main(int argc, char *argv[])
 		case 'w':
 			flags &= ~O_NONBLOCK;
 			break;
+		case 'd':
+			nofail_asprintf(&dirname, "%s/%s/%s", optarg,
+					MODULE_DIR, buf.release);
+			break;
 		case 1:
 			strip_vermagic = 1;
 			break;
@@ -1687,7 +1708,8 @@ int main(int argc, char *argv[])
 	if (argc < optind + 1 && !dump_only && !list_only && !remove)
 		print_usage(argv[0]);
 
-	nofail_asprintf(&dirname, "%s/%s", MODULE_DIR, buf.release);
+	if (!dirname)
+		nofail_asprintf(&dirname, "%s/%s", MODULE_DIR, buf.release);
 	nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
 	nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 

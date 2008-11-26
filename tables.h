@@ -175,13 +175,13 @@ struct of_device_id {
 
 /* Functions provided by tables.c */
 struct module;
-void output_usb_table(struct module *modules, FILE *out);
-void output_ieee1394_table(struct module *modules, FILE *out);
-void output_pci_table(struct module *modules, FILE *out);
-void output_ccw_table(struct module *modules, FILE *out);
-void output_isapnp_table(struct module *modules, FILE *out);
-void output_input_table(struct module *modules, FILE *out);
-void output_serio_table(struct module *modules, FILE *out);
-void output_of_table(struct module *modules, FILE *out);
+void output_usb_table(struct module *modules, FILE *out, char *dirname);
+void output_ieee1394_table(struct module *modules, FILE *out, char *dirname);
+void output_pci_table(struct module *modules, FILE *out, char *dirname);
+void output_ccw_table(struct module *modules, FILE *out, char *dirname);
+void output_isapnp_table(struct module *modules, FILE *out, char *dirname);
+void output_input_table(struct module *modules, FILE *out, char *dirname);
+void output_serio_table(struct module *modules, FILE *out, char *dirname);
+void output_of_table(struct module *modules, FILE *out, char *dirname);
 
 #endif /* MODINITTOOLS_TABLES_H */

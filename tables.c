@@ -33,7 +33,7 @@ static void output_pci_entry(struct pci_device_id *pci, char *name, FILE *out,
 		END(pci->class_mask, conv));
 }
 
-void output_pci_table(struct module *modules, FILE *out)
+void output_pci_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -76,7 +76,7 @@ static void output_usb_entry(struct usb_device_id *usb, char *name, FILE *out,
 		END(usb->bInterfaceProtocol, conv));
 }
 
-void output_usb_table(struct module *modules, FILE *out)
+void output_usb_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -115,7 +115,7 @@ static void output_ieee1394_entry(struct ieee1394_device_id *fw, char *name,
 		END(fw->version, conv));
 }
 
-void output_ieee1394_table(struct module *modules, FILE *out)
+void output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -147,7 +147,7 @@ static void output_ccw_entry(struct ccw_device_id *ccw, char *name, FILE *out,
 		END(ccw->dev_type, conv), END(ccw->dev_model, conv));
 }
 
-void output_ccw_table(struct module *modules, FILE *out)
+void output_ccw_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -187,7 +187,7 @@ static void put_isapnp_id(FILE *out, const char *id)
 	fprintf(out, " 0x%04x     0x%04x    ", vendor, device);
 }
 
-void output_isapnp_table(struct module *modules, FILE *out)
+void output_isapnp_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -406,7 +406,7 @@ static int output_input_entry_64_old(struct input_device_id_old_64 *input,
 	return 0;
 }
 
-void output_input_table(struct module *modules, FILE *out)
+void output_input_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -476,7 +476,7 @@ static void output_serio_entry(struct serio_device_id *serio, char *name, FILE *
 }
 
 
-void output_serio_table(struct module *modules, FILE *out)
+void output_serio_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -535,7 +535,7 @@ static void output_of_entry(struct of_device_id *dev, char *name, FILE *out)
 	free(compatible);
 }
 
-void output_of_table(struct module *modules, FILE *out)
+void output_of_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 

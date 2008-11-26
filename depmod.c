@@ -473,7 +473,7 @@ static void filename2modname(char *modname, const char *filename)
 }
 
 static void output_deps(struct module *modules,
-			FILE *out)
+			FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -481,11 +481,11 @@ static void output_deps(struct module *modules,
 		struct list_head *j, *tmp;
 		order_dep_list(i, i);
 
-		fprintf(out, "%s:", i->pathname + skipchars);
+		fprintf(out, "%s:", i->pathname + strlen(dirname)+1);
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
 				= list_entry(j, struct module, dep_list);
-			fprintf(out, " %s", dep->pathname + skipchars);
+			fprintf(out, " %s", dep->pathname + strlen(dirname)+1);
 			list_del_init(j);
 		}
 		fprintf(out, "\n");
@@ -496,7 +496,7 @@ static void output_deps(struct module *modules,
 int warn_dups = 0;
 
 static void output_deps_bin(struct module *modules,
-			FILE *out)
+			FILE *out, char *dirname)
 {
 	struct module *i;
 	struct index_node *index;
@@ -511,13 +511,13 @@ static void output_deps_bin(struct module *modules,
 		
 		order_dep_list(i, i);
 		
-		filename2modname(modname, i->pathname + skipchars);
-		nofail_asprintf(&line, "%s %s:", modname, i->pathname + skipchars);
+		filename2modname(modname, i->pathname + strlen(dirname)+1);
+		nofail_asprintf(&line, "%s %s:", modname, i->pathname + strlen(dirname)+1);
 		p = line;
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
 				= list_entry(j, struct module, dep_list);
-			nofail_asprintf(&line, "%s %s", p, dep->pathname + skipchars);
+			nofail_asprintf(&line, "%s %s", p, dep->pathname + strlen(dirname)+1);
 			free(p);
 			p = line;
 			list_del_init(j);
@@ -733,7 +733,7 @@ static struct module *parse_modules(struct module *list)
 }
 
 /* Simply dump hash table. */
-static void output_symbols(struct module *unused, FILE *out)
+static void output_symbols(struct module *unused, FILE *out, char *dirname)
 {
 	unsigned int i;
 
@@ -752,7 +752,7 @@ static void output_symbols(struct module *unused, FILE *out)
 	}
 }
 
-static void output_symbols_bin(struct module *unused, FILE *out)
+static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 {
 	struct index_node *index;
 	unsigned int i;
@@ -822,7 +822,7 @@ static char *underscores(char *string)
 	return string;
 }
 
-static void output_aliases(struct module *modules, FILE *out)
+static void output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	const char *p;
@@ -851,7 +851,7 @@ static void output_aliases(struct module *modules, FILE *out)
 	}
 }
 
-static void output_aliases_bin(struct module *modules, FILE *out)
+static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	const char *p;
@@ -899,7 +899,7 @@ static void output_aliases_bin(struct module *modules, FILE *out)
 
 struct depfile {
 	char *name;
-	void (*func)(struct module *, FILE *);
+	void (*func)(struct module *, FILE *, char *dirname);
 };
 
 static struct depfile depfiles[] = {
@@ -1338,7 +1338,7 @@ int main(int argc, char *argv[])
 			if (ends_in(depname, ".bin"))
 				continue;
 		}
-		d->func(list, out);
+		d->func(list, out, dirname);
 		if (!doing_stdout) {
 			fclose(out);
 			if (rename(tmpname, depname) < 0)
