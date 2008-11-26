@@ -46,7 +46,6 @@
 #include "logging.h"
 #include "index.h"
 #include "list.h"
-#include "backwards_compat.c"
 
 int use_binary_indexes = 1; /* default to enabled. */
 
@@ -1544,23 +1543,6 @@ static struct option options[] = { { "verbose", 0, NULL, 'v' },
 				   { "use-blacklist", 0, NULL, 'b' },
 				   { NULL, 0, NULL, 0 } };
 
-#define MODPROBE_DEVFSD_CONF "/etc/modprobe.devfs"
-
-/* This is a horrible hack to allow devfsd, which calls modprobe with
-   -C /etc/modules.conf or /etc/modules.devfs, to work.  FIXME. */
-/* Modern devfsd or variants should use -q explicitly in 2.6. */
-static int is_devfs_call(char *argv[])
-{
-	unsigned int i;
-
-	/* Look for "/dev" arg */
-	for (i = 1; argv[i]; i++) {
-		if (strncmp(argv[i], "/dev/", 5) == 0)
-			return 1;
-	}
-	return 0;
-}
-
 int main(int argc, char *argv[])
 {
 	struct utsname buf;
@@ -1592,15 +1574,6 @@ int main(int argc, char *argv[])
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
-	/* --set-version overrides version, and disables backwards compat. */
-	for (opt = 1; opt < argc; opt++)
-		if (strncmp(argv[opt],"--set-version",strlen("--set-version"))
-		    == 0)
-			break;
-
-	if (opt == argc)
-		try_old_version("modprobe", argv);
-
 	uname(&buf);
 	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifbw", options, NULL)) != -1){
 		switch (opt) {
@@ -1616,28 +1589,10 @@ int main(int argc, char *argv[])
 			buf.release[sizeof(buf.release)-1] = '\0';
 			break;
 		case 'C':
-			if (is_devfs_call(argv)) {
-				if (streq("/etc/modules.devfs", optarg)) {
-					config = MODPROBE_DEVFSD_CONF;
-					add_to_env_var("-C");
-					add_to_env_var(config);
-					/* Fall thru to -q */
-				} else if (streq("/etc/modules.conf", optarg))
-					/* Ignore config, fall thru to -q */
-					;
-				else {
-					/* False alarm.  Treat as normal. */
-					config = optarg;
-					add_to_env_var("-C");
-					add_to_env_var(config);
-					break;
-				}
-			} else {
-				config = optarg;
-				add_to_env_var("-C");
-				add_to_env_var(config);
-				break;
-			}
+			config = optarg;
+			add_to_env_var("-C");
+			add_to_env_var(config);
+			break;
 		case 'q':
 			unknown_silent = 1;
 			add_to_env_var("-q");

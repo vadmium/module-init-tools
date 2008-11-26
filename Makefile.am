@@ -13,7 +13,7 @@ insmod_static_LDADD =
 
 EXTRA_insmod_SOURCES = backwards_compat.c
 EXTRA_lsmod_SOURCES = backwards_compat.c
-EXTRA_modprobe_SOURCES = backwards_compat.c
+EXTRA_modprobe_SOURCES = 
 EXTRA_rmmod_SOURCES = backwards_compat.c
 EXTRA_insmod_static_SOURCES = backwards_compat.c
 EXTRA_depmod_SOURCES = moduleops_core.c
