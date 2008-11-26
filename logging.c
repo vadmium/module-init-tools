@@ -12,15 +12,24 @@ int logging = 0;
 
 void message(const char *prefix, const char *fmt, va_list *arglist)
 {
+	int ret;
 	char *buf, *buf2;
 
-	vasprintf(&buf, fmt, *arglist);
-	asprintf(&buf2, "%s%s", prefix, buf);
+	ret = vasprintf(&buf, fmt, *arglist);
+	if (ret >= 0)
+		ret = asprintf(&buf2, "%s%s", prefix, buf);
+
+	if (ret < 0)
+		buf2 = "FATAL: Out of memory.\n";
 
 	if (logging)
 		syslog(LOG_NOTICE, "%s", buf2);
 	else
 		fprintf(stderr, "%s", buf2);
+
+	if (ret < 0)
+		exit(1);
+
 	free(buf2);
 	free(buf);
 }

@@ -272,7 +272,7 @@ static int read_depends_bin(const char *dirname,
 	char *line;
 	FILE *modules_dep;
 
-	asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep.bin");
+	nofail_asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep.bin");
 	modules_dep = fopen(modules_dep_name, "r");
 	if (!modules_dep) {
 		free(modules_dep_name);
@@ -305,7 +305,7 @@ static void read_depends(const char *dirname,
 	if (read_depends_bin(dirname, start_name, list))
 		return;
 
-	asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep");
+	nofail_asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep");
 	modules_dep = fopen(modules_dep_name, "r");
 	if (!modules_dep)
 		fatal("Could not load %s: %s\n",
@@ -774,10 +774,9 @@ static void do_command(const char *modname,
 
 	while ((p = strstr(replaced_cmd, "$CMDLINE_OPTS")) != NULL) {
 		char *new;
-		asprintf(&new, "%.*s%s%s",
+		nofail_asprintf(&new, "%.*s%s%s",
 			 (int)(p - replaced_cmd), replaced_cmd, cmdline_opts,
 			 p + strlen("$CMDLINE_OPTS"));
-		NOFAIL(new);
 		free(replaced_cmd);
 		replaced_cmd = new;
 	}
@@ -1041,8 +1040,7 @@ static int type_matches(const char *path, const char *subpath)
 	char *subpath_with_slashes;
 	int ret;
 
-	asprintf(&subpath_with_slashes, "/%s/", subpath);
-	NOFAIL(subpath_with_slashes);
+	nofail_asprintf(&subpath_with_slashes, "/%s/", subpath);
 
 	ret = (strstr(path, subpath_with_slashes) != NULL);
 	free(subpath_with_slashes);
@@ -1078,7 +1076,7 @@ static int do_wildcard(const char *dirname,
 		       const char *type,
 		       const char *wildcard)
 {
-	char modules_dep_name[strlen(dirname) + sizeof("modules.dep") + 1];
+	char *modules_dep_name;
 	char *line, *wcard;
 	FILE *modules_dep;
 
@@ -1086,7 +1084,7 @@ static int do_wildcard(const char *dirname,
 	wcard = strdup(wildcard);
 	underscores(wcard);
 
-	sprintf(modules_dep_name, "%s/%s", dirname, "modules.dep");
+	nofail_asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep");
 	modules_dep = fopen(modules_dep_name, "r");
 	if (!modules_dep)
 		fatal("Could not load %s: %s\n",
@@ -1113,6 +1111,7 @@ static int do_wildcard(const char *dirname,
 		free(line);
 	}
 
+	free(modules_dep_name);
 	free(wcard);
 	return 0;
 }
@@ -1308,7 +1307,7 @@ static int read_config_file_bin(const char *filename,
 	char *binfile;
 	FILE *cfile;
 
-	asprintf(&binfile, "%s.bin", filename);
+	nofail_asprintf(&binfile, "%s.bin", filename);
 	cfile = fopen(binfile, "r");
 	if (!cfile) {
 		free(binfile);
@@ -1416,7 +1415,7 @@ static void add_to_env_var(const char *option)
 
 	if ((oldenv = getenv("MODPROBE_OPTIONS")) != NULL) {
 		char *newenv;
-		asprintf(&newenv, "%s %s", oldenv, option);
+		nofail_asprintf(&newenv, "%s %s", oldenv, option);
 		setenv("MODPROBE_OPTIONS", newenv, 1);
 	} else
 		setenv("MODPROBE_OPTIONS", option, 1);
@@ -1717,14 +1716,9 @@ int main(int argc, char *argv[])
 	if (argc < optind + 1 && !dump_only && !list_only && !remove)
 		print_usage(argv[0]);
 
-	dirname = NOFAIL(malloc(strlen(buf.release) + sizeof(MODULE_DIR) + 1));
-	sprintf(dirname, "%s/%s", MODULE_DIR, buf.release);
-	aliasfilename = NOFAIL(malloc(strlen(dirname)
-				      + sizeof("/modules.alias")));
-	sprintf(aliasfilename, "%s/modules.alias", dirname);
-	symfilename = NOFAIL(malloc(strlen(dirname)
-				    + sizeof("/modules.symbols")));
-	sprintf(symfilename, "%s/modules.symbols", dirname);
+	nofail_asprintf(&dirname, "%s/%s", MODULE_DIR, buf.release);
+	nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
+	nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 
 	/* Old-style -t xxx wildcard?  Only with -l. */
 	if (list_only) {

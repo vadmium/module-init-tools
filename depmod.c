@@ -512,12 +512,12 @@ static void output_deps_bin(struct module *modules,
 		order_dep_list(i, i);
 		
 		filename2modname(modname, i->pathname + skipchars);
-		asprintf(&line, "%s %s:", modname, i->pathname + skipchars);
+		nofail_asprintf(&line, "%s %s:", modname, i->pathname + skipchars);
 		p = line;
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
 				= list_entry(j, struct module, dep_list);
-			asprintf(&line, "%s %s", p, dep->pathname + skipchars);
+			nofail_asprintf(&line, "%s %s", p, dep->pathname + skipchars);
 			free(p);
 			p = line;
 			list_del_init(j);
@@ -767,7 +767,7 @@ static void output_symbols_bin(struct module *unused, FILE *out)
 			if (s->owner) {
 				char modname[strlen(s->owner->pathname)+1];
 				filename2modname(modname, s->owner->pathname);
-				asprintf(&line, "symbol:%s %s",
+				nofail_asprintf(&line, "symbol:%s %s",
 					s->name, modname);
 				if (index_insert(index, line) && warn_dups)
 					warn("duplicate module syms:\n%s\n",
@@ -870,7 +870,7 @@ static void output_aliases_bin(struct module *modules, FILE *out)
 		for (p = i->ops->get_aliases(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			asprintf(&line, "%s %s", p, modname);
+			nofail_asprintf(&line, "%s %s", p, modname);
 			underscores(line);
 			if (index_insert(index, line) && warn_dups)
 				warn("duplicate module alias:\n%s\n", line);
@@ -882,7 +882,7 @@ static void output_aliases_bin(struct module *modules, FILE *out)
 		     p;
 		     p = next_string(p, &size)) {
 			if (strncmp(p, "alias=", strlen("alias=")) == 0) {
-				asprintf(&line, "%s %s",
+				nofail_asprintf(&line, "%s %s",
 					p + strlen("alias="), modname);
 				underscores(line);
 				if (index_insert(index, line) && warn_dups)

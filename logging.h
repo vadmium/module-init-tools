@@ -12,6 +12,9 @@ void warn(const char *fmt, ...);
 
 #define NOFAIL(ptr)  do_nofail((ptr), __FILE__, __LINE__, #ptr)
 
+#define nofail_asprintf(ptr, ...) \
+	{ if (asprintf((ptr), __VA_ARGS__) < 0) do_nofail(NULL, __FILE__, __LINE__, #ptr); }
+
 static inline void *do_nofail(void *ptr, const char *file, int line, const char *expr)
 {
 	if (!ptr) {
