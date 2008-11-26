@@ -347,59 +347,6 @@ static const char *remove_moderror(int err)
 	}
 }
 
-/* Is module in /proc/modules?  If so, fill in usecount if not NULL. 
-   0 means no, 1 means yes, -1 means unknown.
- */
-static int module_in_kernel(const char *modname, unsigned int *usecount)
-{
-	FILE *proc_modules;
-	char *line;
-
-again:
-	/* Might not be mounted yet.  Don't fail. */
-	proc_modules = fopen("/proc/modules", "r");
-	if (!proc_modules)
-		return -1;
-
-	while ((line = getline_wrapped(proc_modules, NULL)) != NULL) {
-		char *entry = strtok(line, " \n");
-
-		if (entry && streq(entry, modname)) {
-			/* If it exists, usecount is the third entry. */
-			if (!strtok(NULL, " \n"))
-				goto out;
-
-			if (!(entry = strtok(NULL, " \n"))) /* usecount */
-				goto out;
-			else
-				if (usecount)
-					*usecount = atoi(entry);
-
-			/* Followed by - then status. */
-			if (strtok(NULL, " \n")
-			    && (entry = strtok(NULL, " \n")) != NULL) {
-				/* Locking will fail on ro fs, we might hit
-				 * cases where module is in flux.  Spin. */
-				if (streq(entry, "Loading")
-				    || streq(entry, "Unloading")) {
-					usleep(100000);
-					free(line);
-					fclose(proc_modules);
-					goto again;
-				}
-			}
-
-		out:
-			free(line);
-			fclose(proc_modules);
-			return 1;
-		}
-		free(line);
-	}
-	fclose(proc_modules);
-	return 0;
-}
-
 static void replace_modname(struct module *module,
 			    void *mem, unsigned long len,
 			    const char *oldname, const char *newname)
@@ -745,6 +692,70 @@ static char *add_extra_options(const char *modname,
 		options = options->next;
 	}
 	return optstring;
+}
+
+/* Read sysfs attribute into a buffer.
+ * returns: 1 = ok, 0 = attribute missing,
+ * -1 = file error (or empty file, but we don't care).
+ */
+static int read_attribute(const char *filename, char *buf, size_t buflen)
+{
+	FILE *file;
+	char *s;
+
+	file = fopen(filename, "r");
+	if (file == NULL)
+		return (errno == ENOENT) ? 0 : -1;
+	s = fgets(buf, buflen, file);
+	fclose(file);
+
+	return (s == NULL) ? -1 : 1;
+}
+
+/* Is module in /sys/module?  If so, fill in usecount if not NULL. 
+   0 means no, 1 means yes, -1 means unknown.
+ */
+static int module_in_kernel(const char *modname, unsigned int *usecount)
+{
+	int ret;
+	char *name;
+	struct stat finfo;
+
+	const int ATTR_LEN = 16;
+	char attr[ATTR_LEN];
+
+	/* Find module. We assume sysfs is mounted. */
+	nofail_asprintf(&name, "/sys/module/%s", modname);
+	ret = stat(name, &finfo);
+	free(name);
+	if (ret < 0)
+		return (errno == ENOENT) ? 0 : -1; /* Not found or unknown. */
+
+	/* Wait for the existing module to either go live or disappear. */
+	nofail_asprintf(&name, "/sys/module/%s/initstate", modname);
+	while (1) {
+		ret = read_attribute(name, attr, ATTR_LEN);
+		if (ret != 1 || streq(attr, "live\n"))
+			break;
+
+		usleep(100000);
+	}
+	free(name);
+
+	if (ret != 1)
+		return ret;
+
+	/* Get reference count. */
+	if (usecount != NULL) {
+		nofail_asprintf(&name, "/sys/module/%s/refcnt", modname);
+		ret = read_attribute(name, attr, ATTR_LEN);
+		free(name);
+		if (ret != 1)
+			return ret;
+		*usecount = atoi(attr);
+	}
+
+	return 1;
 }
 
 /* If we don't flush, then child processes print before we do */
@@ -1488,6 +1499,11 @@ static void handle_module(const char *modname,
 			  const char *cmdline_opts,
 			  int flags)
 {
+	struct stat finfo;
+
+	if (stat("/sys/module", &finfo) < 0)
+		fatal("/sys is not mounted.\n");
+
 	if (list_empty(todo_list)) {
 		const char *command;
 
