@@ -1,8 +1,10 @@
-AC_INIT
+AC_INIT(module-init-tools,3.6-pre1)
 
 AC_CANONICAL_SYSTEM
 
-AM_INIT_AUTOMAKE(module-init-tools, "3.6-pre1")
+# Use -no-portability since we're never going to use module-init-tools on
+# non-Linux systems and it's reasonable to expect GNU-compatibility here.
+AM_INIT_AUTOMAKE([-Wno-portability])
 
 # If zlib is required, libz must be linked static, modprobe is in
 # /sbin, libz is in /usr/lib and may not be available when it is run.
