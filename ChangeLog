@@ -1,3 +1,18 @@
+3.6 Version:
+o depmod: make building map files optional (does anyone use them anyway?)
+o demod: use shortened path names in index files (relative paths used)
+o modprobe: use /sys/module rather than /proc/modules (Andreas)
+o modprobe: remove legacy support for pre-2.6 kernels (Andreas)
+o modprobe: check that asprintf() calls actually allocate (Andreas)
+
+3.5 Version:
+o binary indexing file support (Alan Jenkins)
+o depmod: fix some memory leaks, reduce overhead (Alan Jenkins)
+o modprobe: fix some memory leaks, reduce overhead (Alan Jenkins)
+o rmmod: fix some memory leaks (Alan Jenkins)
+o testsuite: update the tests (Alan Jenkins)
+o various other fixes
+
 3.4 Version:
 o modprobe: add ability to parse kernel command line for module options.
 
