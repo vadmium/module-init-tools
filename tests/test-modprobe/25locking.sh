@@ -31,11 +31,68 @@ MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
 MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOES-NOT-EXIST
 export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
 
+MODTEST_OVERRIDE7=/sys/module/noexport_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH7=tests/tmp/sys/module/noexport_nodep_$BITNESS
+export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
+
+MODTEST_OVERRIDE8=/sys/module/noexport_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH8=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
+
+MODTEST_OVERRIDE9=/sys/module/noexport_dep_$BITNESS
+MODTEST_OVERRIDE_WITH9=tests/tmp/sys/module/noexport_dep_$BITNESS
+export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
+
+MODTEST_OVERRIDE10=/sys/module/noexport_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH10=tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
+
+MODTEST_OVERRIDE11=/sys/module/export_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH11=tests/tmp/sys/module/export_nodep_$BITNESS
+export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
+
+MODTEST_OVERRIDE12=/sys/module/export_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH12=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE12 MODTEST_OVERRIDE_WITH12
+
+MODTEST_OVERRIDE13=/sys/module/export_dep_$BITNESS
+MODTEST_OVERRIDE_WITH13=tests/tmp/sys/module/export_dep_$BITNESS
+export MODTEST_OVERRIDE13 MODTEST_OVERRIDE_WITH13
+
+MODTEST_OVERRIDE14=/sys/module/export_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH14=tests/tmp/sys/module/export_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE14 MODTEST_OVERRIDE_WITH14
+
+MODTEST_OVERRIDE15=/sys/module/noexport_doubledep_$BITNESS
+MODTEST_OVERRIDE_WITH15=tests/tmp/sys/module/noexport_doubledep_$BITNESS
+export MODTEST_OVERRIDE15 MODTEST_OVERRIDE_WITH15
+
+MODTEST_OVERRIDE16=/sys/module/noexport_doubledep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH16=tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+export MODTEST_OVERRIDE16 MODTEST_OVERRIDE_WITH16
+
+MODTEST_OVERRIDE17=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
+MODTEST_OVERRIDE_WITH17=tests/tmp/noexport_nodep-$BITNESS.ko
+export MODTEST_OVERRIDE17 MODTEST_OVERRIDE_WITH17
+
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
-/lib/modules/2.5.52/export_nodep-$BITNESS.ko:
-tests/tmp/noexport_nodep-$BITNESS.ko:
+export_nodep-$BITNESS.ko:
+noexport_nodep-$BITNESS.ko:
 EOF
+
+# Now make a fake /sys/module structure for the test
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
+touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
+touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 MODPROBE_WAIT=tests/tmp/continue
 export MODPROBE_WAIT

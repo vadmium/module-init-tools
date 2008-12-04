@@ -79,13 +79,6 @@ static long modtest_init_module(void *map, unsigned long size,
 		printf("Removing %s\n", file);
 		unlink(file);
 	}
-	if (getenv("MODTEST_INSERT_PROC")) {
-		int fd = modtest_open("/proc/modules", O_APPEND|O_WRONLY, 0);
-		write(fd, getenv("MODPROBE_MODULE"), strlen(getenv("MODPROBE_MODULE")));
-		write(fd, " 1000 1 -\n", strlen(" 1000 1 -\n"));
-		close(fd);
-		return 0;
-	}
 	if (getenv("MODTEST_DUMP_INIT")) {
 		while (size) {
 			int ret;
@@ -142,6 +135,7 @@ static const char *modtest_mapname(const char *path)
 		name = getenv(envname);
 		if (!name)
 			break;
+
 		if (strcmp(path, name) == 0) {
 			sprintf(envname, "MODTEST_OVERRIDE_WITH%u", i);
 			return getenv(envname);

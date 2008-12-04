@@ -22,13 +22,15 @@ all: clean $(SOURCES:.c=-$(BITNESS).ko)
 clean:
 	find . ../$(BITNESS)-$(ENDIANNESS) -name '*.ko' | xargs -r rm
 
-# Other machines
-MACHINES+=fandango2 #ppc64
-MACHINES+=fuego # ppc
-MACHINES+=opteron # x86-64
+# Rusty's other machines
+#MACHINES+=fandango2 #ppc64
+#MACHINES+=fuego # ppc
+#MACHINES+=opteron # x86-64
 
-#superego_CCPREFIX=/usr/local/ppc64/bin/powerpc64-linux-
-fandango2_CFLAGS=-m64
+# Jon's other machines
+# NOTE: need to start building these again
+MACHINES+=wasp     # ppc64
+MACHINES+=ppc      # ppc
 
 build: install 
 	DIR=$$(dirname $$(pwd) ); $(foreach mach,$(MACHINES),rsync -az --delete $$DIR/ $(mach):mod-init-tools-data/ && echo $(mach) && ssh $(mach) make -C mod-init-tools-data/src CFLAGS=$($(mach)_CFLAGS) install && rsync -avz --delete $(mach):mod-init-tools-data/ $$DIR/ &&) true

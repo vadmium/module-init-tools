@@ -170,11 +170,11 @@ for iter in override not-override; do
 [ `grep -vc '^#' < tests/tmp/modules.dep` = 5 ]
 
 # Other lines must refer to updates/, not kernels/ module.
-[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/export_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/updates/export_nodep-$BITNESS.ko" ]
-[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/updates/export_nodep-$BITNESS.ko" ]
-[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_nodep-$BITNESS.ko:" ]
-[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_doubledep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/kernel/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/updates/export_nodep-$BITNESS.ko" ]
-[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/updates/export_nodep-$BITNESS.ko:" ]
+[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "kernel/export_dep-$BITNESS.ko: updates/export_nodep-$BITNESS.ko" ]
+[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "kernel/noexport_dep-$BITNESS.ko: updates/export_nodep-$BITNESS.ko" ]
+[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "kernel/noexport_nodep-$BITNESS.ko:" ]
+[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules.dep`" = "kernel/noexport_doubledep-$BITNESS.ko: kernel/export_dep-$BITNESS.ko updates/export_nodep-$BITNESS.ko" ]
+[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "updates/export_nodep-$BITNESS.ko:" ]
 
 # Check modules.symbols results: expect 3 lines
 [ `grep -vc '^#' < tests/tmp/modules.symbols` = 3 ]

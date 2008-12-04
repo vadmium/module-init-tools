@@ -43,7 +43,7 @@ SIZE=$(echo `wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`)
 
 echo "alias_$BITNESS /lib/modules/$MODTEST_UNAME/kernel/alias-$BITNESS.ko:" > tests/tmp/modules.dep.bin.temp
 echo "foo /lib/modules/$MODTEST_UNAME/kernel/foo.ko:" >> tests/tmp/modules.dep.bin.temp
-modindex -o tests/tmp/modules.dep.bin < tests/tmp/modules.dep.bin.temp
+./modindex -o tests/tmp/modules.dep.bin < tests/tmp/modules.dep.bin.temp
 
 rm -f tests/tmp/modules.alias
 rm -f tests/tmp/modules.alias.bin
@@ -52,39 +52,39 @@ rm -f tests/tmp/modprobe.conf
 echo Test > tests/tmp/foo.ko
 
 # Shouldn't complain if can't open modules.alias
-[ "`modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
+[ "`./modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
 
 # Now, alias found in modules.alias works.
 echo "bar alias_$BITNESS" > tests/tmp/modules.alias.bin.temp
-modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
-[ "`modprobe bar 2>&1`" = "INIT_MODULE: $SIZE " ]
+./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
+[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE " ]
 
 # Normal alias should override it.
 echo 'alias bar foo' > tests/tmp/modprobe.conf
-[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`./modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
 
 # If there's a real module, alias from modules.alias must NOT override.
 echo "foo alias_$BITNESS" > tests/tmp/modules.alias.bin.temp
-modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
-[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
+[ "`./modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
 
 # If there's an install command, modules.alias must not override.
 echo 'install bar echo foo' > tests/tmp/modprobe.conf
-[ "`modprobe bar 2>&1`" = "SYSTEM: echo foo" ]
+[ "`./modprobe bar 2>&1`" = "SYSTEM: echo foo" ]
 echo 'remove bar echo foo remove' > tests/tmp/modprobe.conf
-[ "`modprobe -r bar 2>&1`" = "SYSTEM: echo foo remove" ]
+[ "`./modprobe -r bar 2>&1`" = "SYSTEM: echo foo remove" ]
 
 # Should gather up options from other alias name as well.
 echo "bar alias_$BITNESS" > tests/tmp/modules.alias.bin.temp
-modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
+./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
 echo "options bar option1" > tests/tmp/modprobe.conf
 echo "options alias_$BITNESS option2" >> tests/tmp/modprobe.conf
-[ "`modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option1 option2" ]
+[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option1 option2" ]
 
 # Duplicated alias: both get probed (either order)
 echo "bar foo" >> tests/tmp/modules.alias.bin.temp
-modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
-OUT="`modprobe bar 2>&1`"
+./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
+OUT="`./modprobe bar 2>&1`"
 
 [ "$OUT" = "INIT_MODULE: $SIZE option1 option2
 INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1

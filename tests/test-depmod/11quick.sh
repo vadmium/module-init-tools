@@ -158,11 +158,11 @@ export MODTEST_OVERRIDE27 MODTEST_OVERRIDE_WITH27
 # Check modules.dep results: expect 5 lines
 [ `grep -vc '^#' < tests/tmp/modules.dep` = 5 ]
 
-[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko:" ]
-[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" ]
-[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
+[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "export_dep-$BITNESS.ko: export_nodep-$BITNESS.ko" ]
+[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules.dep`" = "noexport_dep-$BITNESS.ko: export_nodep-$BITNESS.ko" ]
+[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "export_nodep-$BITNESS.ko:" ]
+[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules.dep`" = "noexport_nodep-$BITNESS.ko:" ]
+[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules.dep`" = "noexport_doubledep-$BITNESS.ko: export_dep-$BITNESS.ko export_nodep-$BITNESS.ko" ]
 
 # Check modules.symbols results: expect 3 lines
 [ `grep -vc '^#' < tests/tmp/modules.symbols` = 3 ]

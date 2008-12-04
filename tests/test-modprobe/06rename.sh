@@ -23,13 +23,9 @@ MODTEST_OVERRIDE4=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH4=tests/tmp/DOES_NOT_EXIST
 export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
 
-MODTEST_OVERRIDE5=/proc/modules
-MODTEST_OVERRIDE_WITH5=tests/tmp/modules
+MODTEST_OVERRIDE5=/lib/modules/$MODTEST_UNAME/modules.dep.bin
+MODTEST_OVERRIDE_WITH5=FILE-WHICH-DOESNT-EXIST
 export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
 
 # Set up modules.dep file (neither has dependencies).
 echo "# A comment" > tests/tmp/modules.dep
@@ -110,8 +106,4 @@ strings tests/tmp/out | grep -q 'short'
 if strings tests/tmp/out | grep -q 'rename_new'; then exit 1; fi
 strings tests/tmp/out | grep -q 'very_very_long_name'
 
-cat > tests/tmp/proc <<EOF
-newname 100 0 -
-EOF
-[ "`./modprobe --name=newname -r rename-new-$BITNESS 2>&1`" = "DELETE_MODULE: newname EXCL " ]
 done

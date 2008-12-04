@@ -155,15 +155,15 @@ export MODTEST_OVERRIDE34 MODTEST_OVERRIDE_WITH34
 [ `grep -vc '^#' < tests/tmp/modules.dep` = 5 ]
 
 # Could be a: c d b e or A: d c b e.
-[ "`grep -w complex_a-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_a-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/complex_c-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_d-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_b-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko" ] || [ "`grep -w complex_a-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_a-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/complex_d-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_c-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_b-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko" ]
+[ "`grep -w complex_a-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_a-$BITNESS.ko: complex_c-$BITNESS.ko complex_d-$BITNESS.ko complex_b-$BITNESS.ko complex_e-$BITNESS.ko" ] || [ "`grep -w complex_a-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_a-$BITNESS.ko: complex_d-$BITNESS.ko complex_c-$BITNESS.ko complex_b-$BITNESS.ko complex_e-$BITNESS.ko" ]
 
-[ "`grep -w complex_b-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_b-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko" ]
+[ "`grep -w complex_b-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_b-$BITNESS.ko: complex_e-$BITNESS.ko" ]
 
-[ "`grep -w complex_c-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_c-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/complex_b-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko" ]
+[ "`grep -w complex_c-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_c-$BITNESS.ko: complex_b-$BITNESS.ko complex_e-$BITNESS.ko" ]
 
-[ "`grep -w complex_d-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_d-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/complex_b-$BITNESS.ko /lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko" ]
+[ "`grep -w complex_d-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_d-$BITNESS.ko: complex_b-$BITNESS.ko complex_e-$BITNESS.ko" ]
 
-[ "`grep -w complex_e-$BITNESS.ko: tests/tmp/modules.dep`" = "/lib/modules/$MODTEST_UNAME/complex_e-$BITNESS.ko:" ]
+[ "`grep -w complex_e-$BITNESS.ko: tests/tmp/modules.dep`" = "complex_e-$BITNESS.ko:" ]
 
 mv tests/tmp/modules.dep tests/tmp/modules.dep.old
 mv tests/tmp/modules.symbols tests/tmp/modules.symbols.old

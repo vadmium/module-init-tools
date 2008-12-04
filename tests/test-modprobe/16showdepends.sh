@@ -47,25 +47,25 @@ export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
 # Should handle comments.
-/lib/modules/2.5.52/noexport_nodep-$BITNESS.ko:
-/lib/modules/2.5.52/noexport_doubledep-$BITNESS.ko: /lib/modules/2.5.52/export_dep-$BITNESS.ko /lib/modules/2.5.52/export_nodep-$BITNESS.ko
-/lib/modules/2.5.52/noexport_dep-$BITNESS.ko: /lib/modules/2.5.52/export_nodep-$BITNESS.ko
-/lib/modules/2.5.52/export_nodep-$BITNESS.ko:
-/lib/modules/2.5.52/export_dep-$BITNESS.ko: /lib/modules/2.5.52/export_nodep-$BITNESS.ko
+/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:
+/lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
+/lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
+/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko:
+/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
 EOF
 
 # Empty proc
 cp /dev/null tests/tmp/proc
 
-[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/noexport_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/noexport_doubledep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko " ]
 
 # Nothing in stderr...
 [ `wc -c < tests/tmp/stderr` = 0 ]
@@ -79,15 +79,15 @@ export_dep_$BITNESS 100 0 export_nodep_$BITNESS,
 noexport_doubledep_$BITNESS 100 0 export_dep_$BITNESS,export_nodep_$BITNESS
 EOF
 
-[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/noexport_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/noexport_doubledep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko " ]
+[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko " ]
 
 # Nothing in stderr...
 [ `wc -c < tests/tmp/stderr` = 0 ]
@@ -122,15 +122,15 @@ options export_dep-$BITNESS opt4
 options noexport_doubledep-$BITNESS opt5
 EOF
 
-[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko opt1" ]
-[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko opt2" ]
-[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko opt2
-insmod /lib/modules/2.5.52/noexport_dep-$BITNESS.ko opt3" ]
-[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko opt2
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko opt4" ]
-[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko opt2
-insmod /lib/modules/2.5.52/export_dep-$BITNESS.ko opt4
-insmod /lib/modules/2.5.52/noexport_doubledep-$BITNESS.ko opt5" ]
+[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko opt1" ]
+[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko opt2" ]
+[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko opt2
+insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko opt3" ]
+[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko opt2
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko opt4" ]
+[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko opt2
+insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko opt4
+insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko opt5" ]
 # Nothing in stderr...
 [ `wc -c < tests/tmp/stderr` = 0 ]
 
@@ -141,7 +141,7 @@ alias foo noexport_nodep-$BITNESS
 options foo fooopt
 EOF
 
-[ "`./modprobe --show-depends foo`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko fooopt opt1" ]
+[ "`./modprobe --show-depends foo`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko fooopt opt1" ]
 # Nothing in stderr...
 [ `wc -c < tests/tmp/stderr` = 0 ]
 

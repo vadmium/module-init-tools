@@ -47,6 +47,8 @@
 #include "index.h"
 #include "list.h"
 
+#include "testing.h"
+
 int use_binary_indexes = 1; /* default to enabled. */
 
 extern long init_module(void *, unsigned long, const char *);

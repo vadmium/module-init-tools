@@ -152,14 +152,67 @@ MODTEST_OVERRIDE16=/etc/modprobe.conf
 MODTEST_OVERRIDE_WITH16=tests/tmp/modprobe.conf
 export MODTEST_OVERRIDE16 MODTEST_OVERRIDE_WITH16
 
+MODTEST_OVERRIDE17=/sys/module/noexport_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH17=tests/tmp/sys/module/noexport_nodep_$BITNESS
+export MODTEST_OVERRIDE17 MODTEST_OVERRIDE_WITH17
+
+MODTEST_OVERRIDE18=/sys/module/noexport_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH18=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE18 MODTEST_OVERRIDE_WITH18
+
+MODTEST_OVERRIDE19=/sys/module/noexport_dep_$BITNESS
+MODTEST_OVERRIDE_WITH19=tests/tmp/sys/module/noexport_dep_$BITNESS
+export MODTEST_OVERRIDE19 MODTEST_OVERRIDE_WITH19
+
+MODTEST_OVERRIDE20=/sys/module/noexport_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH20=tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE20 MODTEST_OVERRIDE_WITH20
+
+MODTEST_OVERRIDE21=/sys/module/export_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH21=tests/tmp/sys/module/export_nodep_$BITNESS
+export MODTEST_OVERRIDE21 MODTEST_OVERRIDE_WITH21
+
+MODTEST_OVERRIDE22=/sys/module/export_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH22=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE22 MODTEST_OVERRIDE_WITH22
+
+MODTEST_OVERRIDE23=/sys/module/export_dep_$BITNESS
+MODTEST_OVERRIDE_WITH23=tests/tmp/sys/module/export_dep_$BITNESS
+export MODTEST_OVERRIDE23 MODTEST_OVERRIDE_WITH23
+
+MODTEST_OVERRIDE24=/sys/module/export_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH24=tests/tmp/sys/module/export_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE24 MODTEST_OVERRIDE_WITH24
+
+MODTEST_OVERRIDE25=/sys/module/noexport_doubledep_$BITNESS
+MODTEST_OVERRIDE_WITH25=tests/tmp/sys/module/noexport_doubledep_$BITNESS
+export MODTEST_OVERRIDE25 MODTEST_OVERRIDE_WITH25
+
+MODTEST_OVERRIDE26=/sys/module/noexport_doubledep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH26=tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+export MODTEST_OVERRIDE26 MODTEST_OVERRIDE_WITH26
+
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
-/lib/modules/2.5.52/noexport_nodep-$BITNESS.ko:
-/lib/modules/2.5.52/noexport_doubledep-$BITNESS.ko: /lib/modules/2.5.52/export_dep-$BITNESS.ko /lib/modules/2.5.52/export_nodep-$BITNESS.ko
-/lib/modules/2.5.52/noexport_dep-$BITNESS.ko: /lib/modules/2.5.52/export_nodep-$BITNESS.ko
-/lib/modules/2.5.52/export_nodep-$BITNESS.ko:
-/lib/modules/2.5.52/export_dep-$BITNESS.ko: /lib/modules/2.5.52/export_nodep-$BITNESS.ko
+noexport_nodep-$BITNESS.ko:
+noexport_doubledep-$BITNESS.ko: export_dep-$BITNESS.ko export_nodep-$BITNESS.ko
+noexport_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
+export_nodep-$BITNESS.ko:
+export_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
 EOF
+
+# Now make a fake /sys/module structure for the test
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
+touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
+touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)

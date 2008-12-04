@@ -27,66 +27,92 @@ MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
 MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOES-NOT-EXIST
 export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
 
-MODTEST_OVERRIDE7=/proc/modules
-MODTEST_OVERRIDE_WITH7=tests/tmp/proc
+MODTEST_OVERRIDE7=/sys/module/noexport_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH7=tests/tmp/sys/module/noexport_nodep_$BITNESS
 export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
+
+MODTEST_OVERRIDE8=/sys/module/noexport_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH8=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
+
+MODTEST_OVERRIDE9=/sys/module/noexport_dep_$BITNESS
+MODTEST_OVERRIDE_WITH9=tests/tmp/sys/module/noexport_dep_$BITNESS
+export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
+
+MODTEST_OVERRIDE10=/sys/module/noexport_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH10=tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
+
+MODTEST_OVERRIDE11=/sys/module/export_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH11=tests/tmp/sys/module/export_nodep_$BITNESS
+export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
+
+MODTEST_OVERRIDE12=/sys/module/export_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH12=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE12 MODTEST_OVERRIDE_WITH12
+
+MODTEST_OVERRIDE13=/sys/module/export_dep_$BITNESS
+MODTEST_OVERRIDE_WITH13=tests/tmp/sys/module/export_dep_$BITNESS
+export MODTEST_OVERRIDE13 MODTEST_OVERRIDE_WITH13
+
+MODTEST_OVERRIDE14=/sys/module/export_dep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH14=tests/tmp/sys/module/export_dep_$BITNESS/initstate
+export MODTEST_OVERRIDE14 MODTEST_OVERRIDE_WITH14
+
+MODTEST_OVERRIDE15=/sys/module/noexport_doubledep_$BITNESS
+MODTEST_OVERRIDE_WITH15=tests/tmp/sys/module/noexport_doubledep_$BITNESS
+export MODTEST_OVERRIDE15 MODTEST_OVERRIDE_WITH15
+
+MODTEST_OVERRIDE16=/sys/module/noexport_doubledep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH16=tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+export MODTEST_OVERRIDE16 MODTEST_OVERRIDE_WITH16
 
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
-/lib/modules/2.5.52/noexport_dep-$BITNESS.ko: /lib/modules/2.5.52/export_nodep-$BITNESS.ko
-/lib/modules/2.5.52/export_nodep-$BITNESS.ko:
+noexport_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
+export_nodep-$BITNESS.ko:
 EOF
 
 # Insertion
 SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
 SIZE_NOEXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`)
 
-# Empty proc
-touch tests/tmp/proc
+# Empty sysfs
+rm -rf tests/tmp/sys
 
 # Check it pulls in both.
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
 # Check it's happy if we tell it dep is already instealled
-cat > tests/tmp/proc <<EOF
-export_nodep_$BITNESS 100 0 -
-EOF
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
 # If there's an install command, it will be done.
-cat > tests/tmp/proc <<EOF
-EOF
+# Clean up sysfs (so we don't think it's loaded)
+rm -rf tests/tmp/sys
 
 echo "install export_nodep-$BITNESS COMMAND" > tests/tmp/modprobe.conf
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "SYSTEM: COMMAND
 INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
-# If it's in proc, install command WONT be done.
-cat > tests/tmp/proc <<EOF
-export_nodep_$BITNESS 100 0 -
-EOF
+# If it's in /sys/module, install command WONT be done.
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
 # Do dependencies even if install command.
+# clean up sysfs (so we don't think it's loaded)
+rm -rf tests/tmp/sys
+
 echo "install noexport_dep-$BITNESS COMMAND" > tests/tmp/modprobe.conf
-cat > tests/tmp/proc <<EOF
-EOF
+
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 SYSTEM: COMMAND" ]
-
-# Recursive install commands, WITH -q.
-echo "install export_nodep-$BITNESS ./modprobe --first-time --ignore-install export_nodep-$BITNESS && { ./modprobe noexport_dep-$BITNESS; /bin/true; }" > tests/tmp/modprobe.conf
-
-cat > tests/tmp/proc <<EOF
-EOF
-
-MODTEST_DO_SYSTEM=1
-MODTEST_INSERT_PROC=1
-export MODTEST_DO_SYSTEM MODTEST_INSERT_PROC
-[ "`./modprobe -qv -- export_nodep-$BITNESS`" = "install ./modprobe --first-time --ignore-install export_nodep-$BITNESS && { ./modprobe noexport_dep-$BITNESS; /bin/true; }
-insmod /lib/modules/2.5.52/export_nodep-$BITNESS.ko 
-insmod /lib/modules/2.5.52/noexport_dep-$BITNESS.ko " ]
-unset MODTEST_DO_SYSTEM MODTEST_INSERT_PROC
 
 done

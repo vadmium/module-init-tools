@@ -177,12 +177,12 @@ cp tests/data/$BITNESS$ENDIAN/rename/rename-new-$BITNESS.ko tests/tmp/updates
 # Check modules.dep results: expect 6 lines
 [ `grep -vc '^#' < tests/tmp/modules/modules.dep` = 6 ]
 
-[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/export_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/kernel/export_nodep-$BITNESS.ko" ]
-[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_dep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/kernel/export_nodep-$BITNESS.ko" ]
-[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_nodep-$BITNESS.ko:" ]
-[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/noexport_doubledep-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/kernel/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/kernel/export_nodep-$BITNESS.ko" ]
-[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/kernel/export_nodep-$BITNESS.ko:" ]
-[ "`grep -w rename-new-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "/lib/modules/$MODTEST_UNAME/updates/rename-new-$BITNESS.ko:" ]
+[ "`grep -w export_dep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "kernel/export_dep-$BITNESS.ko: kernel/export_nodep-$BITNESS.ko" ]
+[ "`grep -w noexport_dep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "kernel/noexport_dep-$BITNESS.ko: kernel/export_nodep-$BITNESS.ko" ]
+[ "`grep -w noexport_nodep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "kernel/noexport_nodep-$BITNESS.ko:" ]
+[ "`grep -w noexport_doubledep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "kernel/noexport_doubledep-$BITNESS.ko: kernel/export_dep-$BITNESS.ko kernel/export_nodep-$BITNESS.ko" ]
+[ "`grep -w export_nodep-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "kernel/export_nodep-$BITNESS.ko:" ]
+[ "`grep -w rename-new-$BITNESS.ko: tests/tmp/modules/modules.dep`" = "updates/rename-new-$BITNESS.ko:" ]
 
 # Check modules.symbols results: expect 3 lines
 [ `grep -vc '^#' < tests/tmp/modules/modules.symbols` = 3 ]

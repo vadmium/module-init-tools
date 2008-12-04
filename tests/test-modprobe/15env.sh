@@ -2,15 +2,15 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/2.5.52
+MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME
 MODTEST_OVERRIDE_WITH1=tests/data/$BITNESS/normal
 export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
 
-MODTEST_OVERRIDE2=/lib/modules/2.5.52/noexport_nodep-$BITNESS.ko
+MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
 MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
 export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
 
-MODTEST_OVERRIDE3=/lib/modules/2.5.52/modules.dep
+MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep
 MODTEST_OVERRIDE_WITH3=tests/tmp/modules.dep
 export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
 
@@ -30,7 +30,7 @@ MODTEST_OVERRIDE7=/lib/modules/2.5.53/modules.dep.bin
 MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
 export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
 # Now create modules.dep and modules.conf
-echo /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko: > tests/tmp/modules.dep
+echo /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko: > tests/tmp/modules.dep
 echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/modprobe.conf
 echo install foo ./modprobe bar > tests/tmp/modprobe2.conf
 echo install bar echo DOING BAR >> tests/tmp/modprobe2.conf
@@ -38,9 +38,9 @@ echo install bar echo DOING BAR >> tests/tmp/modprobe2.conf
 SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 
 # Test normal args, then in env.
-[ "`./modprobe -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko 
+[ "`./modprobe -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
-[ "`MODPROBE_OPTIONS=-v ./modprobe noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko 
+[ "`MODPROBE_OPTIONS=-v ./modprobe noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
 
 [ "`./modprobe -q noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
@@ -49,18 +49,18 @@ INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
 [ "`./modprobe -n noexport_nodep-$BITNESS 2>&1`" = "" ]
 [ "`MODPROBE_OPTIONS=-n ./modprobe noexport_nodep-$BITNESS 2>&1`" = "" ]
 
-[ "`./modprobe -n -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko " ]
-[ "`MODPROBE_OPTIONS="-n -v" ./modprobe noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko " ]
+[ "`./modprobe -n -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
+[ "`MODPROBE_OPTIONS="-n -v" ./modprobe noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
 
 # Test argument inheritence.
 MODTEST_DO_SYSTEM=1
 export MODTEST_DO_SYSTEM
 
 [ "`./modprobe -v foo 2>&1`" = "install ./modprobe noexport_nodep-$BITNESS
-insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
 [ "`MODPROBE_OPTIONS=-v ./modprobe foo 2>&1`" = "install ./modprobe noexport_nodep-$BITNESS
-insmod /lib/modules/2.5.52/noexport_nodep-$BITNESS.ko 
+insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
 
 [ "`./modprobe -C /etc/modprobe2.conf foo 2>&1`" = "DOING BAR" ]

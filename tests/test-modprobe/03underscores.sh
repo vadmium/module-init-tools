@@ -31,10 +31,23 @@ MODTEST_OVERRIDE7=/lib/modules/$MODTEST_UNAME/modules.dep.bin
 MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
 export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
 
+MODTEST_OVERRIDE8=/sys/module/noexport_nodep_$BITNESS
+MODTEST_OVERRIDE_WITH8=tests/tmp/sys/module/noexport_nodep_$BITNESS
+export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
+
+MODTEST_OVERRIDE9=/sys/module/noexport_nodep_$BITNESS/initstate
+MODTEST_OVERRIDE_WITH9=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
+
+# Now make a fake /sys/module structure for the test
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+
 # Set up modules.dep file.
 echo "# A comment" > tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "export_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
 
 # Set up config file.
 echo "alias alias-_ noexport-nodep_$BITNESS" > tests/tmp/modprobe.conf
