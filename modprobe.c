@@ -251,7 +251,7 @@ static int add_modules_dep_line(char *line,
 		return 0;
 
 	/* Create the list. */
-	if (line == strstr(line, dirname)) {	/* old style deps */
+	if ('/' == line[0]) {	/* old style deps - absolute path specified */
 		add_module(line, ptr - line, list);
 	} else {
 		nofail_asprintf(&fullpath, "%s/%s", dirname, line);
@@ -267,8 +267,7 @@ static int add_modules_dep_line(char *line,
 			break;
 		dep_start = ptr;
 		ptr += strcspn(ptr, " \t");
-		if (dep_start == strstr(dep_start, dirname)) {
-							/* old style deps */
+		if ('/' == dep_start[0]) {	/* old style deps */
 			add_module(dep_start, ptr - dep_start, list);
 		} else {
 			nofail_asprintf(&fullpath, "%s/%s", dirname, dep_start);
