@@ -762,14 +762,13 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	if (ret != 1)
 		return ret;
 
-	/* Get reference count. */
+	/* Get reference count, if it exists. */
 	if (usecount != NULL) {
 		nofail_asprintf(&name, "/sys/module/%s/refcnt", modname);
 		ret = read_attribute(name, attr, ATTR_LEN);
 		free(name);
-		if (ret != 1)
-			return ret;
-		*usecount = atoi(attr);
+		if (ret == 1)
+			*usecount = atoi(attr);
 	}
 
 	return 1;
