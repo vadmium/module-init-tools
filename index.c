@@ -210,8 +210,10 @@ void index_write(const struct index_node *node, FILE *out)
 	
 	u = htonl(INDEX_MAGIC);
 	fwrite(&u, sizeof(u), 1, out);
+	u = htonl(INDEX_VERSION);
+	fwrite(&u, sizeof(u), 1, out);
 	
-	/* First word is reserved for the offset of the root node */
+	/* Second word is reserved for the offset of the root node */
 	initial_offset = ftell(out);
 	u = 0;
 	fwrite(&u, sizeof(uint32_t), 1, out);
@@ -454,11 +456,17 @@ static struct index_node_f *index_readchild(const struct index_node_f *parent,
 
 static struct index_node_f *index_readroot(FILE *in)
 {
-	uint32_t offset;
+	uint32_t magic, offset, version;
 
 	fseek(in, 0, SEEK_SET);
-	
-	if (read_long(in) != INDEX_MAGIC)
+
+	magic = read_long(in);
+
+	if (INDEX_MAGIC == magic)
+		version = read_long(in);
+	else if (INDEX_MAGIC_OLD == magic)
+		version = 0x00000000;
+	else
 		index_fatal("Bad magic number");
 
 	offset = read_long(in);

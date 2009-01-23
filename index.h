@@ -24,9 +24,19 @@
 /* Integers are stored as 32 bit unsigned in "network" order, i.e. MSB first.
    All files start with a magic number.
 
-   Magic spells "BOOTFAST".  No duplicates found on google web or code search.
+   Magic spells "BOOTFAST". Second one used on newer versioned binary files.
  */
-#define INDEX_MAGIC 0xB007FA57
+#define INDEX_MAGIC_OLD 0xB007FA57
+#define INDEX_MAGIC 0xB007F457
+
+/* We use a version string to keep track of changes to the binary format
+ * This is stored in the form: INDEX_MAJOR (hi) INDEX_MINOR (lo) just in
+ * case we ever decide to have minor changes that are not incompatible.
+ */
+
+#define INDEX_VERSION_MAJOR 0x0001
+#define INDEX_VERSION_MINOR 0x0001
+#define INDEX_VERSION ((INDEX_VERSION_MAJOR<<16)|INDEX_VERSION_MINOR)
 
 /* The index file is simply a set of uninterpreted ASCII strings.
 
@@ -106,6 +116,7 @@ struct index_node {
 /* Disk format:
 
    uint32_t magic = INDEX_MAGIC;
+   uint32_t version = INDEX_VERSION;
    uint32_t root_offset;
 
    (node_offset & INDEX_NODE_MASK) specifies the file offset of nodes:
