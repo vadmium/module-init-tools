@@ -426,9 +426,12 @@
         <term><option>--use-blacklist</option>
         </term>
         <listitem>
-          <para>
-            Apply a matchin blacklist entry also to a request by module name,
-            not only to a request by an alias.
+	  <para>
+	    This option causes <command>modprobe</command> to apply the
+	    <command>blacklist</command> commands in the configuration file (if
+	    any) to module names as well.  It is usually used by <citerefentry>
+	    <refentrytitle>udev</refentrytitle><manvolnum>7</manvolnum>
+	    </citerefentry>.
 	  </para>
         </listitem>
       </varlistentry>
