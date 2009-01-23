@@ -277,7 +277,7 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 {
 	char *data;
 	struct utsname buf;
-	char *depname, *p;
+	char *depname, *p, *moddir;
 
 	data = grab_file(name, size);
 	if (data) {
@@ -290,15 +290,25 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 		return NULL;
 	}
 
-	/* Search for it in modules.dep. */
 	if (kernel) {
-		asprintf(&depname, "%s/%s/%s/modules.dep",
-			 basedir, MODULE_DIR, kernel);
+		if (strlen(basedir))
+			asprintf(&moddir, "%s/%s/%s",
+				basedir, MODULE_DIR, kernel);
+		else
+			asprintf(&moddir, "%s/%s",
+				MODULE_DIR, kernel);
 	} else {
 		uname(&buf);
-		asprintf(&depname, "%s/%s/%s/modules.dep",
-			 basedir, MODULE_DIR, buf.release);
+		if (strlen(basedir))
+			asprintf(&moddir, "%s/%s/%s",
+			 	basedir, MODULE_DIR, buf.release);
+		else
+			asprintf(&moddir, "%s/%s",
+				MODULE_DIR, buf.release);
 	}
+	asprintf(&depname, "%s/%s", moddir, "modules.dep");
+
+	/* Search for it in modules.dep. */
 	data = grab_file(depname, size);
 	if (!data) {
 		fprintf(stderr, "modinfo: could not open %s\n", depname);
@@ -310,9 +320,25 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	for (p = data; p < data + *size; p = next_line(p, data + *size)) {
 		if (name_matches(p, data + *size, name)) {
 			int namelen = strcspn(p, ":");
-			*filename = malloc(namelen + 1);
-			memcpy(*filename, p, namelen);
-			(*filename)[namelen] = '\0';
+
+			if ('/' == p[0]) { /* old style deps - absolute path */
+				*filename = malloc(namelen + strlen(basedir)+2);
+				if (strlen(basedir)) {
+					sprintf(*filename, "%s/", basedir);
+					memcpy(*filename+strlen(basedir)+1,p,
+						namelen);
+					(*filename)[namelen
+						+strlen(basedir)+1] = '\0';
+				} else {
+					memcpy(*filename,p,namelen);
+					(*filename)[namelen] = '\0';
+				}
+			} else {
+				*filename = malloc(namelen + strlen(moddir)+2);
+				sprintf(*filename, "%s/", moddir);
+				memcpy(*filename+strlen(moddir)+1, p,namelen);
+				(*filename)[namelen+strlen(moddir)+1] ='\0';
+			}
 			release_file(data, *size);
 			data = grab_file(*filename, size);
 			if (!data)
