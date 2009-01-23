@@ -1342,6 +1342,11 @@ int main(int argc, char *argv[])
 	}
 	list = parse_modules(list);
 
+	if (!list) {
+		/* Do nothing if nothing has been found */
+		fatal("No modules have been found, exiting\n");
+	}
+
 	for (i = 0; i < sizeof(depfiles)/sizeof(depfiles[0]); i++) {
 		FILE *out;
 		struct depfile *d = &depfiles[i];
