@@ -21,9 +21,12 @@ int config_filter(const char *name)
 		".dpkg-new",
 		".dpkg-bak",
 		".bak",
+		".orig",
+		".rej",
 		".YaST2save",
 		".-",
 		"~",
+		",v",
 		NULL
 	};
 
