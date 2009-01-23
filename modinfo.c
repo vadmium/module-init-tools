@@ -273,7 +273,7 @@ static char *next_line(char *p, const char *end)
 }
 
 static void *grab_module(const char *name, unsigned long *size, char**filename,
-	const char *kernel)
+	const char *kernel, const char *basedir)
 {
 	char *data;
 	struct utsname buf;
@@ -292,11 +292,12 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 
 	/* Search for it in modules.dep. */
 	if (kernel) {
-		asprintf(&depname, "%s/%s/modules.dep", MODULE_DIR, kernel);
+		asprintf(&depname, "%s/%s/%s/modules.dep",
+			 basedir, MODULE_DIR, kernel);
 	} else {
 		uname(&buf);
-		asprintf(&depname, "%s/%s/modules.dep", MODULE_DIR,
-			 buf.release);
+		asprintf(&depname, "%s/%s/%s/modules.dep",
+			 basedir, MODULE_DIR, buf.release);
 	}
 	data = grab_file(depname, size);
 	if (!data) {
@@ -328,11 +329,12 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 
 static void usage(const char *name)
 {
-	fprintf(stderr, "Usage: %s [-0][-F field][-k kernelversion] module...\n"
+	fprintf(stderr, "Usage: %s [-0][-F field][-k kernelversion][-b basedir]  module...\n"
 		" Prints out the information about one or more module(s).\n"
 		" If a fieldname is given, just print out that field (or nothing if not found).\n"
 		" Otherwise, print all information out in a readable form\n"
-		" If -0 is given, separate with nul, not newline.\n",
+		" If -0 is given, separate with nul, not newline.\n"
+		" If -b is given, use an image of the module tree.\n",
 		name);
 }
 
@@ -344,6 +346,7 @@ int main(int argc, char *argv[])
 	char sep = '\n';
 	unsigned long infosize = 0;
 	int opt, ret = 0;
+	char *basedir = "";
 
 	if (!getenv("NEW_MODINFO"))
 		try_old_version("modinfo", argv);
@@ -354,7 +357,7 @@ int main(int argc, char *argv[])
 	else
 		abort();
 
-	while ((opt = getopt_long(argc,argv,"adlpVhn0F:k:",options,NULL)) >= 0){
+	while ((opt = getopt_long(argc,argv,"adlpVhn0F:k:b:",options,NULL)) >= 0){
 		switch (opt) {
 		case 'a': field = "author"; break;
 		case 'd': field = "description"; break;
@@ -365,6 +368,7 @@ int main(int argc, char *argv[])
 		case 'F': field = optarg; break;
 		case '0': sep = '\0'; break;
 		case 'k': kernel = optarg; break;
+		case 'b': basedir = optarg; break;
 		default:
 			usage(argv[0]); exit(0);
 		}
@@ -377,7 +381,8 @@ int main(int argc, char *argv[])
 		unsigned long modulesize;
 		char *filename;
 
-		mod = grab_module(argv[opt], &modulesize, &filename, kernel);
+		mod = grab_module(argv[opt], &modulesize, &filename,
+				  kernel, basedir);
 		if (!mod) {
 			ret = 1;
 			continue;
