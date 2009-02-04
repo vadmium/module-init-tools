@@ -1382,21 +1382,18 @@ int main(int argc, char *argv[])
 		/* Do command line args. */
 		for (opt = optind; opt < argc; opt++) {
 			struct module *new = grab_module(NULL, argv[opt]);
-			if (new) {
-				new->next = list;
-				list = new;
+			if (!new) {
+				/* cmd-line specified modules must exist */
+				fatal("grab_module() failed for module %s\n", argv[opt]);
 			}
+			new->next = list;
+			list = new;
 		}
 	} else {
 		list = grab_basedir(dirname,search,overrides);
 	}
 	list = sort_modules(dirname,list);
 	list = parse_modules(list);
-
-	if (!list) {
-		/* Do nothing if nothing has been found */
-		fatal("No modules have been found, exiting\n");
-	}
 
 	for (i = 0; i < sizeof(depfiles)/sizeof(depfiles[0]); i++) {
 		FILE *out;
