@@ -46,6 +46,7 @@
 #include "logging.h"
 #include "index.h"
 #include "list.h"
+#include "config_filter.h"
 
 #include "testing.h"
 
@@ -1293,7 +1294,8 @@ static int read_config(const char *filename,
 	if (dir) {
 		struct dirent *i;
 		while ((i = readdir(dir)) != NULL) {
-			if (!streq(i->d_name,".") && !streq(i->d_name,"..")) {
+			if (!streq(i->d_name,".") && !streq(i->d_name,"..")
+			    && config_filter(i->d_name)) {
 				char sub[strlen(filename) + 1
 					 + strlen(i->d_name) + 1];
 

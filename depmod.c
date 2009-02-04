@@ -27,6 +27,7 @@
 #include "index.h"
 #include "moduleops.h"
 #include "tables.h"
+#include "config_filter.h"
 
 #include "testing.h"
 
@@ -710,6 +711,54 @@ static struct module *grab_basedir(const char *dirname,
 	return list;
 }
 
+static struct module *sort_modules(const char *dirname, struct module *list)
+{
+	struct module *tlist = NULL, **tpos = &tlist;
+	FILE *modorder;
+	int dir_len = strlen(dirname) + 1;
+	char file_name[dir_len + strlen("modules.order") + 1];
+	char line[10240];
+
+	sprintf(file_name, "%s/%s", dirname, "modules.order");
+
+	modorder = fopen(file_name, "r");
+	if (!modorder) {
+		/* Older kernels don't generate modules.order.  Just
+		   return if the file doesn't exist. */
+		if (errno == ENOENT)
+			return;
+		fatal("Could not open '%s': %s\n", file_name, strerror(errno));
+	}
+
+	sprintf(line, "%s/", dirname);
+
+	/* move modules listed in modorder file to tlist in order */
+	while (fgets(line, sizeof(line), modorder)) {
+		struct module **pos, *mod;
+		int len = strlen(line);
+
+		if (line[len - 1] == '\n')
+			line[len - 1] = '\0';
+
+		for (pos = &list; (mod = *pos); pos = &(*pos)->next) {
+			if (strcmp(line, mod->pathname + dir_len) == 0) {
+				*pos = mod->next;
+				mod->next = NULL;
+				*tpos = mod;
+				tpos = &mod->next;
+				break;
+			}
+		}
+	}
+
+	/* append the rest */
+	*tpos = list;
+
+	fclose(modorder);
+
+	return tlist;
+}
+
 static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
@@ -1163,7 +1212,8 @@ static int read_config(const char *filename,
 	if (dir) {
 		struct dirent *i;
 		while ((i = readdir(dir)) != NULL) {
-			if (!streq(i->d_name,".") && !streq(i->d_name,"..")) {
+			if (!streq(i->d_name,".") && !streq(i->d_name,"..")
+					&& config_filter(i->d_name)) {
 				char sub[strlen(filename) + 1
 				       + strlen(i->d_name) + 1];
 
@@ -1340,6 +1390,7 @@ int main(int argc, char *argv[])
 	} else {
 		list = grab_basedir(dirname,search,overrides);
 	}
+	list = sort_modules(dirname,list);
 	list = parse_modules(list);
 
 	if (!list) {

@@ -98,6 +98,7 @@
       <varlistentry>
         <term><option>-k <replaceable>kernel</replaceable></option>
         </term>
+        <listitem>
           <para>
             Provide information about a kernel other than the running one. This
             is particularly useful for distributions needing to extract
@@ -106,7 +107,7 @@
             are needed by various modules in a new kernel for which you must
             make an initrd image prior to booting.
           </para>
-        </term>
+        </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-0</option> <option>--null</option>
