@@ -726,7 +726,7 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 		/* Older kernels don't generate modules.order.  Just
 		   return if the file doesn't exist. */
 		if (errno == ENOENT)
-			return;
+			return list;
 		fatal("Could not open '%s': %s\n", file_name, strerror(errno));
 	}
 
