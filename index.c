@@ -700,7 +700,7 @@ static void index_searchwild__node(struct index_node_f *node,
 		
 		child = index_readchild(node, '?');
 		if (child) {
-			buf_pushchar(buf, '*');
+			buf_pushchar(buf, '?');
 			index_searchwild__all(child, 0, buf, &key[i], out);
 			buf_popchar(buf);
 		}
