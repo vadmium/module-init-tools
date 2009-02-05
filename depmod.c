@@ -325,6 +325,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 	new->basename = my_basename(new->pathname);
 
 	INIT_LIST_HEAD(&new->dep_list);
+	new->order = INDEX_PRIORITY_MIN;
 
 	new->data = grab_file(new->pathname, &new->len);
 	if (!new->data) {
@@ -517,7 +518,7 @@ static void output_deps_bin(struct module *modules,
 		order_dep_list(i, i);
 		
 		filename2modname(modname, i->pathname + strlen(dirname)+1);
-		nofail_asprintf(&line, "%s %s:", modname, i->pathname + strlen(dirname)+1);
+		nofail_asprintf(&line, "%s:", i->pathname + strlen(dirname)+1);
 		p = line;
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
@@ -527,7 +528,7 @@ static void output_deps_bin(struct module *modules,
 			p = line;
 			list_del_init(j);
 		}
-		if (index_insert(index, line) && warn_dups)
+		if (index_insert(index, modname, line, i->order) && warn_dups)
 			warn("duplicate module deps:\n%s\n",line);
 		free(line);
 	}
@@ -718,6 +719,7 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 	int dir_len = strlen(dirname) + 1;
 	char file_name[dir_len + strlen("modules.order") + 1];
 	char line[10240];
+	unsigned int linenum = 0;
 
 	sprintf(file_name, "%s/%s", dirname, "modules.order");
 
@@ -737,11 +739,13 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 		struct module **pos, *mod;
 		int len = strlen(line);
 
+		linenum++;
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
 
 		for (pos = &list; (mod = *pos); pos = &(*pos)->next) {
 			if (strcmp(line, mod->pathname + dir_len) == 0) {
+				mod->order = linenum;
 				*pos = mod->next;
 				mod->next = NULL;
 				*tpos = mod;
@@ -809,7 +813,8 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 {
 	struct index_node *index;
 	unsigned int i;
-	char *line;
+	char *alias;
+	int duplicate;
 
 	index = index_create();
 	
@@ -820,12 +825,13 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 			if (s->owner) {
 				char modname[strlen(s->owner->pathname)+1];
 				filename2modname(modname, s->owner->pathname);
-				nofail_asprintf(&line, "symbol:%s %s",
-					s->name, modname);
-				if (index_insert(index, line) && warn_dups)
-					warn("duplicate module syms:\n%s\n",
-						line);
-				free(line);
+				nofail_asprintf(&alias, "symbol:%s", s->name);
+				duplicate = index_insert(index, alias, modname,
+							 s->owner->order);
+				if (duplicate && warn_dups)
+					warn("duplicate module syms:\n%s %s\n",
+						alias, modname);
+				free(alias);
 			}
 		}
 	}
@@ -908,9 +914,10 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	const char *p;
-	char *line;
+	char *alias;
 	unsigned long size;
 	struct index_node *index;
+	int duplicate;
 
 	index = index_create();
 	
@@ -923,11 +930,13 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		for (p = i->ops->get_aliases(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			nofail_asprintf(&line, "%s %s", p, modname);
-			underscores(line);
-			if (index_insert(index, line) && warn_dups)
-				warn("duplicate module alias:\n%s\n", line);
-			free(line);
+			alias = NOFAIL(strdup(p));
+			underscores(alias);
+			duplicate = index_insert(index, alias, modname, i->order);
+			if (duplicate && warn_dups)
+				warn("duplicate module alias:\n%s %s\n",
+					alias, modname);
+			free(alias);
 		}
 
 		/* Grab from new-style .modinfo section. */
@@ -935,13 +944,13 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		     p;
 		     p = next_string(p, &size)) {
 			if (strncmp(p, "alias=", strlen("alias=")) == 0) {
-				nofail_asprintf(&line, "%s %s",
-					p + strlen("alias="), modname);
-				underscores(line);
-				if (index_insert(index, line) && warn_dups)
-					warn("duplicate module alias:\n%s\n",
-						line);
-				free(line);
+				alias = NOFAIL(strdup(p + strlen("alias=")));
+				underscores(alias);
+				duplicate = index_insert(index, alias, modname, i->order);
+				if (duplicate && warn_dups)
+					warn("duplicate module alias:\n%s %s\n",
+						alias, modname);
+				free(alias);
 			}
 		}
 	}

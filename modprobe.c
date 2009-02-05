@@ -1330,6 +1330,7 @@ static int read_config_file_bin(const char *filename,
 			    struct module_alias **aliases,
 			    struct module_blacklist **blacklist)
 {
+	struct index_value *realnames;
 	struct index_value *realname;
 	char *binfile;
 	struct index_file *index;
@@ -1350,14 +1351,10 @@ static int read_config_file_bin(const char *filename,
 		return 1;
 	}
 	
-	realname = index_searchwild(index, name);
-	while(realname) {
-		struct index_value *next = realname->next;
+	realnames = index_searchwild(index, name);
+	for (realname = realnames; realname; realname = realname->next)
 		*aliases = add_alias(realname->value, *aliases);
-		
-		free(realname);
-		realname = next;
-	}
+	index_values_free(realnames);
 	
 	free(binfile);
 	index_file_close(index);

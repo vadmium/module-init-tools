@@ -55,8 +55,9 @@ static char *getline_wrapped(FILE *file, unsigned int *linenum)
 static void write_index(const char *filename)
 {
 	struct index_node *index;
-	char *line;
+	char *line, *pos;
 	FILE *cfile;
+	unsigned int linenum = 0;
 	
 	cfile = fopen(filename, "w");
 	if (!cfile)
@@ -65,8 +66,10 @@ static void write_index(const char *filename)
 	
 	index = index_create();
 	
-	while((line = getline_wrapped(stdin, NULL))) {
-		index_insert(index, line);
+	while((line = getline_wrapped(stdin, &linenum))) {
+		pos = strchr(line, ' ');
+		*pos++ = '\0';
+		index_insert(index, line, pos, linenum);
 		free(line);
 	}
 	
@@ -118,22 +121,18 @@ static void search_index(const char *filename, char *key)
 static void searchwild_index(const char *filename, char *key)
 {
 	struct index_file *index = open_index(filename);
-	struct index_value *values;
+	struct index_value *values, *v;
 
 	values = index_searchwild(index, key);
 	if (values)
 		printf("Found value(s):\n");
 	else
-		printf("Not found.\n");
-	
-	while(values) {
-		struct index_value *next = values->next;
-		
-		printf("%s\n", values->value);
-		free(values);
-		values = next;
-	}
-	
+		printf("Not found.\n");	
+
+	for (v = values; v; v = v->next)
+		printf("%s\n", v->value);
+
+	index_values_free(values);
 	index_file_close(index);
 }
 

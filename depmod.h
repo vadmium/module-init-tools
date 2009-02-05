@@ -30,6 +30,9 @@ struct module
 	/* Set while we are traversing dependencies */
 	struct list_head dep_list;
 
+	/* Line number in modules.order (or INDEX_PRIORITY_MIN) */
+	unsigned int order;
+
 	/* Tables extracted from module by ops->fetch_tables(). */
 	unsigned int pci_size;
 	void *pci_table;

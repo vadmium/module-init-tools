@@ -19,7 +19,7 @@
 #ifndef MODINITTOOLS_INDEX_H
 #define MODINITTOOLS_INDEX_H
 
-#include <arpa/inet.h> /* htonl */
+#include <stdint.h>
 
 /* Integers are stored as 32 bit unsigned in "network" order, i.e. MSB first.
    All files start with a magic number.
@@ -34,16 +34,12 @@
  * case we ever decide to have minor changes that are not incompatible.
  */
 
-#define INDEX_VERSION_MAJOR 0x0001
+#define INDEX_VERSION_MAJOR 0x0002
 #define INDEX_VERSION_MINOR 0x0001
 #define INDEX_VERSION ((INDEX_VERSION_MAJOR<<16)|INDEX_VERSION_MINOR)
 
-/* The index file is simply a set of uninterpreted ASCII strings.
-
-   Key/value separation is handled by the reader.  The end of a key
-   is indicated by the first space character in the string.
-   Therefore duplicate keys are legal (which is necessary for module aliases).
-   The writer code only warns on duplicates of an entire string (key+value).
+/* The index file maps keys to values. Both keys and values are ASCII strings.
+   Each key can have multiple values. Values are sorted by an integer priority.
 
    The reader also implements a wildcard search (including range expressions)
    where the keys in the index are treated as patterns.
@@ -64,7 +60,7 @@
 
    == Key ==
     + Normal node
-    * Marked node, representing a string in the index
+    * Marked node, representing a key and it's values.
 
    +
    |-a-+-s-+-k-*
@@ -102,12 +98,20 @@
    child pointers at the start and end of arrays.
 */
 
-/* In-memory structure (depmod only) */
+#define INDEX_PRIORITY_MIN UINT32_MAX
+
+struct index_value {
+	struct index_value *next;
+	unsigned int priority;
+	char value[0];
+};
+
+/* In-memory index (depmod only) */
 
 #define INDEX_CHILDMAX 128
 struct index_node {
 	char *prefix;		/* path compression */
-	char isendpoint;	/* does this node represent a string? */
+	struct index_value *values;
 	unsigned char first;	/* range of child nodes */
 	unsigned char last;
 	struct index_node *children[INDEX_CHILDMAX]; /* indexed by character */
@@ -127,6 +131,12 @@ struct index_node {
         char last;
         uint32_t children[last - first + 1];
 
+        uint32_t value_count;
+        struct {
+            uint32_t priority;
+            char[] value; // nul terminated
+        } values[value_count];
+
    (node_offset & INDEX_NODE_FLAGS) indicates which fields are present.
    Empty prefixes are ommitted, leaf nodes omit the three child-related fields.
 
@@ -138,22 +148,18 @@ struct index_node {
 enum node_offset {
 	INDEX_NODE_FLAGS    = 0xF0000000, /* Flags in high nibble */
 	INDEX_NODE_PREFIX   = 0x80000000,
-	INDEX_NODE_ENDPOINT = 0x40000000,
+	INDEX_NODE_VALUES = 0x40000000,
 	INDEX_NODE_CHILDS   = 0x20000000,
 
 	INDEX_NODE_MASK     = 0x0FFFFFFF, /* Offset value */
-};
-
-struct index_value {
-	struct index_value *next;
-	char value[0];
 };
 
 struct index_file;
 
 struct index_node *index_create(void);
 void index_destroy(struct index_node *node);
-int index_insert(struct index_node *node, const char *str);
+int index_insert(struct index_node *node, const char *key,
+		 const char *value, unsigned int priority);
 void index_write(const struct index_node *node, FILE *out);
 
 struct index_file *index_file_open(const char *filename);
@@ -173,5 +179,7 @@ char *index_search(struct index_file *index, const char *key);
    The keys in the index are treated as wildcard patterns using fnmatch()
 */
 struct index_value *index_searchwild(struct index_file *index, const char *key);
+
+void index_values_free(struct index_value *values);
 
 #endif /* MODINITTOOLS_INDEX_H */
