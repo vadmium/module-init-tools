@@ -1396,7 +1396,13 @@ int main(int argc, char *argv[])
 	if (!all) {
 		/* Do command line args. */
 		for (opt = optind; opt < argc; opt++) {
-			struct module *new = grab_module(NULL, argv[opt]);
+			struct module *new;
+
+			if (argv[opt][0] != '/')
+				fatal("modules must be specified using absolute paths.\n"
+					"\"%s\" is a relative path\n", argv[opt]);
+
+			new = grab_module(NULL, argv[opt]);
 			if (!new) {
 				/* cmd-line specified modules must exist */
 				fatal("grab_module() failed for module %s\n", argv[opt]);
