@@ -24,6 +24,8 @@
 #include "logging.h"
 #include "index.h"
 
+#include "testing.h"
+
 /*
  * Index abstract data type (used only by depmod)
  */
@@ -444,33 +446,59 @@ static void index_close(struct index_node_f *node)
 	free(node);
 }
 
+struct index_file {
+	FILE *file;
+	uint32_t root_offset;
+};
+
+/* Failures are silent; modprobe will fall back to text files */
+struct index_file *index_file_open(const char *filename)
+{
+	FILE *file;
+	uint32_t magic, version;
+	struct index_file *new;
+
+	file = fopen(filename, "r");
+	if (!file)
+		return NULL;
+	errno = EINVAL;
+
+	magic = read_long(file);
+	if (magic != INDEX_MAGIC)
+		return NULL;
+
+	version = read_long(file);
+	if (version >> 16 != INDEX_VERSION_MAJOR)
+		return NULL;
+
+	new = NOFAIL(malloc(sizeof(struct index_file)));
+	new->file = file;
+	new->root_offset = read_long(new->file);
+
+	errno = 0;
+	return new;
+}
+
+void index_file_close(struct index_file *index)
+{
+	fclose(index->file);
+	free(index);
+}
+
+
+static struct index_node_f *index_readroot(struct index_file *in)
+{
+	return index_read(in->file, in->root_offset);
+}
+
 static struct index_node_f *index_readchild(const struct index_node_f *parent,
 					    int ch)
 {
 	if (parent->first <= ch && ch <= parent->last)
 		return index_read(parent->file,
-		                  parent->children[ch - parent->first]);
+		                       parent->children[ch - parent->first]);
 	else
 		return NULL;
-}
-
-static struct index_node_f *index_readroot(FILE *in)
-{
-	uint32_t magic, offset, version;
-
-	fseek(in, 0, SEEK_SET);
-
-	magic = read_long(in);
-
-	if (INDEX_MAGIC == magic)
-		version = read_long(in);
-	else if (INDEX_MAGIC_OLD == magic)
-		version = 0x00000000;
-	else
-		index_fatal("Bad magic number");
-
-	offset = read_long(in);
-	return index_read(in, offset);
 }
 
 /*
@@ -507,7 +535,7 @@ static void index_dump_node(struct index_node_f *node,
 	index_close(node);
 }
 
-void index_dump(FILE *in, FILE *out, const char *prefix)
+void index_dump(struct index_file *in, FILE *out, const char *prefix)
 {
 	struct index_node_f *root;
 	struct buffer *buf;
@@ -528,7 +556,7 @@ void index_dump(FILE *in, FILE *out, const char *prefix)
  */
 
 /* Level 1: interface function */
-char *index_search(FILE *in, const char *key);
+char *index_search(struct index_file *in, const char *key);
 
 /* Level 2: descend the tree */
 static char *index_search__node(struct index_node_f *node, const char *key, int i);
@@ -537,7 +565,7 @@ static char *index_search__node(struct index_node_f *node, const char *key, int 
    The first character of the value is node->prefix[j] */
 static char *index_search__firstvalue(struct index_node_f *node, int j);
 
-char *index_search(FILE *in, const char *key)
+char *index_search(struct index_file *in, const char *key)
 {
 	struct index_node_f *root;
 	char *value;
@@ -619,7 +647,7 @@ static char *index_search__firstvalue(struct index_node_f *node, int j)
  */
 
 /* Level 1: interface function */
-struct index_value *index_searchwild(FILE *in, const char *key);
+struct index_value *index_searchwild(struct index_file *in, const char *key);
 
 /* Level 2: descend the tree (until we hit a wildcard) */
 static void index_searchwild__node(struct index_node_f *node,
@@ -647,7 +675,7 @@ static void index_searchwild__allvalues(struct index_node_f *node, int j,
 					struct index_value **out);
 
 
-struct index_value *index_searchwild(FILE *in, const char *key)
+struct index_value *index_searchwild(struct index_file *in, const char *key)
 {
 	struct index_node_f *root = index_readroot(in);
 	struct buffer *buf = buf_create();

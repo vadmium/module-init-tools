@@ -13,6 +13,8 @@
 #include <sys/utsname.h>
 #include <asm/unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>
 
 /* We don't use all of these. */

@@ -286,10 +286,10 @@ static int read_depends_bin(const char *dirname,
 {
 	char *modules_dep_name;
 	char *line;
-	FILE *modules_dep;
+	struct index_file *modules_dep;
 
 	nofail_asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep.bin");
-	modules_dep = fopen(modules_dep_name, "r");
+	modules_dep = index_file_open(modules_dep_name);
 	if (!modules_dep) {
 		free(modules_dep_name);
 		return 0;
@@ -302,8 +302,8 @@ static int read_depends_bin(const char *dirname,
 			fatal("Module index is inconsistent\n");
 		free(line);
 	}
-	
-	fclose(modules_dep);
+
+	index_file_close(modules_dep);
 	free(modules_dep_name);
 	
 	return 1;
@@ -1332,11 +1332,11 @@ static int read_config_file_bin(const char *filename,
 {
 	struct index_value *realname;
 	char *binfile;
-	FILE *cfile;
+	struct index_file *index;
 
 	nofail_asprintf(&binfile, "%s.bin", filename);
-	cfile = fopen(binfile, "r");
-	if (!cfile) {
+	index = index_file_open(binfile);
+	if (!index) {
 		free(binfile);
 		
 		return read_config_file(filename, name, dump_only, removing,
@@ -1344,13 +1344,13 @@ static int read_config_file_bin(const char *filename,
 	}
 
 	if (dump_only) {
-		index_dump(cfile, stdout, "alias ");
+		index_dump(index, stdout, "alias ");
 		free(binfile);
-		fclose(cfile);
+		index_file_close(index);
 		return 1;
 	}
 	
-	realname = index_searchwild(cfile, name);
+	realname = index_searchwild(index, name);
 	while(realname) {
 		struct index_value *next = realname->next;
 		*aliases = add_alias(realname->value, *aliases);
@@ -1360,7 +1360,7 @@ static int read_config_file_bin(const char *filename,
 	}
 	
 	free(binfile);
-	fclose(cfile);
+	index_file_close(index);
 	return 1;
 }
 

@@ -26,7 +26,7 @@
 
    Magic spells "BOOTFAST". Second one used on newer versioned binary files.
  */
-#define INDEX_MAGIC_OLD 0xB007FA57
+/* #define INDEX_MAGIC_OLD 0xB007FA57 */
 #define INDEX_MAGIC 0xB007F457
 
 /* We use a version string to keep track of changes to the binary format
@@ -149,24 +149,29 @@ struct index_value {
 	char value[0];
 };
 
-struct index_node *index_create();
+struct index_file;
+
+struct index_node *index_create(void);
 void index_destroy(struct index_node *node);
 int index_insert(struct index_node *node, const char *str);
 void index_write(const struct index_node *node, FILE *out);
 
+struct index_file *index_file_open(const char *filename);
+void index_file_close(struct index_file *index);
+
 /* Dump all strings in index as lines in a plain text file
    (prefix is prepended to each line)
 */
-void index_dump(FILE *in, FILE *out, const char *prefix);
+void index_dump(struct index_file *in, FILE *out, const char *prefix);
 
 /* Return value for first matching key.
    Keys must be exactly equal to match - i.e. there are no wildcard patterns
 */
-char *index_search(FILE *in, const char *key);
+char *index_search(struct index_file *index, const char *key);
 
 /* Return values for all matching keys.
    The keys in the index are treated as wildcard patterns using fnmatch()
 */
-struct index_value *index_searchwild(FILE *in, const char *key);
+struct index_value *index_searchwild(struct index_file *index, const char *key);
 
 #endif /* MODINITTOOLS_INDEX_H */

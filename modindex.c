@@ -75,51 +75,52 @@ static void write_index(const char *filename)
 	fclose(cfile);
 }
 
-static void dump_index(const char *filename)
+static struct index_file *open_index(const char *filename)
 {
-	FILE *cfile;
-	
-	cfile = fopen(filename, "r");
-	if (!cfile)
+	struct index_file *index;
+
+	index = index_file_open(filename);
+	if (!index) {
+		if (errno == EINVAL)
+			fatal("%s has wrong magic or version number", filename);
+
 		fatal("Could not open %s for reading: %s\n",
 		      filename, strerror(errno));
-	
-	index_dump(cfile, stdout, "");
-	
-	fclose(cfile);
+	}
+
+	return index;
+}
+
+static void dump_index(const char *filename)
+{
+	struct index_file *index = open_index(filename);
+
+	index_dump(index, stdout, "");
+
+	index_file_close(index);
 }
 
 static void search_index(const char *filename, char *key)
 {
+	struct index_file *index = open_index(filename);
 	char *value;
-	FILE *cfile;
-	
-	cfile = fopen(filename, "r");
-	if (!cfile)
-		fatal("Could not open %s for reading: %s\n",
-		      filename, strerror(errno));
-	
-	value = index_search(cfile, key);
+
+	value = index_search(index, key);
 	if (value)
 		printf("Found value:\n%s\n", value);
 	else
 		printf("Not found.\n");
 	
 	free(value);
-	fclose(cfile);
+	index_file_close(index);
 }
 
 static void searchwild_index(const char *filename, char *key)
 {
+	struct index_file *index = open_index(filename);
 	struct index_value *values;
-	FILE *cfile;
-	
-	cfile = fopen(filename, "r");
-	if (!cfile)
-		fatal("Could not open %s for reading: %s\n",
-		      filename, strerror(errno));
-	
-	values = index_searchwild(cfile, key);
+
+	values = index_searchwild(index, key);
 	if (values)
 		printf("Found value(s):\n");
 	else
@@ -133,7 +134,7 @@ static void searchwild_index(const char *filename, char *key)
 		values = next;
 	}
 	
-	fclose(cfile);
+	index_file_close(index);
 }
 
 static void print_usage(const char *progname)
