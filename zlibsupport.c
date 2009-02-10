@@ -21,33 +21,21 @@
 void *grab_contents(gzFile *gzfd, unsigned long *size)
 {
 	unsigned int max = 16384;
-	void *buffer = malloc(max);
+	void *buffer = NOFAIL(malloc(max));
 	int ret;
-
-	if (!buffer)
-		return NULL;
 
 	*size = 0;
 	while ((ret = gzread(gzfd, buffer + *size, max - *size)) > 0) {
 		*size += ret;
-		if (*size == max) {
-			void *p;
-
-			p = realloc(buffer, max *= 2);
-			if (!p)
-				goto out_err;
-
-			buffer = p;
-		}
+		if (*size == max)
+			buffer = NOFAIL(realloc(buffer, max *= 2));
 	}
-	if (ret < 0)
-		goto out_err;
+	if (ret < 0) {
+		free(buffer);
+		buffer = NULL;
+	}
 
 	return buffer;
-
-out_err:
-	free(buffer);
-	return NULL;
 }
 
 void *grab_fd(int fd, unsigned long *size)
@@ -55,8 +43,11 @@ void *grab_fd(int fd, unsigned long *size)
 	gzFile gzfd;
 
 	gzfd = gzdopen(fd, "rb");
-	if (!gzfd)
+	if (!gzfd) {
+		if (errno == ENOMEM)
+			fatal("Memory allocation failure in gzdopen\n");
 		return NULL;
+	}
 
 	/* gzclose(gzfd) would close fd, which would drop locks.
 	   Don't blame zlib: POSIX locking semantics are so horribly
@@ -70,9 +61,13 @@ void *grab_file(const char *filename, unsigned long *size)
 	gzFile gzfd;
 	void *buffer;
 
+	errno = 0;
 	gzfd = gzopen(filename, "rb");
-	if (!gzfd)
+	if (!gzfd) {
+		if (errno == ENOMEM)
+			fatal("Memory allocation failure in gzopen\n");
 		return NULL;
+	}
 	buffer = grab_contents(gzfd, size);
 	gzclose(gzfd);
 	return buffer;
