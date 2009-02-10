@@ -55,6 +55,7 @@ struct module_search
 
 	/* search path */
 	char *search_path;
+	size_t len;
 };
 
 static int verbose;
@@ -553,7 +554,6 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
 			      struct module_search *search,
 			      struct module_overrides *overrides)
 {
-	char *p, *q, *s;
 	struct module_search *tmp;
 	struct module_overrides *ovtmp;
 	int i = 0;
@@ -561,63 +561,31 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
 	int prio_new = -1;
 	int prio_old = -1;
 
-/* The names already match, now we check for wildcard overrides and other
- * high priority overrides we added to the config.
+/* The names already match, now we check for overrides and directory search
+ * order
  */
-	for (ovtmp=overrides;ovtmp!=NULL;ovtmp=ovtmp->next) {
-
-		p = strstr(ovtmp->modfile,newpath);
-		if (p)
+	for (ovtmp = overrides; ovtmp != NULL; ovtmp = ovtmp->next) {
+		if (strcmp(ovtmp->modfile, newpath) == 0)
 			return 1;
-
-		q = strstr(ovtmp->modfile,"*");
-		if (q) {
-			p = strstr(newpath, q+1);
-			if (p)
-				return 1;
-
-			p = strstr(oldpath, q+1);
-			if (p)
-				return 0;
-		}
-
-		p = strstr(ovtmp->modfile,oldpath);
-		if (p)
+		if (strcmp(ovtmp->modfile, oldpath) == 0)
 			return 0;
 	}
-	
-	for (i=0,tmp=search;tmp!=NULL;tmp=tmp->next,i++) {
-
-		s = NOFAIL(malloc(strlen(tmp->search_path)+2));
-		s[0] = '/';
-		strncpy(s+1,tmp->search_path, strlen(tmp->search_path)+1);
-
-		if (0 == strncmp(tmp->search_path,MODULE_BUILTIN_KEY,
-				 strlen(MODULE_BUILTIN_KEY)))
+	for (i = 0, tmp = search; tmp != NULL; tmp = tmp->next, i++) {
+		if (strcmp(tmp->search_path, MODULE_BUILTIN_KEY) == 0)
 			prio_builtin = i;
-			
-		p = strstr(newpath,s);
-		if ((p) && ((p[strlen(s)] == '/')
-			||  (p[strlen(s)] == '\0')))
+		else if (strncmp(tmp->search_path, newpath, tmp->len) == 0)
 			prio_new = i;
-
-		p = strstr(oldpath,s);
-		if ((p) && ((p[strlen(s)] == '/')
-			||  (p[strlen(s)] == '\0')))
+		else if (strncmp(tmp->search_path, oldpath, tmp->len) == 0)
 			prio_old = i;
-	
-		free(s);
-		
 	}
-
+	if (prio_builtin < 0)
+		prio_builtin = i;
 	if (prio_new < 0)
 		prio_new = prio_builtin;
-	
 	if (prio_old < 0)
 		prio_old = prio_builtin;
 
 	return prio_new > prio_old;
-	
 }
 
 
@@ -1087,6 +1055,7 @@ static char *strsep_skipspace(char **string, char *delim)
 }
 
 static struct module_search *add_search(const char *search_path,
+					size_t len,
 					struct module_search *search)
 {
 
@@ -1094,6 +1063,7 @@ static struct module_search *add_search(const char *search_path,
 	
 	new = NOFAIL(malloc(sizeof(*new)));
 	new->search_path = NOFAIL(strdup(search_path));
+	new->len = len;
 	new->next = search;
 
 	return new;
@@ -1117,11 +1087,13 @@ static struct module_overrides *add_override(const char *modfile,
 /* Recursion */
 static int read_config(const char *filename,
 		       const char *basedir,
+		       const char *kernelversion,
 		       struct module_search **search,
 		       struct module_overrides **overrides);
 
 static int read_config_file(const char *filename,
 			    const char *basedir,
+			    const char *kernelversion,
 			    struct module_search **search,
                             struct module_overrides **overrides)
 {
@@ -1151,25 +1123,49 @@ static int read_config_file(const char *filename,
 		if (strcmp(cmd, "search") == 0) {
 			char *search_path;
 			
-			while ((search_path = strsep_skipspace(&ptr, "\t ")))
-				*search = add_search(search_path, *search);
+			while ((search_path = strsep_skipspace(&ptr, "\t "))) {
+				char *dirname;
+				size_t len;
+
+				if (strcmp(search_path,
+						MODULE_BUILTIN_KEY) == 0) {
+					*search = add_search(MODULE_BUILTIN_KEY,
+							     0, *search);
+					continue;
+				}
+				len = strlen(basedir)
+				    + strlen(MODULE_DIR)
+				    + strlen(kernelversion)
+				    + 1
+				    + strlen(search_path);
+				dirname = NOFAIL(malloc(len + 1));
+				sprintf(dirname, "%s%s%s/%s", basedir,
+					MODULE_DIR, kernelversion, search_path);
+				*search = add_search(dirname, len, *search);
+				free(dirname);
+			}
 		} else if (strcmp(cmd, "override") == 0) {
 			char *pathname = NULL, *version, *subdir;
 			modname = strsep_skipspace(&ptr, "\t ");
 			version = strsep_skipspace(&ptr, "\t ");
 			subdir = strsep_skipspace(&ptr, "\t ");
 
+			if (strcmp(version, kernelversion) != 0 &&
+			    strcmp(version, "*") != 0)
+				continue;
+
 			pathname = NOFAIL(malloc(strlen(basedir)
 				               + strlen(MODULE_DIR)
-					       + strlen(version)
+					       + strlen(kernelversion)
 					       + strlen(subdir)
 					       + strlen(modname)
 					       + strlen(".ko")
 					       + 3));
 			sprintf(pathname, "%s%s%s/%s/%s.ko", basedir,
-				MODULE_DIR, version, subdir, modname);
+				MODULE_DIR, kernelversion, subdir, modname);
 
 			*overrides = add_override(pathname, *overrides);
+			free(pathname);
 		} else if (strcmp(cmd, "include") == 0) {
 			char *newfilename;
 
@@ -1178,6 +1174,7 @@ static int read_config_file(const char *filename,
 				grammar(cmd, filename, linenum);
 			else {
 				if (!read_config(newfilename, basedir,
+						 kernelversion,
 						 search, overrides))
 					warn("Failed to open included"
 					     " config file %s: %s\n",
@@ -1211,6 +1208,7 @@ static int read_config_file(const char *filename,
    Returns true or false. */
 static int read_config(const char *filename,
 		       const char *basedir,
+		       const char *kernelversion,
 		       struct module_search **search,
                        struct module_overrides **overrides)
 {
@@ -1227,8 +1225,8 @@ static int read_config(const char *filename,
 				       + strlen(i->d_name) + 1];
 
 				sprintf(sub, "%s/%s", filename, i->d_name);
-				if (!read_config(sub, basedir, search,
-						 overrides))
+				if (!read_config(sub, basedir, kernelversion,
+						 search, overrides))
 					warn("Failed to open"
 					     " config file %s: %s\n",
 					     sub, strerror(errno));
@@ -1237,7 +1235,8 @@ static int read_config(const char *filename,
 		closedir(dir);
 		ret = 1;
 	} else {
-		if (read_config_file(filename, basedir, search, overrides))
+		if (read_config_file(filename, basedir, kernelversion, search,
+				     overrides))
 			ret = 1;
 	}
 
@@ -1252,13 +1251,15 @@ static const char *default_configs[] =
 
 static void read_toplevel_config(const char *filename,
 				 const char *basedir,
+				 const char *kernelversion,
 				 struct module_search **search,
                                  struct module_overrides **overrides)
 {
 	unsigned int i;
 
 	if (filename) {
-		if (!read_config(filename, basedir, search, overrides))
+		if (!read_config(filename, basedir, kernelversion, search,
+				 overrides))
 			fatal("Failed to open config file %s: %s\n",
 			      filename, strerror(errno));
 		return;
@@ -1266,7 +1267,8 @@ static void read_toplevel_config(const char *filename,
 
 	/* Try defaults. */
 	for (i = 0; i < ARRAY_SIZE(default_configs); i++) {
-		read_config(default_configs[i], basedir, search, overrides);
+		read_config(default_configs[i], basedir, kernelversion,
+			    search, overrides);
 	}
 }
 
@@ -1378,14 +1380,14 @@ int main(int argc, char *argv[])
 		all = 1;
 	}
 
-	read_toplevel_config(config, basedir, &search, &overrides);
+	read_toplevel_config(config, basedir, version, &search, &overrides);
 
 	/* For backward compatibility add "updates" to the head of the search
 	 * list here. But only if there was no "search" option specified.
 	 */
 
 	if (!search)
-		search = add_search("updates",search);
+		search = add_search("updates", strlen("updates"), search);
 	
 	if (!all) {
 		/* Do command line args. */
