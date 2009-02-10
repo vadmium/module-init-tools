@@ -11,8 +11,10 @@ config.status
 config.sub
 configure
 depcomp
+install-sh
 Makefile.in
 Makefile
+missing
 
 # Compiled executables
 *.o
