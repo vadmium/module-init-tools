@@ -7,8 +7,8 @@ extern int logging;
 /* Number of times warn() has been called */
 extern int warned;
 
-void fatal(const char *fmt, ...);
-void warn(const char *fmt, ...);
+extern void fatal(const char *fmt, ...);
+extern void warn(const char *fmt, ...);
 
 #define NOFAIL(ptr)  do_nofail((ptr), __FILE__, __LINE__, #ptr)
 

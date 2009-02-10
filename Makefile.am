@@ -3,7 +3,7 @@ lsmod_SOURCES = lsmod.c testing.h
 modprobe_SOURCES = modprobe.c logging.c index.c zlibsupport.c config_filter.c logging.h index.h testing.h zlibsupport.h config_filter.h
 rmmod_SOURCES = rmmod.c testing.h
 depmod_SOURCES = depmod.c logging.c index.c moduleops.c tables.c zlibsupport.c config_filter.c depmod.h logging.h index.h moduleops.h tables.h list.h testing.h  zlibsupport.h config_filter.h
-modinfo_SOURCES = modinfo.c zlibsupport.c testing.h zlibsupport.h
+modinfo_SOURCES = modinfo.c logging.c zlibsupport.c testing.h zlibsupport.h
 modindex_SOURCES = modindex.c logging.c index.c logging.h index.h
 
 insmod_static_SOURCES = insmod.c

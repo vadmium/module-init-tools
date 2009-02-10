@@ -8,11 +8,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
 
 #include "zlibsupport.h"
+#include "logging.h"
 #include "testing.h"
 
 #ifdef CONFIG_USE_ZLIB
