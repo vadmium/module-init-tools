@@ -395,12 +395,15 @@ int main(int argc, char *argv[])
 		case '0': sep = '\0'; break;
 		case 'k': kernel = optarg; break;
 		case 'b': basedir = optarg; break;
+		case 'h': usage(argv[0]); exit(0); break;
 		default:
-			usage(argv[0]); exit(0);
+			usage(argv[0]); exit(1);
 		}
 	}
-	if (argc < optind + 1)
+	if (argc < optind + 1) {
 		usage(argv[0]);
+		exit(1);
+	}
 
 	for (opt = optind; opt < argc; opt++) {
 		void *info, *mod;
