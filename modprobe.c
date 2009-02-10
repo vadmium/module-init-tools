@@ -698,6 +698,20 @@ static char *append_option(char *options, const char *newoption)
 	return options;
 }
 
+static char *prepend_option(char *options, const char *newoption)
+{
+	size_t l1, l2;
+	l1 = strlen(options);
+	l2 = strlen(newoption);
+	/* the resulting string will look like
+	 * newoption + ' ' + options + '\0' */
+	options = NOFAIL(realloc(options, l2 + 1 + l1 + 1));
+	memmove(options + l2 + 1, options, l1 + 1);
+	options[l2] = ' ';
+	memcpy(options, newoption, l2);
+	return options;
+}
+
 /* Add to options */
 static char *add_extra_options(const char *modname,
 			       char *optstring,
@@ -705,7 +719,7 @@ static char *add_extra_options(const char *modname,
 {
 	while (options) {
 		if (strcmp(options->modulename, modname) == 0)
-			optstring = append_option(optstring, options->options);
+			optstring = prepend_option(optstring, options->options);
 		options = options->next;
 	}
 	return optstring;
