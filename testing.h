@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <time.h>
 
 /* We don't use all of these. */
 static int modtest_uname(struct utsname *buf) __attribute__((unused));
@@ -69,6 +70,11 @@ static long modtest_create_module(const char *name, size_t size)
 static long modtest_init_module(void *map, unsigned long size,
 				const char *optstring)
 {
+	const struct timespec delay = {
+		.tv_sec = 0,
+		.tv_nsec = 500 * 1000 * 1000
+	};
+
 	if (getenv("MODPROBE_WAIT")) {
 		int fd;
 		const char *file = getenv("MODPROBE_WAIT");
@@ -76,7 +82,7 @@ static long modtest_init_module(void *map, unsigned long size,
 		printf("Looping on %s\n", file);
 		fflush(stdout);
 		while ((fd = open(file, O_RDONLY)) < 0)
-			sleep(1);
+			nanosleep(&delay, NULL);
 		close(fd);
 		printf("Removing %s\n", file);
 		unlink(file);

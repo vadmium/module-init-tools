@@ -101,19 +101,19 @@ SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
 
 # Should be looping.
 ./modprobe export_nodep-$BITNESS > tests/tmp/out1 2>&1 &
-sleep 2
+sleep 1
 
 [ "`cat tests/tmp/out1`" = "Looping on tests/tmp/continue" ]
 
 # Second one should wait.
 ./modprobe -r export_nodep-$BITNESS > tests/tmp/out2 2>&1 &
-sleep 2
+sleep 1
 
 [ "`cat tests/tmp/out2`" = "" ]
 
 # Release first one
 touch tests/tmp/continue
-sleep 2
+sleep 1
 
 # Should have exited and cleaned up
 [ "`cat tests/tmp/out1`" = "Looping on tests/tmp/continue
@@ -126,7 +126,7 @@ INIT_MODULE: $SIZE " ]
 
 # Release second one
 touch tests/tmp/continue
-sleep 2
+sleep 1
 
 # Should have exited and cleaned up
 [ "`cat tests/tmp/out2`" = "Looping on tests/tmp/continue
