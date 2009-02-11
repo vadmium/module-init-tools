@@ -141,7 +141,7 @@ alias foo noexport_nodep-$BITNESS
 options foo fooopt
 EOF
 
-[ "`./modprobe --show-depends foo`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko fooopt opt1" ]
+[ "`./modprobe --show-depends foo`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko opt1 fooopt" ]
 # Nothing in stderr...
 [ `wc -c < tests/tmp/stderr` = 0 ]
 

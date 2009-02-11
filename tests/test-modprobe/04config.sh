@@ -216,55 +216,55 @@ SYSTEM: echo Removing export_nodep" ]
 
 # Test options
 [ "`./modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep" ]
-[ "`./modprobe noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP OPTIONS I am noexport_nodep" ]
+[ "`./modprobe noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep OPTIONS" ]
 
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep" ]
 [ "`./modprobe noexport_dep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_NOEXPORT_DEP OPTIONS I am noexport_dep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep OPTIONS" ]
 
 [ "`./modprobe export_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep" ]
 [ "`./modprobe export_dep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_EXPORT_DEP OPTIONS I am export_dep" ]
+INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep OPTIONS" ]
 
 [ "`./modprobe noexport_doubledep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep
 INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep" ]
 [ "`./modprobe noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep
-INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP OPTIONS I am noexport_doubledep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep OPTIONS" ]
 
 # Test aliases doing insertion.
-[ "`./modprobe alias_to_noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am alias to noexport_nodep I am noexport_nodep" ]
-[ "`./modprobe alias_to_noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP OPTIONS I am alias to noexport_nodep I am noexport_nodep" ]
+[ "`./modprobe alias_to_noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep I am alias to noexport_nodep" ]
+[ "`./modprobe alias_to_noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep I am alias to noexport_nodep OPTIONS" ]
 
 [ "`./modprobe alias_to_noexport_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_NOEXPORT_DEP I am alias to noexport_dep I am noexport_dep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep I am alias to noexport_dep" ]
 [ "`./modprobe alias_to_noexport_dep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_NOEXPORT_DEP OPTIONS I am alias to noexport_dep I am noexport_dep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep I am alias to noexport_dep OPTIONS" ]
 
 [ "`./modprobe alias_to_export_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_EXPORT_DEP I am alias to export_dep I am export_dep" ]
+INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep I am alias to export_dep" ]
 [ "`./modprobe alias_to_export_dep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
-INIT_MODULE: $SIZE_EXPORT_DEP OPTIONS I am alias to export_dep I am export_dep" ]
+INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep I am alias to export_dep OPTIONS" ]
 
 [ "`./modprobe alias_to_noexport_doubledep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep
-INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am alias to noexport_doubledep I am noexport_doubledep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep I am alias to noexport_doubledep" ]
 [ "`./modprobe alias_to_noexport_doubledep-$BITNESS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep
-INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am alias to noexport_doubledep I am noexport_doubledep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep I am alias to noexport_doubledep" ]
 [ "`./modprobe alias_to_noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "SYSTEM: echo Installing export_nodep
 INIT_MODULE: $SIZE_EXPORT_DEP I am export_dep
-INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP OPTIONS I am alias to noexport_doubledep I am noexport_doubledep" ]
+INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep I am alias to noexport_doubledep OPTIONS" ]
 
 [ "`./modprobe alias_to_foo 2>&1`" = "SYSTEM: echo Installing foo" ]
 [ "`./modprobe alias_to_bar 2>&1`" = "SYSTEM: echo Installing bar" ]
 [ "`./modprobe alias_to_baz 2>&1`" = "SYSTEM: echo Installing baz" ]
 
 # Test tab-to-spaces conversion, and \ wrapping.
-[ "`./modprobe alias_to_noexport_nodep-$BITNESS_with_tabbed_options 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP index=0 id=\"Thinkpad\" isapnp=0  port=0x530 cport=0x538 fm_port=0x388  mpu_port=-1 mpu_irq=-1  irq=9 dma1=1 dma2=3  enable=1 isapnp=0 I am noexport_nodep" ]
+[ "`./modprobe alias_to_noexport_nodep-$BITNESS_with_tabbed_options 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep index=0 id=\"Thinkpad\" isapnp=0  port=0x530 cport=0x538 fm_port=0x388  mpu_port=-1 mpu_irq=-1  irq=9 dma1=1 dma2=3  enable=1 isapnp=0" ]
 
 # Test aliases doing removal.
 [ "`./modprobe -r alias_to_noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]

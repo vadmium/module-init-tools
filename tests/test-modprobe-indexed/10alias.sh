@@ -79,14 +79,14 @@ echo "bar alias_$BITNESS" > tests/tmp/modules.alias.bin.temp
 ./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
 echo "options bar option1" > tests/tmp/modprobe.conf
 echo "options alias_$BITNESS option2" >> tests/tmp/modprobe.conf
-[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option1 option2" ]
+[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option2 option1" ]
 
 # Duplicated alias: both get probed (either order)
 echo "bar foo" >> tests/tmp/modules.alias.bin.temp
 ./modindex -o tests/tmp/modules.alias.bin < tests/tmp/modules.alias.bin.temp
 OUT="`./modprobe bar 2>&1`"
 
-[ "$OUT" = "INIT_MODULE: $SIZE option1 option2
+[ "$OUT" = "INIT_MODULE: $SIZE option2 option1
 INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1
-INIT_MODULE: $SIZE option1 option2" ]
+INIT_MODULE: $SIZE option2 option1" ]
 done
