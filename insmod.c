@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <asm/unistd.h>
 
+#include "testing.h"
 #include "backwards_compat.c"
 
 #define streq(a,b) (strcmp((a),(b)) == 0)
