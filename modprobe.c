@@ -761,7 +761,11 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	const int ATTR_LEN = 16;
 	char attr[ATTR_LEN];
 
-	/* Find module. We assume sysfs is mounted. */
+	/* Check sysfs is mounted */
+	if (stat("/sys/module", &finfo) < 0)
+		return -1;
+
+	/* Find module. */
 	nofail_asprintf(&name, "/sys/module/%s", modname);
 	ret = stat(name, &finfo);
 	free(name);
@@ -1533,11 +1537,6 @@ static void handle_module(const char *modname,
 			  const char *cmdline_opts,
 			  int flags)
 {
-	struct stat finfo;
-
-	if (stat("/sys/module", &finfo) < 0)
-		fatal("/sys is not mounted.\n");
-
 	if (list_empty(todo_list)) {
 		const char *command;
 

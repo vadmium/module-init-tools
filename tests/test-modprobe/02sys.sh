@@ -45,6 +45,10 @@ MODTEST_OVERRIDE10=/sys/module/export_nodep_$BITNESS/initstate
 MODTEST_OVERRIDE_WITH10=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
 
+MODTEST_OVERRIDE11=/sys/module
+MODTEST_OVERRIDE_WITH11=tests/tmp/sys/module
+export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
+
 # Now create modules.dep
 cat > tests/tmp/modules.dep <<EOF
 noexport_nodep-$BITNESS.ko:
@@ -58,17 +62,26 @@ EOF
 #export_nodep-$BITNESS export_nodep-$BITNESS.ko:
 #EOF
 
+# TODO: make this more complete (like the original 02proc.sh)
+
+SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
+SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+
+# If it can't open /sys/module, it should try anyway.
+rm -rf tests/tmp/sys/module
+
+[ "`./modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
+[ "`./modprobe export_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP " ]
+
+[ "`./modprobe -r noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]
+[ "`./modprobe -r export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
+
 # Now make a fake /sys/module structure for the test
 mkdir -p tests/tmp/sys/module
 mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
 mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
 touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
 touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-
-SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
-
-# TODO: maybe make this more complete (like the original 02proc.sh)
 
 # Test load the modules
 
