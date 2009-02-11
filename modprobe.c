@@ -705,10 +705,16 @@ static char *prepend_option(char *options, const char *newoption)
 	l2 = strlen(newoption);
 	/* the resulting string will look like
 	 * newoption + ' ' + options + '\0' */
-	options = NOFAIL(realloc(options, l2 + 1 + l1 + 1));
-	memmove(options + l2 + 1, options, l1 + 1);
-	options[l2] = ' ';
-	memcpy(options, newoption, l2);
+	if (l1) {
+		options = NOFAIL(realloc(options, l2 + 1 + l1 + 1));
+		memmove(options + l2 + 1, options, l1 + 1);
+		options[l2] = ' ';
+		memcpy(options, newoption, l2);
+	} else {
+		options = NOFAIL(realloc(options, l2 + 1));
+		memcpy(options, newoption, l2);
+		options[l2] = '\0';
+	}
 	return options;
 }
 
