@@ -38,5 +38,6 @@ patches
 series
 
 # test output
+tests/tmp
 tests/data/32
 tests/data/64
