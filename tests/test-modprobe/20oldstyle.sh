@@ -3,38 +3,21 @@
 for BITNESS in 32 64; do
 
 rm -rf tests/tmp/*
-mkdir tests/tmp/drivers tests/tmp/other tests/tmp/drivers/type tests/tmp/other/type
-cp tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko tests/tmp/drivers/type/
-cp tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko tests/tmp/other/type/
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR/drivers/type
+ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR/drivers/type
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/type
-MODTEST_OVERRIDE_WITH2=tests/tmp/type
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH3=tests/tmp/drivers/type/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/other/type/export_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH4=tests/tmp/other/type/export_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH5=tests/tmp/DOES_NOT_EXIST
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOES-NOT-EXIST
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
+mkdir -p $MODULE_DIR/other/type
+ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+   $MODULE_DIR/other/type
 
 # Set up modules.dep file.
-echo "# A comment" > tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/other/type/export_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "# A comment" > $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/other/type/export_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)

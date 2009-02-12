@@ -6,21 +6,20 @@
 for ENDIAN in -le -be; do
 for BITNESS in 32 64; do
 
-gzip < tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko > tests/tmp/modinfo-$BITNESS.ko.gz
+rm -rf tests/tmp/*
 
-# Inputs
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+# Copy modules instead of linking, so we can compress them
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+cp tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko \
+   $MODULE_DIR
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko.gz
-MODTEST_OVERRIDE_WITH2=tests/tmp/modinfo-$BITNESS.ko.gz
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+gzip $MODULE_DIR/modinfo-$BITNESS.ko
 
-echo "/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko.gz: /lib/modules/$MODTEST_UNAME/modinfo-crap-$BITNESS.ko.gz" > tests/tmp/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko.gz: /lib/modules/$MODTEST_UNAME/modinfo-crap-$BITNESS.ko.gz" > $MODULE_DIR/modules.dep
 
 # Test individual field extraction: by module search and abs. path
-for file in modinfo-$BITNESS tests/tmp/modinfo-$BITNESS.ko.gz; do
+for file in modinfo-$BITNESS $MODULE_DIR/modinfo-$BITNESS.ko.gz; do
     [ "`./modinfo -F randomcrap $file 2>&1`" = "my random crap which I use to test stuff with" ]
     [ "`./modinfo -F vermagic $file 2>&1`" = "my magic" ]
     [ "`./modinfo -F author $file 2>&1`" = "AUTHOR" ]
@@ -41,11 +40,11 @@ described:uint" ]
 done
 
 # Test multiple modules on cmdline.
-[ "`./modinfo -F vermagic tests/tmp/modinfo-$BITNESS.ko.gz tests/tmp/modinfo-$BITNESS.ko.gz 2>&1`" = "my magic
+[ "`./modinfo -F vermagic $MODULE_DIR/modinfo-$BITNESS.ko.gz $MODULE_DIR/modinfo-$BITNESS.ko.gz 2>&1`" = "my magic
 my magic" ]
 
 # Test 0-fill
-[ "`./modinfo -0 -F alias tests/tmp/modinfo-$BITNESS.ko.gz 2>&1 | tr '\000' @`" = "ALIAS1@ALIAS2@" ]
+[ "`./modinfo -0 -F alias $MODULE_DIR/modinfo-$BITNESS.ko.gz 2>&1 | tr '\000' @`" = "ALIAS1@ALIAS2@" ]
 
 done
 done

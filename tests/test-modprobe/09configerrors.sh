@@ -1,20 +1,16 @@
 #! /bin/sh
 
 # Test various config file errors.
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=/dev/null
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
 
-MODTEST_OVERRIDE2=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH2=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH3=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+touch $MODULE_DIR/modules.dep
 
 # Test bad alias syntax
-cat > tests/tmp/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc
+cat > tests/tmp/etc/modprobe.conf <<EOF
 alias
 alias foo
 EOF
@@ -24,7 +20,7 @@ WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'alias'
 FATAL: Module foo not found." ]
 
 # Bad option syntax
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 options
 options foo
 EOF
@@ -34,7 +30,7 @@ WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'options'
 FATAL: Module foo not found." ]
 
 # Bad include syntax
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 include
 EOF
 
@@ -42,7 +38,7 @@ EOF
 FATAL: Module foo not found." ]
 
 # Bad install syntax
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 install
 install foo
 EOF
@@ -52,7 +48,7 @@ WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'install'
 FATAL: Module foo not found." ]
 
 # Bad remove syntax
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 remove
 remove foo
 EOF
@@ -62,7 +58,7 @@ WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 # Complete junk
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 complete junk and stuff
 rubbish
 EOF
@@ -72,34 +68,34 @@ WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'rubbish'
 FATAL: Module foo not found." ]
 
 # Line numbering counted correctly.
-echo "#comment" > tests/tmp/modprobe.conf
-echo "remove" >> tests/tmp/modprobe.conf
+echo "#comment" > tests/tmp/etc/modprobe.conf
+echo "remove" >> tests/tmp/etc/modprobe.conf
 
 [ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
-echo "" > tests/tmp/modprobe.conf
-echo "remove" >> tests/tmp/modprobe.conf
+echo "" > tests/tmp/etc/modprobe.conf
+echo "remove" >> tests/tmp/etc/modprobe.conf
 
 [ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
-echo "  # Comment" > tests/tmp/modprobe.conf
-echo "remove" >> tests/tmp/modprobe.conf
+echo "  # Comment" > tests/tmp/etc/modprobe.conf
+echo "remove" >> tests/tmp/etc/modprobe.conf
 
 [ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
-echo "  # Comment \\" > tests/tmp/modprobe.conf
-echo "with multiple lines" >> tests/tmp/modprobe.conf
-echo "remove" >> tests/tmp/modprobe.conf
+echo "  # Comment \\" > tests/tmp/etc/modprobe.conf
+echo "with multiple lines" >> tests/tmp/etc/modprobe.conf
+echo "remove" >> tests/tmp/etc/modprobe.conf
 
 [ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.conf line 3: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
-echo "remove foo \\" > tests/tmp/modprobe.conf
-echo "  bar" >> tests/tmp/modprobe.conf
-echo "remove" >> tests/tmp/modprobe.conf
+echo "remove foo \\" > tests/tmp/etc/modprobe.conf
+echo "  bar" >> tests/tmp/etc/modprobe.conf
+echo "remove" >> tests/tmp/etc/modprobe.conf
 [ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.conf line 3: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 

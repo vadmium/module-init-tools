@@ -4,60 +4,24 @@
 
 for BITNESS in 32 64; do
 
-# Inputs
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME
-MODTEST_OVERRIDE_WITH1=tests/data/$BITNESS/normal
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH3=tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH4=tests/tmp/modules.dep
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH5=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH6=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
-
-MODTEST_OVERRIDE7=/sys/module/noexport_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH7=tests/tmp/sys/module/noexport_nodep_$BITNESS
-export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
-
-MODTEST_OVERRIDE8=/sys/module/noexport_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH8=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
-
-MODTEST_OVERRIDE9=/sys/module/export_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH9=tests/tmp/sys/module/export_nodep_$BITNESS
-export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
-
-MODTEST_OVERRIDE10=/sys/module/export_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH10=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
-
-MODTEST_OVERRIDE11=/sys/module
-MODTEST_OVERRIDE_WITH11=tests/tmp/sys/module
-export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR
 
 # Now create modules.dep
-cat > tests/tmp/modules.dep <<EOF
+cat > $MODULE_DIR/modules.dep <<EOF
 noexport_nodep-$BITNESS.ko:
 export_nodep-$BITNESS.ko:
 EOF
 
 #TODO: If we decided to do this later...
 # Now create modules.dep.bin
-#cat | ./modindex -o tests/tmp/modules.dep.bin <<EOF
+#cat | ./modindex -o $MODULE_DIR/modules.dep.bin <<EOF
 #noexport_nodep-$BITNESS noexport_nodep-$BITNESS.ko:
 #export_nodep-$BITNESS export_nodep-$BITNESS.ko:
 #EOF

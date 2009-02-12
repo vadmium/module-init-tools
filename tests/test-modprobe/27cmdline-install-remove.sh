@@ -2,30 +2,22 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH3=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH4=FILE-WHICH-DOES-NOT-EXIST
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR
 
 # Set up modules.dep file.
-echo "# A comment" > tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "# A comment" > $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 # Set up modprobe.conf file: one at end, one with text either side.
-echo "options noexport_nodep-$BITNESS file-options" > tests/tmp/modprobe.conf
-echo "install noexport_nodep-$BITNESS modprobe --ignore-install noexport_nodep-$BITNESS \$CMDLINE_OPTS" >> tests/tmp/modprobe.conf
-echo "install othertarget echo \$CMDLINE_OPTS otheropts" >> tests/tmp/modprobe.conf
+mkdir -p tests/tmp/etc
+echo "options noexport_nodep-$BITNESS file-options" > tests/tmp/etc/modprobe.conf
+echo "install noexport_nodep-$BITNESS modprobe --ignore-install noexport_nodep-$BITNESS \$CMDLINE_OPTS" >> tests/tmp/etc/modprobe.conf
+echo "install othertarget echo \$CMDLINE_OPTS otheropts" >> tests/tmp/etc/modprobe.conf
 
 # With quoted args
 [ "`./modprobe noexport_nodep-$BITNESS 'foo="bar baz"' 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]

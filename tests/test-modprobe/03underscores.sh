@@ -3,41 +3,15 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR
 
-MODTEST_OVERRIDE3=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH3=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=include-_
-MODTEST_OVERRIDE_WITH4=tests/tmp/modprobe.conf.included
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/proc/modules
-MODTEST_OVERRIDE_WITH5=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH6=tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
-
-MODTEST_OVERRIDE7=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
-
-MODTEST_OVERRIDE8=/sys/module/noexport_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH8=tests/tmp/sys/module/noexport_nodep_$BITNESS
-export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
-
-MODTEST_OVERRIDE9=/sys/module/noexport_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH9=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
 
 # Now make a fake /sys/module structure for the test
 mkdir -p tests/tmp/sys/module
@@ -45,17 +19,18 @@ mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
 touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
 
 # Set up modules.dep file.
-echo "# A comment" > tests/tmp/modules.dep
-echo "noexport_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
-echo "export_nodep-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "# A comment" > $MODULE_DIR/modules.dep
+echo "noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
+echo "export_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 # Set up config file.
-echo "alias alias-_ noexport-nodep_$BITNESS" > tests/tmp/modprobe.conf
-echo "options export-nodep_$BITNESS option-_" >> tests/tmp/modprobe.conf
-echo "install test-_ echo install-_" >> tests/tmp/modprobe.conf
-echo "remove test-_ echo remove-_" >> tests/tmp/modprobe.conf
-echo "include include-_" >> tests/tmp/modprobe.conf
-echo "install test-include echo Included" >> tests/tmp/modprobe.conf.included
+mkdir -p tests/tmp/etc
+echo "alias alias-_ noexport-nodep_$BITNESS" > tests/tmp/etc/modprobe.conf
+echo "options export-nodep_$BITNESS option-_" >> tests/tmp/etc/modprobe.conf
+echo "install test-_ echo install-_" >> tests/tmp/etc/modprobe.conf
+echo "remove test-_ echo remove-_" >> tests/tmp/etc/modprobe.conf
+echo "include tests/tmp/include-_" >> tests/tmp/etc/modprobe.conf
+echo "install test-include echo Included" >> tests/tmp/include-_
 
 SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)

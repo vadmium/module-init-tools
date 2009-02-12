@@ -3,29 +3,25 @@
 
 for BITNESS in 32 64; do
 
+rm -rf tests/tmp/*
+
 # Simple dump out test.
-[ "`./modprobe -C /dev/null -c 2>&1`" = "" ]
-[ "`./modprobe --config /dev/null --showconfig 2>&1`" = "" ]
+touch tests/tmp/empty
+[ "`./modprobe -C /empty -c 2>&1`" = "" ]
+[ "`./modprobe --config /empty --showconfig 2>&1`" = "" ]
 
 # Explicitly mentioned config files must exist.
 [ "`./modprobe -C FILE-WHICH-DOESNT-EXIST foo 2>&1`" = "FATAL: Failed to open config file FILE-WHICH-DOESNT-EXIST: No such file or directory" ]
 
-# Default one doesn't have to.
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=/dev/null
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+touch $MODULE_DIR/modules.dep
 
-MODTEST_OVERRIDE2=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH2=FILE-WHICH-DOESNT-EXIST:
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH3=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
 [ "`./modprobe foo 2>&1`" = "FATAL: Module foo not found." ]
 
 # Create a simple config file.
-cat > tests/tmp/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc
+cat > tests/tmp/etc/modprobe.conf <<EOF
 # Various aliases
 alias alias_to_foo foo
 alias alias_to_bar bar
@@ -72,89 +68,16 @@ remove baz echo Removing baz
 alias alias_to_baz baz
 EOF
 
-# Inputs
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME
-MODTEST_OVERRIDE_WITH1=tests/data/$BITNESS/normal
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
-
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/export_dep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH3=tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH4=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH5=tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH6=tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
-
-MODTEST_OVERRIDE7=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH7=tests/tmp/modules.dep
-export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
-
-MODTEST_OVERRIDE8=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH8=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
-
-MODTEST_OVERRIDE9=/etc/modprobe.conf.included
-MODTEST_OVERRIDE_WITH9=tests/tmp/modprobe.conf.included
-export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
-
-MODTEST_OVERRIDE10=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH10=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
-
-MODTEST_OVERRIDE11=/sys/module/noexport_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH11=tests/tmp/sys/module/noexport_nodep_$BITNESS
-export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
-
-MODTEST_OVERRIDE12=/sys/module/noexport_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH12=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE12 MODTEST_OVERRIDE_WITH12
-
-MODTEST_OVERRIDE13=/sys/module/noexport_dep_$BITNESS
-MODTEST_OVERRIDE_WITH13=tests/tmp/sys/module/noexport_dep_$BITNESS
-export MODTEST_OVERRIDE13 MODTEST_OVERRIDE_WITH13
-
-MODTEST_OVERRIDE14=/sys/module/noexport_dep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH14=tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-export MODTEST_OVERRIDE14 MODTEST_OVERRIDE_WITH14
-
-MODTEST_OVERRIDE15=/sys/module/export_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH15=tests/tmp/sys/module/export_nodep_$BITNESS
-export MODTEST_OVERRIDE15 MODTEST_OVERRIDE_WITH15
-
-MODTEST_OVERRIDE16=/sys/module/export_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH16=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE16 MODTEST_OVERRIDE_WITH16
-
-MODTEST_OVERRIDE17=/sys/module/export_dep_$BITNESS
-MODTEST_OVERRIDE_WITH17=tests/tmp/sys/module/export_dep_$BITNESS
-export MODTEST_OVERRIDE17 MODTEST_OVERRIDE_WITH17
-
-MODTEST_OVERRIDE18=/sys/module/export_dep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH18=tests/tmp/sys/module/export_dep_$BITNESS/initstate
-export MODTEST_OVERRIDE18 MODTEST_OVERRIDE_WITH18
-
-MODTEST_OVERRIDE19=/sys/module/noexport_doubledep_$BITNESS
-MODTEST_OVERRIDE_WITH19=tests/tmp/sys/module/noexport_doubledep_$BITNESS
-export MODTEST_OVERRIDE19 MODTEST_OVERRIDE_WITH19
-
-MODTEST_OVERRIDE20=/sys/module/noexport_doubledep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH20=tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
-export MODTEST_OVERRIDE20 MODTEST_OVERRIDE_WITH20
+# Create inputs
+ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+   $MODULE_DIR
 
 # Now create modules.dep
-cat > tests/tmp/modules.dep <<EOF
+cat > $MODULE_DIR/modules.dep <<EOF
 noexport_nodep-$BITNESS.ko:
 noexport_doubledep-$BITNESS.ko: export_dep-$BITNESS.ko export_nodep-$BITNESS.ko
 noexport_dep-$BITNESS.ko: export_nodep-$BITNESS.ko

@@ -5,36 +5,39 @@
 
 for BITNESS in 32 64; do
 
+rm -rf tests/tmp/*
+
 # Simple dump out test.
-[ "`./modprobe -C /dev/null -c 2>&1`" = "" ]
-[ "`./modprobe --config /dev/null --showconfig 2>&1`" = "" ]
+touch tests/tmp/empty
+[ "`./modprobe -C /empty -c 2>&1`" = "" ]
+[ "`./modprobe --config /empty --showconfig 2>&1`" = "" ]
 
 # Explicitly mentioned config files must exist.
 [ "`./modprobe -C FILE-WHICH-DOESNT-EXIST foo 2>&1`" = "FATAL: Failed to open config file FILE-WHICH-DOESNT-EXIST: No such file or directory" ]
 
 # Default one(s) don't have to.
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=/dev/null
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
 
-MODTEST_OVERRIDE2=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH2=FILE-WHICH-DOESNT-EXIST:
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
 
-MODTEST_OVERRIDE3=/etc/modprobe.d
-MODTEST_OVERRIDE_WITH3=FILE-WHICH-DOESNT-EXIST:
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+   $MODULE_DIR
 
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH4=FILE-WHICH-DOES-NOT-EXIST
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
+touch $MODULE_DIR/modules.dep
+
 [ "`./modprobe foo 2>&1`" = "FATAL: Module foo not found." ]
 [ "`./modprobe foo 2>&1`" = "FATAL: Module foo not found." ]
 
 # Create a simple config dir.
-rm -rf tests/tmp/modprobe.d tests/tmp/modprobe.conf
-mkdir tests/tmp/modprobe.d
-cat > tests/tmp/modprobe.d/1 <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/1 <<EOF
 # Various aliases
 alias alias_to_foo foo
 alias alias_to_bar bar
@@ -44,7 +47,7 @@ alias alias_to_noexport_nodep-$BITNESS noexport_nodep-$BITNESS
 alias alias_to_noexport_doubledep-$BITNESS noexport_doubledep-$BITNESS
 alias alias_to_noexport_nodep-$BITNESS_with_tabbed_options noexport_nodep-$BITNESS
 EOF
-cat > tests/tmp/modprobe.d/2 <<EOF
+cat > tests/tmp/etc/modprobe.d/2 <<EOF
 # Various options, including options to aliases.
 options alias_to_export_dep-$BITNESS I am alias to export_dep
 options export_dep-$BITNESS I am export_dep
@@ -60,7 +63,7 @@ options alias_to_noexport_nodep-$BITNESS_with_tabbed_options index=0 id="Thinkpa
 	irq=9 dma1=1 dma2=3 \\
 	enable=1 isapnp=0
 EOF
-cat > tests/tmp/modprobe.d/3 <<EOF
+cat > tests/tmp/etc/modprobe.d/3 <<EOF
 # Install commands
 install bar echo Installing bar
 install foo echo Installing foo
@@ -72,13 +75,12 @@ remove foo echo Removing foo
 remove export_nodep-$BITNESS echo Removing export_nodep
 EOF
 
-cat > tests/tmp/modprobe.d/4 <<EOF
+cat > tests/tmp/etc/modprobe.d/4 <<EOF
 # Finally, an include
 include tests/tmp/modprobe.d.included
 EOF
 
 # Now create this included dir
-rm -rf tests/tmp/modprobe.d.included
 mkdir tests/tmp/modprobe.d.included
 cat > tests/tmp/modprobe.d.included/1 <<EOF
 install baz echo Installing baz
@@ -87,113 +89,8 @@ remove baz echo Removing baz
 alias alias_to_baz baz
 EOF
 
-# Inputs
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME
-MODTEST_OVERRIDE_WITH1=tests/data/$BITNESS/normal
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
-
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/export_dep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH3=tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH4=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH5=tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH6=tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
-
-MODTEST_OVERRIDE7=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH7=tests/tmp/modules.dep
-export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
-
-MODTEST_OVERRIDE8=/etc/modprobe.d
-MODTEST_OVERRIDE_WITH8=tests/tmp/modprobe.d
-export MODTEST_OVERRIDE8 MODTEST_OVERRIDE_WITH8
-
-MODTEST_OVERRIDE9=/etc/modprobe.d.included
-MODTEST_OVERRIDE_WITH9=tests/tmp/modprobe.d.included
-export MODTEST_OVERRIDE9 MODTEST_OVERRIDE_WITH9
-
-MODTEST_OVERRIDE10=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH10=tests/tmp/modules.dep
-export MODTEST_OVERRIDE10 MODTEST_OVERRIDE_WITH10
-
-MODTEST_OVERRIDE11=/proc/modules
-MODTEST_OVERRIDE_WITH11=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE11 MODTEST_OVERRIDE_WITH11
-
-MODTEST_OVERRIDE12=/etc/modprobe.d/1
-MODTEST_OVERRIDE_WITH12=tests/tmp/modprobe.d/1
-export MODTEST_OVERRIDE12 MODTEST_OVERRIDE_WITH12
-
-MODTEST_OVERRIDE13=/etc/modprobe.d/2
-MODTEST_OVERRIDE_WITH13=tests/tmp/modprobe.d/2
-export MODTEST_OVERRIDE13 MODTEST_OVERRIDE_WITH13
-
-MODTEST_OVERRIDE14=/etc/modprobe.d/3
-MODTEST_OVERRIDE_WITH14=tests/tmp/modprobe.d/3
-export MODTEST_OVERRIDE14 MODTEST_OVERRIDE_WITH14
-
-MODTEST_OVERRIDE15=/etc/modprobe.d/4
-MODTEST_OVERRIDE_WITH15=tests/tmp/modprobe.d/4
-export MODTEST_OVERRIDE15 MODTEST_OVERRIDE_WITH15
-
-MODTEST_OVERRIDE16=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH16=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE16 MODTEST_OVERRIDE_WITH16
-
-MODTEST_OVERRIDE17=/sys/module/noexport_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH17=tests/tmp/sys/module/noexport_nodep_$BITNESS
-export MODTEST_OVERRIDE17 MODTEST_OVERRIDE_WITH17
-
-MODTEST_OVERRIDE18=/sys/module/noexport_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH18=tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE18 MODTEST_OVERRIDE_WITH18
-
-MODTEST_OVERRIDE19=/sys/module/noexport_dep_$BITNESS
-MODTEST_OVERRIDE_WITH19=tests/tmp/sys/module/noexport_dep_$BITNESS
-export MODTEST_OVERRIDE19 MODTEST_OVERRIDE_WITH19
-
-MODTEST_OVERRIDE20=/sys/module/noexport_dep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH20=tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-export MODTEST_OVERRIDE20 MODTEST_OVERRIDE_WITH20
-
-MODTEST_OVERRIDE21=/sys/module/export_nodep_$BITNESS
-MODTEST_OVERRIDE_WITH21=tests/tmp/sys/module/export_nodep_$BITNESS
-export MODTEST_OVERRIDE21 MODTEST_OVERRIDE_WITH21
-
-MODTEST_OVERRIDE22=/sys/module/export_nodep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH22=tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-export MODTEST_OVERRIDE22 MODTEST_OVERRIDE_WITH22
-
-MODTEST_OVERRIDE23=/sys/module/export_dep_$BITNESS
-MODTEST_OVERRIDE_WITH23=tests/tmp/sys/module/export_dep_$BITNESS
-export MODTEST_OVERRIDE23 MODTEST_OVERRIDE_WITH23
-
-MODTEST_OVERRIDE24=/sys/module/export_dep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH24=tests/tmp/sys/module/export_dep_$BITNESS/initstate
-export MODTEST_OVERRIDE24 MODTEST_OVERRIDE_WITH24
-
-MODTEST_OVERRIDE25=/sys/module/noexport_doubledep_$BITNESS
-MODTEST_OVERRIDE_WITH25=tests/tmp/sys/module/noexport_doubledep_$BITNESS
-export MODTEST_OVERRIDE25 MODTEST_OVERRIDE_WITH25
-
-MODTEST_OVERRIDE26=/sys/module/noexport_doubledep_$BITNESS/initstate
-MODTEST_OVERRIDE_WITH26=tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
-export MODTEST_OVERRIDE26 MODTEST_OVERRIDE_WITH26
-
 # Now create modules.dep
-cat > tests/tmp/modules.dep <<EOF
+cat > $MODULE_DIR/modules.dep <<EOF
 noexport_nodep-$BITNESS.ko:
 noexport_doubledep-$BITNESS.ko: export_dep-$BITNESS.ko export_nodep-$BITNESS.ko
 noexport_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
@@ -320,7 +217,7 @@ SYSTEM: echo Removing export_nodep" ]
 [ "`./modprobe -r alias_to_baz 2>&1`" = "SYSTEM: echo Removing baz" ]
 
 # If it finds modprobe.conf, won't look in dir.
-cat > tests/tmp/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.conf <<EOF
 # Various aliases
 alias alias_to_ foo
 EOF

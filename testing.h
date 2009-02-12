@@ -51,7 +51,7 @@ static int modtest_uname(struct utsname *buf)
 	if ((release = getenv("MODTEST_UNAME")))
 		strcpy(buf->release, release);
 	else {
-		printf("MODTEST_OVERRIDE used but MODTEST_UNAME not set.\n");
+		printf("MODTEST_OVERRIDE_ROOT used but MODTEST_UNAME not set.\n");
 		exit(1);
 	}
 	strcpy(buf->version, "Fakeversion");
@@ -132,49 +132,60 @@ static long modtest_delete_module(const char *modname, unsigned int flags)
 	return 0;
 }
 
-static const char *modtest_mapname(const char *path)
+/* Add prefix to absolute paths; relative paths are left unchanged */
+static const char *modtest_mapname(const char *path, char *buf, size_t buflen)
 {
-	unsigned int i;
-	char envname[64];
+	char *root; 
 
-	for (i = 0; ; i++) {
-		char *name; 
-		sprintf(envname, "MODTEST_OVERRIDE%u", i);
-		name = getenv(envname);
-		if (!name)
-			break;
+	if (path[0] != '/')
+		return path;
 
-		if (strcmp(path, name) == 0) {
-			sprintf(envname, "MODTEST_OVERRIDE_WITH%u", i);
-			return getenv(envname);
-		}
-	}
-	return path;
+	root = getenv("MODTEST_OVERRIDE_ROOT");
+	if (!root)
+		return path;
+
+	snprintf(buf, buflen, "%s%s", root, path);
+	return buf;
 }
 
 static void *modtest_fopen(const char *path, const char *mode)
 {
-	return fopen(modtest_mapname(path), mode);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return fopen(path, mode);
 }
 
 static int modtest_open(const char *path, int flags, mode_t mode)
 {
-	return open(modtest_mapname(path), flags, mode);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return open(path, flags, mode);
 }
 
-static int modtest_stat(const char *file_name, struct stat *buf)
+static int modtest_stat(const char *path, struct stat *buf)
 {
-	return stat(modtest_mapname(file_name), buf);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return stat(path, buf);
 }
 
-static int modtest_lstat(const char *file_name, struct stat *buf)
+static int modtest_lstat(const char *path, struct stat *buf)
 {
-	return lstat(modtest_mapname(file_name), buf);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return lstat(path, buf);
 }
 
-static DIR *modtest_opendir(const char *name)
+static DIR *modtest_opendir(const char *path)
 {
-	return opendir(modtest_mapname(name));
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return opendir(path);
 }
 
 static int modtest_system(const char *string)
@@ -187,22 +198,33 @@ static int modtest_system(const char *string)
 
 static int modtest_rename(const char *oldpath, const char *newpath)
 {
-	return rename(modtest_mapname(oldpath), modtest_mapname(newpath));
+	char oldpath_buf[PATH_MAX];
+	char newpath_buf[PATH_MAX];
+
+	oldpath = modtest_mapname(oldpath, oldpath_buf, sizeof(oldpath_buf));
+	newpath = modtest_mapname(newpath, newpath_buf, sizeof(newpath_buf));
+	return rename(oldpath, newpath);
 }
 
 static int modtest_readlink(const char *path, char *buf, size_t bufsiz)
 {
-	return readlink(modtest_mapname(path), buf, bufsiz);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return readlink(path, buf, bufsiz);
 }
 
 #ifdef CONFIG_USE_ZLIB
 #include <zlib.h>
-static gzFile *modtest_gzopen(const char *filename, const char *mode)
+static gzFile *modtest_gzopen(const char *path, const char *mode)
 __attribute__((unused));
 
-static gzFile *modtest_gzopen(const char *filename, const char *mode)
+static gzFile *modtest_gzopen(const char *path, const char *mode)
 {
-	return gzopen(modtest_mapname(filename), mode);
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return gzopen(path, mode);
 }
 #endif
 

@@ -3,34 +3,23 @@
 
 for BITNESS in 32 64; do
 
+rm -rf tests/tmp/*
+
 # We need to dump the module to make sure the name has changed.
 MODTEST_DUMP_INIT=1
 export MODTEST_DUMP_INIT
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
-
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/rename-new-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/rename/rename-new-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/rename-old-$BITNESS.ko
-MODTEST_OVERRIDE_WITH3=tests/data/$BITNESS/rename/rename-old-$BITNESS.ko
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH4=tests/tmp/DOES_NOT_EXIST
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH5=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/rename/rename-new-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/rename/rename-old-$BITNESS.ko \
+   $MODULE_DIR
 
 # Set up modules.dep file (neither has dependencies).
-echo "# A comment" > tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/rename-new-$BITNESS.ko:" >> tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/rename-old-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "# A comment" > $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/rename-new-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/rename-old-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 # Test old-style module 
 [ "`./modprobe rename-old-$BITNESS 2> tests/tmp/out`" = "" ]
