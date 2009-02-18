@@ -75,10 +75,10 @@ for config in --enable-zlib --disable-zlib; do
 
     # By default, we want to look like a new kernel.
     MODTEST_UNAME=2.6.27
-    MODTEST_OVERRIDE0=/proc/ksyms
-    MODTEST_OVERRIDE_WITH0=/proc/nonexistent-file
+    export MODTEST_UNAME
 
-    export MODTEST_UNAME MODTEST_OVERRIDE0 MODTEST_OVERRIDE_WITH0
+    MODTEST_OVERRIDE_ROOT=tests/tmp
+    export MODTEST_OVERRIDE_ROOT
 
     if [ $# -eq 1 ]; then DOING=0; else DOING=1; fi
 

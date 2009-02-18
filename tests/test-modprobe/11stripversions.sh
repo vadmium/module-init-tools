@@ -8,29 +8,21 @@ section_attributes()
 
 for BITNESS in 32 64; do
 
+rm -rf tests/tmp/*
+
 # We need to dump the module to make sure the name has changed.
 MODTEST_DUMP_INIT=1
 export MODTEST_DUMP_INIT
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
-
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/rename-version-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/rename/rename-version-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH3=tests/tmp/DOES_NOT_EXIST
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH4=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/rename/rename-version-$BITNESS.ko \
+   $MODULE_DIR
 
 # Set up modules.dep file (neither has dependencies).
-echo "# A comment" > tests/tmp/modules.dep
-echo "/lib/modules/$MODTEST_UNAME/rename-version-$BITNESS.ko:" >> tests/tmp/modules.dep
+echo "# A comment" > $MODULE_DIR/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/rename-version-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 # Check it without removing.
 [ "`./modprobe rename-version-$BITNESS 2> tests/tmp/out`" = "" ]

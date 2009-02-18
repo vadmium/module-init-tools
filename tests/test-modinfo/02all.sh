@@ -4,16 +4,15 @@
 for ENDIAN in -le -be; do
 for BITNESS in 32 64; do
 
-# Inputs
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+# Create inputs
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko \
+   $MODULE_DIR
 
-echo "/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/modinfo-crap-$BITNESS.ko" > tests/tmp/modules.dep
+echo "/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/modinfo-crap-$BITNESS.ko" > $MODULE_DIR/modules.dep
 
 # Found by reading modules.dep
 OUTPUT1=`./modinfo modinfo-$BITNESS 2>&1 | md5sum`

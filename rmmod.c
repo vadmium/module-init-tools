@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <syslog.h>
 
+#include "testing.h"
 #include "backwards_compat.c"
 
 extern long delete_module(const char *, unsigned int);

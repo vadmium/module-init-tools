@@ -3,23 +3,18 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH1=/dev/null
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH2=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH3=FILE_WHICH_DOESNT_EXIST
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+touch $MODULE_DIR/modules.dep
 
 MODTEST_DO_SYSTEM=1
 export MODTEST_DO_SYSTEM
 
 # Create a simple config file.
-cat > tests/tmp/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc
+cat > tests/tmp/etc/modprobe.conf <<EOF
 # Various aliases
 install *wildcard-_* echo installing \$MODPROBE_MODULE.
 remove *wildcard-_* echo removing \$MODPROBE_MODULE.

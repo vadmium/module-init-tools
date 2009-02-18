@@ -1,11 +1,9 @@
 #! /bin/sh
 
-MODTEST_OVERRIDE1=/proc/modules
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+mkdir -p tests/tmp/proc
 
 # Old style
-echo 'foo_bar 100 0' > tests/tmp/modules
+echo 'foo_bar 100 0' > tests/tmp/proc/modules
 
 [ "`./rmmod foo_bar`" = "DELETE_MODULE: foo_bar EXCL NONBLOCK " ]
 

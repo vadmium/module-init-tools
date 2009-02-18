@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <asm/unistd.h>
 
+#include "testing.h"
 #include "backwards_compat.c"
 
 static void print_usage(const char *progname)

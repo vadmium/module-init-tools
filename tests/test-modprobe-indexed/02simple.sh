@@ -2,20 +2,15 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME/modules.dep.bin
-MODTEST_OVERRIDE_WITH1=tests/tmp/modules.dep.bin
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
-
-MODTEST_OVERRIDE3=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH3=tests/tmp/DOES_NOT_EXIST
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR
 
 # Set up modules.dep.bin file
-echo "noexport_nodep_$BITNESS noexport_nodep-$BITNESS.ko:" | ./modindex -o tests/tmp/modules.dep.bin
+echo "noexport_nodep_$BITNESS noexport_nodep-$BITNESS.ko:" | ./modindex -o $MODULE_DIR/modules.dep.bin
 
 SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 

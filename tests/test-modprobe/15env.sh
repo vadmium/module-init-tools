@@ -2,38 +2,20 @@
 
 for BITNESS in 32 64; do
 
-MODTEST_OVERRIDE1=/lib/modules/$MODTEST_UNAME
-MODTEST_OVERRIDE_WITH1=tests/data/$BITNESS/normal
-export MODTEST_OVERRIDE1 MODTEST_OVERRIDE_WITH1
+rm -rf tests/tmp/*
 
-MODTEST_OVERRIDE2=/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko
-MODTEST_OVERRIDE_WITH2=tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko
-export MODTEST_OVERRIDE2 MODTEST_OVERRIDE_WITH2
+MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
+mkdir -p $MODULE_DIR
+ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+   $MODULE_DIR
 
-MODTEST_OVERRIDE3=/lib/modules/$MODTEST_UNAME/modules.dep
-MODTEST_OVERRIDE_WITH3=tests/tmp/modules.dep
-export MODTEST_OVERRIDE3 MODTEST_OVERRIDE_WITH3
-
-MODTEST_OVERRIDE4=/etc/modprobe.conf
-MODTEST_OVERRIDE_WITH4=tests/tmp/modprobe.conf
-export MODTEST_OVERRIDE4 MODTEST_OVERRIDE_WITH4
-
-MODTEST_OVERRIDE5=/proc/modules
-MODTEST_OVERRIDE_WITH5=tests/tmp/proc
-export MODTEST_OVERRIDE5 MODTEST_OVERRIDE_WITH5
-
-MODTEST_OVERRIDE6=/etc/modprobe2.conf
-MODTEST_OVERRIDE_WITH6=tests/tmp/modprobe2.conf
-export MODTEST_OVERRIDE6 MODTEST_OVERRIDE_WITH6
-
-MODTEST_OVERRIDE7=/lib/modules/2.5.53/modules.dep.bin
-MODTEST_OVERRIDE_WITH7=FILE-WHICH-DOESNT-EXIST
-export MODTEST_OVERRIDE7 MODTEST_OVERRIDE_WITH7
 # Now create modules.dep and modules.conf
-echo /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko: > tests/tmp/modules.dep
-echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/modprobe.conf
-echo install foo ./modprobe bar > tests/tmp/modprobe2.conf
-echo install bar echo DOING BAR >> tests/tmp/modprobe2.conf
+echo /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko: > $MODULE_DIR/modules.dep
+
+mkdir -p tests/tmp/etc
+echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/etc/modprobe.conf
+echo install foo ./modprobe bar > tests/tmp/etc/modprobe2.conf
+echo install bar echo DOING BAR >> tests/tmp/etc/modprobe2.conf
 
 SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 
