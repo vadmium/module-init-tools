@@ -1489,6 +1489,9 @@ static char **merge_args(char *args, char *argv[], int *argc)
 		newargs[num_env] = arg;
 	}
 
+	if (!newargs)
+		return argv;
+
 	/* Append commandline args */
 	newargs[0] = argv[0];
 	for (i = 1; i <= *argc; i++)
