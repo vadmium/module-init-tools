@@ -279,15 +279,16 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	struct utsname buf;
 	char *depname, *p, *moddir;
 
-	data = grab_file(name, size);
-	if (data) {
-		*filename = strdup(name);
-		return data;
-	}
-	if (errno != ENOENT) {
-		fprintf(stderr, "modinfo: could not open %s: %s\n",
-			name, strerror(errno));
-		return NULL;
+	if (strchr(name, '.') || strchr(name, '/')) {
+		data = grab_file(name, size);
+		if (data) {
+			*filename = strdup(name);
+			return data;
+		} else {
+			fprintf(stderr, "modinfo: could not open %s: %s\n",
+				name, strerror(errno));
+			return NULL;
+		}
 	}
 
 	if (kernel) {
