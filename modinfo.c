@@ -220,7 +220,7 @@ static struct option options[] =
 	{"version", 0, 0, 'V'},
 	{"help", 0, 0, 'h'},
 	{"null", 0, 0, '0'},
-	{"field", 0, 0, 'F'},
+	{"field", 1, 0, 'F'},
 	{0, 0, 0, 0}
 };
 
