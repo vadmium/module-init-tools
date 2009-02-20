@@ -1100,24 +1100,27 @@ static int type_matches(const char *path, const char *subpath)
 /* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
 static char *underscores(char *string)
 {
-	if (string) {
-		unsigned int i;
-		int inbracket = 0;
-		for (i = 0; string[i]; i++) {
-			switch (string[i]) {
-			case '[':
-				inbracket++;
-				break;
-			case ']':
-				inbracket--;
-				break;
-			case '-':
-				if (!inbracket)
-					string[i] = '_';
-			}
-		}
-		if (inbracket)
+	unsigned int i;
+
+	if (!string)
+		return NULL;
+
+	for (i = 0; string[i]; i++) {
+		switch (string[i]) {
+		case '-':
+			string[i] = '_';
+			break;
+
+		case ']':
 			warn("Unmatched bracket in %s\n", string);
+			break;
+
+		case '[':
+			i += strcspn(&string[i], "]");
+			if (!string[i])
+				warn("Unmatched bracket in %s\n", string);
+			break;
+		}
 	}
 	return string;
 }
@@ -1216,15 +1219,13 @@ static int read_config_file(const char *filename,
 		}
 
 		if (strcmp(cmd, "alias") == 0) {
-			char *wildcard
-				= underscores(strsep_skipspace(&ptr, "\t "));
-			char *realname
-				= underscores(strsep_skipspace(&ptr, "\t "));
+			char *wildcard = strsep_skipspace(&ptr, "\t ");
+			char *realname = strsep_skipspace(&ptr, "\t ");
 
 			if (!wildcard || !realname)
 				grammar(cmd, filename, linenum);
-			else if (fnmatch(wildcard,name,0) == 0)
-				*aliases = add_alias(realname, *aliases);
+			else if (fnmatch(underscores(wildcard),name,0) == 0)
+				*aliases = add_alias(underscores(realname), *aliases);
 		} else if (strcmp(cmd, "include") == 0) {
 			struct module_alias *newalias = NULL;
 			char *newfilename;

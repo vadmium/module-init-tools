@@ -839,7 +839,11 @@ static char *underscores(char *string)
 		case '-':
 			string[i] = '_';
 			break;
-		
+
+		case ']':
+			warn("Unmatched bracket in %s\n", string);
+			break;
+
 		case '[':
 			i += strcspn(&string[i], "]");
 			if (!string[i])
