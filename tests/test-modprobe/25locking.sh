@@ -34,6 +34,10 @@ touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
 touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
+# Slow disks (e.g. first generation SSDs) can cause long delays
+# Try to avoid modprobe being delayed during this test
+sync
+
 MODPROBE_WAIT=tests/tmp/continue
 export MODPROBE_WAIT
 
