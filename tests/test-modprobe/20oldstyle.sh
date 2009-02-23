@@ -20,8 +20,8 @@ echo "# A comment" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/other/type/export_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
-SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+SIZE1=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE2=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 
 # -l lists all of them (either order)
 [ "`./modprobe -l 2>&1`" = "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko

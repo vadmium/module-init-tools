@@ -12,7 +12,7 @@ ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
 # Set up modules.dep.bin file
 echo "noexport_nodep_$BITNESS noexport_nodep-$BITNESS.ko:" | ./modindex -o $MODULE_DIR/modules.dep.bin
 
-SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
+SIZE=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 
 # No args
 [ "`./modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE " ]

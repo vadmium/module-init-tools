@@ -19,7 +19,7 @@ echo "install some-command ./modprobe crap && echo SUCCESS" > tests/tmp/etc/modp
 echo "remove some-command ./modprobe -r crap && echo SUCCESS" >> tests/tmp/etc/modprobe.conf 
 echo "alias foobar crap" >> tests/tmp/etc/modprobe.conf 
 
-SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
+SIZE=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 
 # -q works as normal.
 [ "`./modprobe -q noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE " ]

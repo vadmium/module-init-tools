@@ -17,7 +17,7 @@ echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/etc/modprobe.con
 echo install foo ./modprobe bar > tests/tmp/etc/modprobe2.conf
 echo install bar echo DOING BAR >> tests/tmp/etc/modprobe2.conf
 
-SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
+SIZE_NOEXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 
 # Test normal args, then in env.
 [ "`./modprobe -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 

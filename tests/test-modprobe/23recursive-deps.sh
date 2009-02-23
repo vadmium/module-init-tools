@@ -29,8 +29,8 @@ mkdir -p tests/tmp/sys/module
 mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
 echo "live" > tests/tmp/sys/module/export_dep_$BITNESS/initstate
 
-SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
-SIZE_NOEXPORT_DOUBLEDEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`)
+SIZE_EXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
+SIZE_NOEXPORT_DOUBLEDEP=`wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`
 
 [ "`./modprobe -v noexport_doubledep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_EXPORT_NODEP 

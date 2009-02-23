@@ -27,7 +27,7 @@ sync
 MODPROBE_WAIT=tests/tmp/continue
 export MODPROBE_WAIT
 
-SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+SIZE=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 
 # Should be looping.
 ./modprobe export_nodep-$BITNESS > tests/tmp/out1 2>&1 &
@@ -86,6 +86,6 @@ cp tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko $MODULE_DIR
 chmod a-w $MODULE_DIR/noexport_nodep-$BITNESS.ko
 unset MODPROBE_WAIT
 
-SIZE2=$(echo `wc -c < $MODULE_DIR/noexport_nodep-$BITNESS.ko`)
+SIZE2=`wc -c < $MODULE_DIR/noexport_nodep-$BITNESS.ko`
 
 [ "`./modprobe noexport_nodep-$BITNESS`" = "INIT_MODULE: $SIZE2 " ]

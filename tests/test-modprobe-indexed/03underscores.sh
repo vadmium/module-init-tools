@@ -41,8 +41,8 @@ echo "remove test-_ echo remove-_" >> tests/tmp/etc/modprobe.conf
 echo "include tests/tmp/include-_" >> tests/tmp/etc/modprobe.conf
 echo "install test-include echo Included" >> tests/tmp/include-_
 
-SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+SIZE1=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE2=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 
 # On command line (-r and normal)
 [ "`./modprobe noexport-nodep_$BITNESS 2>&1`" = "INIT_MODULE: $SIZE1 " ]
