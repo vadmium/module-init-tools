@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for modules.alias usage.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -62,4 +62,3 @@ OUT="`./modprobe bar 2>&1`"
 [ "$OUT" = "INIT_MODULE: $SIZE option2 option1
 INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1
 INIT_MODULE: $SIZE option2 option1" ]
-done

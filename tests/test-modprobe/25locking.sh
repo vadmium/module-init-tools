@@ -1,6 +1,6 @@
 #! /bin/sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -11,7 +11,7 @@ EOF
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -89,4 +89,3 @@ unset MODPROBE_WAIT
 SIZE2=$(echo `wc -c < $MODULE_DIR/noexport_nodep-$BITNESS.ko`)
 
 [ "`./modprobe noexport_nodep-$BITNESS`" = "INIT_MODULE: $SIZE2 " ]
-done

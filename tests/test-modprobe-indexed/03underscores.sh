@@ -1,15 +1,15 @@
 #! /bin/sh
 # Check underscore synonymity everywhere.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep.bin file.
@@ -69,5 +69,3 @@ SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
 # NOT in include commands
 [ "`./modprobe test-include 2>&1`" = "SYSTEM: echo Included" ]
 [ "`./modprobe test_include 2>&1`" = "SYSTEM: echo Included" ]
-
-done

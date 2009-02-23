@@ -12,8 +12,8 @@ export MODTEST_DUMP_INIT
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/rename/rename-new-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/rename/rename-old-$BITNESS.ko \
+ln tests/data/$BITNESS/rename/rename-new-$BITNESS.ko \
+   tests/data/$BITNESS/rename/rename-old-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep file (neither has dependencies).

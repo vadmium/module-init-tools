@@ -2,15 +2,15 @@
 
 # Test handling of /sys/module/.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -86,5 +86,3 @@ echo 1 > tests/tmp/sys/module/noexport_nodep_$BITNESS/refcnt
 [ "`./modprobe -r export_nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS is in use." ]
 [ "`./modprobe -r noexport-nodep-$BITNESS 2>&1`" = "FATAL: Module noexport_nodep_$BITNESS is in use." ]
 [ "`./modprobe -r export-nodep-$BITNESS 2>&1`" = "FATAL: Module export_nodep_$BITNESS is in use." ]
-
-done

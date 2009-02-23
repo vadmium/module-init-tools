@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for spaces in configuration files: based on 04config.sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -63,11 +63,11 @@ alias   alias_to_baz   baz
 EOF
 
 # Create inputs
-ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -180,5 +180,3 @@ SYSTEM: echo Removing   export_nodep" ]
 [ "`./modprobe -r alias_to_foo 2>&1`" = "SYSTEM: echo Removing   foo" ]
 [ "`./modprobe -r alias_to_bar 2>&1`" = "SYSTEM: echo Removing   bar" ]
 [ "`./modprobe -r alias_to_baz 2>&1`" = "SYSTEM: echo Removing   baz" ]
-
-done

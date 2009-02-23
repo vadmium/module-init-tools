@@ -1,18 +1,18 @@
 #! /bin/sh
 # Test module dependencies.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -79,5 +79,3 @@ rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
 [ "`./modprobe -v -n -r noexport_doubledep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-
-done

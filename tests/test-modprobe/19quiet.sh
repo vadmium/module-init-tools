@@ -1,12 +1,12 @@
 #! /bin/sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep file.
@@ -77,5 +77,3 @@ if ./modprobe -r some-command 2>/dev/null; then exit 1; fi
 # -q doesn't cause "modprobe -r crap" to succeed, but silences it.
 [ "`./modprobe -r -q some-command 2>&1`" = "FATAL: Error running remove command for some_command" ]
 if ./modprobe -r -q some-command 2>/dev/null; then exit 1; fi
-
-done

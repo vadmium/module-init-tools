@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for blacklist usage.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -40,4 +40,3 @@ RESULT="`./modprobe bar 2>&1`"
 [ "$RESULT" = "INIT_MODULE: $SIZE 
 INIT_MODULE: 5 " ] || [ "$RESULT" = "INIT_MODULE: 5 
 INIT_MODULE: $SIZE " ]
-done

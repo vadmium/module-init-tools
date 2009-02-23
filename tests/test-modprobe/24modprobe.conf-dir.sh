@@ -1,9 +1,7 @@
 #! /bin/sh
-
-#! /bin/sh
 # Test configuration file handling.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -23,11 +21,11 @@ mkdir -p $MODULE_DIR
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
 touch $MODULE_DIR/modules.dep
@@ -208,6 +206,3 @@ cat > tests/tmp/etc/modprobe.conf <<EOF
 # Various aliases
 alias alias_to_ foo
 EOF
-
-
-done

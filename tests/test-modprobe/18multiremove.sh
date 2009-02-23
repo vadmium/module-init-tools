@@ -1,19 +1,18 @@
 #! /bin/sh
-
 # modprobe -r supports multiple module names now.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -42,5 +41,3 @@ echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 # Removal
 [ "`./modprobe -r noexport_nodep-$BITNESS export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-
-done

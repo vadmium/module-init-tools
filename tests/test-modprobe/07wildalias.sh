@@ -1,8 +1,6 @@
 #! /bin/sh
 # Test wildcard aliases.
 
-for BITNESS in 32 64; do
-
 rm -rf tests/tmp/*
 
 # Create inputs
@@ -27,5 +25,3 @@ EOF
 [ "`./modprobe /dev/test 2>&1`" = "FATAL: Module bar not found." ]
 [ "`./modprobe /dev/test/tmp 2>&1`" = "FATAL: Module bar not found." ]
 [ "`./modprobe /dev/test7  2>&1`" = "FATAL: Module bar not found." ]
-
-done
