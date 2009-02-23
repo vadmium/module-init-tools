@@ -12,12 +12,6 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
    tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
-
-# Now make a fake /sys/module structure for the test
-mkdir -p tests/tmp/sys/module
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-
 # Set up modules.dep file.
 echo "# A comment" > $MODULE_DIR/modules.dep
 echo "noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep

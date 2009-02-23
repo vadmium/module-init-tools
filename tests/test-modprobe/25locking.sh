@@ -20,19 +20,6 @@ export_nodep-$BITNESS.ko:
 noexport_nodep-$BITNESS.ko:
 EOF
 
-# Now make a fake /sys/module structure for the test
-mkdir -p tests/tmp/sys/module
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
-
 # Slow disks (e.g. first generation SSDs) can cause long delays
 # Try to avoid modprobe being delayed during this test
 sync
@@ -45,19 +32,16 @@ SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
 # Should be looping.
 ./modprobe export_nodep-$BITNESS > tests/tmp/out1 2>&1 &
 sleep 1
-
 [ "`cat tests/tmp/out1`" = "Looping on tests/tmp/continue" ]
 
 # Second one should wait.
 ./modprobe -r export_nodep-$BITNESS > tests/tmp/out2 2>&1 &
 sleep 1
-
 [ "`cat tests/tmp/out2`" = "" ]
 
 # Release first one
 touch tests/tmp/continue
 sleep 1
-
 # Should have exited and cleaned up
 [ "`cat tests/tmp/out1`" = "Looping on tests/tmp/continue
 Removing tests/tmp/continue
@@ -70,7 +54,6 @@ INIT_MODULE: $SIZE " ]
 # Release second one
 touch tests/tmp/continue
 sleep 1
-
 # Should have exited and cleaned up
 [ "`cat tests/tmp/out2`" = "Looping on tests/tmp/continue
 Removing tests/tmp/continue

@@ -19,19 +19,6 @@ echo "install some-command ./modprobe crap && echo SUCCESS" > tests/tmp/etc/modp
 echo "remove some-command ./modprobe -r crap && echo SUCCESS" >> tests/tmp/etc/modprobe.conf 
 echo "alias foobar crap" >> tests/tmp/etc/modprobe.conf 
 
-# Now make a fake /sys/module structure for the test
-mkdir -p tests/tmp/sys/module
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
-
 SIZE=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
 
 # -q works as normal.
@@ -60,11 +47,18 @@ if ./modprobe some-command 2>/dev/null; then exit 1; fi
 [ "`./modprobe -q some-command 2>&1`" = "FATAL: Error running install command for some_command" ]
 if ./modprobe -q some-command 2>/dev/null; then exit 1; fi
 
-## Remove
-# All in proc
-cat > tests/tmp/proc <<EOF
-noexport_nodep_$BITNESS 100 0 -
-EOF
+# Now make a fake /sys/module structure for the test
+mkdir -p tests/tmp/sys/module
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
+echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # -q works as normal.
 [ "`./modprobe -r -q noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]

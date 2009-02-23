@@ -63,11 +63,11 @@ mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
 mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
 mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
 mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Removal
 [ "`./modprobe -v -n -r noexport_nodep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko" ]

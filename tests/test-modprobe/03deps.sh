@@ -32,8 +32,8 @@ SIZE_NOEXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNE
 SIZE_EXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_dep-$BITNESS.ko`)
 SIZE_NOEXPORT_DOUBLEDEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`)
 
-# Empty sysfs
-rm -rf tests/tmp/sys
+# Empty /sys/module/
+mkdir -p tests/tmp/sys/module
 
 [ "`./modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
 [ "`./modprobe noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP OPTIONS" ]
@@ -65,11 +65,11 @@ mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
 mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
 mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
 mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Removal
 [ "`./modprobe -r noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]
@@ -79,6 +79,28 @@ DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 [ "`./modprobe -r export_dep-$BITNESS 2>&1`" = "DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 [ "`./modprobe -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_doubledep_$BITNESS EXCL 
+DELETE_MODULE: export_dep_$BITNESS EXCL 
+DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
+
+# Removal with renaming.
+rm -rf tests/tmp/sys/module/*
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/newname
+echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/newname/initstate
+echo 0 > tests/tmp/sys/module/noexport_nodep_$BITNESS/refcnt
+echo 0 > tests/tmp/sys/module/export_nodep_$BITNESS/refcnt
+echo 0 > tests/tmp/sys/module/noexport_dep_$BITNESS/refcnt
+echo 0 > tests/tmp/sys/module/export_dep_$BITNESS/refcnt
+echo 0 > tests/tmp/sys/module/newname/refcnt
+
+[ "`./modprobe -o newname -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: newname EXCL 
 DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 
