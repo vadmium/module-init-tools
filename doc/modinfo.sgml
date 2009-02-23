@@ -86,9 +86,9 @@
 	    useful for scripts.  Field names are case-insenitive.
 	    Common fields (which may not be in every module) include
 	    <literal>author</literal>, <literal>description</literal>,
-	    <literal>license</literal>, <literal>param</literal>,
+	    <literal>license</literal>, <literal>parm</literal>,
 	    <literal>depends</literal>, and <literal>alias</literal>.
-	    There are often multiple <literal>param</literal>,
+	    There are often multiple <literal>parm</literal>,
 	    <literal>alias</literal> and <literal>depends</literal>
 	    fields.  The special field <literal>filename</literal>
 	    lists the filename of the module.
@@ -127,7 +127,7 @@
           <para>
 	    These are shortcuts for <literal>author</literal>,
 	    <literal>description</literal>,
-	    <literal>license</literal>.  <literal>param</literal> and
+	    <literal>license</literal>.  <literal>parm</literal> and
 	    <literal>filename</literal> respectively, to ease the
 	    transition from the old modutils
 	    <command>modinfo</command>.
