@@ -12,7 +12,6 @@ EOF
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
 ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -100,11 +99,11 @@ Removing tests/tmp/continue
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 
 # Check that a read-only module still loads.
-cp tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko tests/tmp/
-chmod a-w tests/tmp/noexport_nodep-$BITNESS.ko
+cp tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko $MODULE_DIR
+chmod a-w $MODULE_DIR/noexport_nodep-$BITNESS.ko
 unset MODPROBE_WAIT
 
-SIZE2=$(echo `wc -c < tests/tmp/noexport_nodep-$BITNESS.ko`)
+SIZE2=$(echo `wc -c < $MODULE_DIR/noexport_nodep-$BITNESS.ko`)
 
 [ "`./modprobe noexport_nodep-$BITNESS`" = "INIT_MODULE: $SIZE2 " ]
 done
