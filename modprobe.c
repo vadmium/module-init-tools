@@ -1749,6 +1749,7 @@ int main(int argc, char *argv[])
 
 		read_toplevel_config(config, "", 1, 0,
 			     &modoptions, &commands, &aliases, &blacklist);
+		/* Read module options from kernel command line */
 		read_kcmdline(1, &modoptions);
 		if (use_binary_indexes) {
 			read_config_file_bin(aliasfilename, "", 1, 0,
