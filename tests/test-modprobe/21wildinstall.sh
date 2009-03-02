@@ -11,8 +11,8 @@ MODTEST_DO_SYSTEM=1
 export MODTEST_DO_SYSTEM
 
 # Create a simple config file.
-mkdir -p tests/tmp/etc
-cat > tests/tmp/etc/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 # Various aliases
 install *wildcard-_* echo installing \$MODPROBE_MODULE.
 remove *wildcard-_* echo removing \$MODPROBE_MODULE.

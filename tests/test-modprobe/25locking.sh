@@ -61,8 +61,8 @@ DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 [ ! -f tests/tmp/continue ]
 
 # Lock gets dropped for install commands
-mkdir -p tests/tmp/etc
-cat > tests/tmp/etc/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 # Aliases to cause one command to hang.
 install export_nodep-$BITNESS ./modprobe --ignore-install export_nodep-$BITNESS foo
 remove export_nodep-$BITNESS ./modprobe -r --ignore-remove export_nodep-$BITNESS

@@ -20,8 +20,8 @@ touch $MODULE_DIR/modules.dep
 [ "`./modprobe foo 2>&1`" = "FATAL: Module foo not found." ]
 
 # Create a simple config file.
-mkdir -p tests/tmp/etc
-cat > tests/tmp/etc/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 # Various aliases
 alias   alias_to_foo   foo
 alias   alias_to_bar   bar
@@ -49,13 +49,10 @@ install   export_nodep-$BITNESS   echo Installing   export_nodep
 remove   bar   echo Removing   bar
 remove   foo   echo Removing   foo
 remove   export_nodep-$BITNESS   echo Removing   export_nodep
-
-# Finally, an include
-include   tests/tmp/modprobe.conf.included
 EOF
 
 # Now create this included file
-cat > tests/tmp/modprobe.conf.included <<EOF
+cat > tests/tmp/etc/modprobe.d/modprobe-include.conf <<EOF
 install   baz   echo Installing   baz
 remove   baz   echo Removing   baz
 

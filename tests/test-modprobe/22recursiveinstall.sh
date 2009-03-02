@@ -39,8 +39,8 @@ echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 # Clean up sysfs (so we don't think it's loaded)
 rm -rf tests/tmp/sys
 
-mkdir -p tests/tmp/etc
-echo "install export_nodep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.conf
+mkdir -p tests/tmp/etc/modprobe.d
+echo "install export_nodep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.d/modprobe.conf
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "SYSTEM: COMMAND
 INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
@@ -55,7 +55,7 @@ echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 # clean up sysfs (so we don't think it's loaded)
 rm -rf tests/tmp/sys
 
-echo "install noexport_dep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.conf
+echo "install noexport_dep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.d/modprobe.conf
 
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 SYSTEM: COMMAND" ]

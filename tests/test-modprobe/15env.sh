@@ -12,8 +12,8 @@ ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
 # Now create modules.dep and modules.conf
 echo /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko: > $MODULE_DIR/modules.dep
 
-mkdir -p tests/tmp/etc
-echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/etc/modprobe.conf
+mkdir -p tests/tmp/etc/modprobe.d
+echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/etc/modprobe.d/modprobe.conf
 echo install foo ./modprobe bar > tests/tmp/etc/modprobe2.conf
 echo install bar echo DOING BAR >> tests/tmp/etc/modprobe2.conf
 

@@ -1102,18 +1102,17 @@ static struct module_overrides *add_override(const char *modfile,
 	
 }
 
-/* Recursion */
-static int read_config(const char *filename,
-		       const char *basedir,
-		       const char *kernelversion,
-		       struct module_search **search,
-		       struct module_overrides **overrides);
+static int parse_config_scan(const char *filename,
+			     const char *basedir,
+			     const char *kernelversion,
+			     struct module_search **search,
+			     struct module_overrides **overrides);
 
-static int read_config_file(const char *filename,
-			    const char *basedir,
-			    const char *kernelversion,
-			    struct module_search **search,
-                            struct module_overrides **overrides)
+static int parse_config_file(const char *filename,
+			     const char *basedir,
+			     const char *kernelversion,
+			     struct module_search **search,
+			     struct module_overrides **overrides)
 {
 	char *line;
 	unsigned int linenum = 0;
@@ -1188,17 +1187,24 @@ static int read_config_file(const char *filename,
 			char *newfilename;
 
 			newfilename = strsep_skipspace(&ptr, "\t ");
-			if (!newfilename)
+			if (!newfilename) {
 				grammar(cmd, filename, linenum);
-			else {
-				if (!read_config(newfilename, basedir,
-						 kernelversion,
-						 search, overrides))
+			} else {
+				warn("\"include %s\" is deprecated, "
+				     "please use /etc/depmod.d\n", newfilename);
+				if (strncmp(newfilename, "/etc/depmod.d",
+					    strlen("/etc/depmod.d")) == 0) {
+					warn("\"include /etc/depmod.d\" is "
+					     "the default, ignored\n");
+				} else {
+					if (!parse_config_scan(newfilename, basedir,
+							       kernelversion,
+							       search, overrides))
 					warn("Failed to open included"
 					     " config file %s: %s\n",
 					     newfilename, strerror(errno));
-                        }
-
+				}
+			}
 		} else if (strcmp(cmd, "make_map_files") == 0) {
 			char *option;
 
@@ -1222,72 +1228,97 @@ static int read_config_file(const char *filename,
         return 1;
 }
 
-/* Simple format, ignore lines starting with #, one command per line.
-   Returns true or false. */
-static int read_config(const char *filename,
-		       const char *basedir,
-		       const char *kernelversion,
-		       struct module_search **search,
-                       struct module_overrides **overrides)
+static int parse_config_scan(const char *filename,
+			     const char *basedir,
+			     const char *kernelversion,
+			     struct module_search **search,
+			     struct module_overrides **overrides)
 {
 	DIR *dir;
 	int ret = 0;
 
 	dir = opendir(filename);
 	if (dir) {
+		struct file_entry {
+			struct list_head node;
+			char name[];
+		};
+		LIST_HEAD(files_list);
+		struct file_entry *fe, *fe_tmp;
 		struct dirent *i;
-		while ((i = readdir(dir)) != NULL) {
-			if (!streq(i->d_name,".") && !streq(i->d_name,"..")
-					&& config_filter(i->d_name)) {
-				char sub[strlen(filename) + 1
-				       + strlen(i->d_name) + 1];
 
-				sprintf(sub, "%s/%s", filename, i->d_name);
-				if (!read_config(sub, basedir, kernelversion,
-						 search, overrides))
-					warn("Failed to open"
-					     " config file %s: %s\n",
-					     sub, strerror(errno));
-			}
+		/* sort files from directory into list */
+		while ((i = readdir(dir)) != NULL) {
+			size_t len;
+
+			if (i->d_name[0] == '.')
+				continue;
+			if (!config_filter(i->d_name))
+				continue;
+
+			len = strlen(i->d_name);
+			if (len < 6 || strcmp(&i->d_name[len-5], ".conf") != 0)
+				warn("All config files need .conf: %s/%s, "
+				     "it will be ignored in a future release.\n",
+				     filename, i->d_name);
+			fe = malloc(sizeof(struct file_entry) + len + 1);
+			if (fe == NULL)
+				continue;
+			strcpy(fe->name, i->d_name);
+			list_for_each_entry(fe_tmp, &files_list, node)
+				if (strcmp(fe_tmp->name, fe->name) >= 0)
+					break;
+			list_add_tail(&fe->node, &fe_tmp->node);
 		}
 		closedir(dir);
+
+		/* parse list of files */
+		list_for_each_entry_safe(fe, fe_tmp, &files_list, node) {
+			char *cfgfile;
+
+			nofail_asprintf(&cfgfile, "%s/%s", filename, fe->name);
+			if (!parse_config_file(cfgfile, basedir, kernelversion,
+					       search, overrides))
+				warn("Failed to open config file "
+				     "%s: %s\n", fe->name, strerror(errno));
+			free(cfgfile);
+			list_del(&fe->node);
+			free(fe);
+		}
+
 		ret = 1;
 	} else {
-		if (read_config_file(filename, basedir, kernelversion, search,
-				     overrides))
+		if (parse_config_file(filename, basedir, kernelversion, search,
+				      overrides))
 			ret = 1;
 	}
 
 	return ret;
 }
 
-static const char *default_configs[] =
+static void parse_toplevel_config(const char *filename,
+				  const char *basedir,
+				  const char *kernelversion,
+				  struct module_search **search,
+				  struct module_overrides **overrides)
 {
-	"/etc/depmod.conf",
-	"/etc/depmod.d",
-};
-
-static void read_toplevel_config(const char *filename,
-				 const char *basedir,
-				 const char *kernelversion,
-				 struct module_search **search,
-                                 struct module_overrides **overrides)
-{
-	unsigned int i;
-
 	if (filename) {
-		if (!read_config(filename, basedir, kernelversion, search,
+		if (!parse_config_scan(filename, basedir, kernelversion, search,
 				 overrides))
 			fatal("Failed to open config file %s: %s\n",
 			      filename, strerror(errno));
 		return;
 	}
 
-	/* Try defaults. */
-	for (i = 0; i < ARRAY_SIZE(default_configs); i++) {
-		read_config(default_configs[i], basedir, kernelversion,
-			    search, overrides);
-	}
+	/* deprecated config file */
+	if (parse_config_file("/etc/depmod.conf", basedir, kernelversion,
+			      search, overrides) > 0)
+		warn("Deprecated config file /etc/depmod.conf, "
+		      "all config files belong into /etc/depmod.d/.\n");
+
+	/* default config */
+	parse_config_scan("/etc/depmod.d", basedir, kernelversion,
+			  search, overrides);
 }
 
 /* Local to main, but not freed on exit.  Keep valgrind quiet. */
@@ -1398,7 +1429,7 @@ int main(int argc, char *argv[])
 		all = 1;
 	}
 
-	read_toplevel_config(config, basedir, version, &search, &overrides);
+	parse_toplevel_config(config, basedir, version, &search, &overrides);
 
 	/* For backward compatibility add "updates" to the head of the search
 	 * list here. But only if there was no "search" option specified.

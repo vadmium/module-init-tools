@@ -49,9 +49,9 @@ insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko OPTIONS" ]
 
 # Test alias and options resolution
-mkdir -p tests/tmp/etc
-echo "alias foo noexport_doubledep-$BITNESS" > tests/tmp/etc/modprobe.conf
-echo "options noexport_doubledep-$BITNESS OPTIONS" >> tests/tmp/etc/modprobe.conf
+mkdir -p tests/tmp/etc/modprobe.d
+echo "alias foo noexport_doubledep-$BITNESS" > tests/tmp/etc/modprobe.d/modprobe.conf
+echo "options noexport_doubledep-$BITNESS OPTIONS" >> tests/tmp/etc/modprobe.d/modprobe.conf
 [ "`./modprobe -v -n foo 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko OPTIONS" ]

@@ -280,9 +280,9 @@ static int add_modules_dep_line(char *line,
 	return 1;
 }
 
-static int read_depends_bin(const char *dirname,
-			 const char *start_name,
-			 struct list_head *list)
+static int read_depends_file(const char *dirname,
+			     const char *start_name,
+			     struct list_head *list)
 {
 	char *modules_dep_name;
 	char *line;
@@ -318,8 +318,9 @@ static void read_depends(const char *dirname,
 	FILE *modules_dep;
 	int done = 0;
 
-	if (read_depends_bin(dirname, start_name, list))
-		return;
+	if (use_binary_indexes)
+		if (read_depends_file(dirname, start_name, list))
+			return;
 
 	nofail_asprintf(&modules_dep_name, "%s/%s", dirname, "modules.dep");
 	modules_dep = fopen(modules_dep_name, "r");
@@ -1177,18 +1178,16 @@ static char *strsep_skipspace(char **string, char *delim)
 	return strsep(string, delim);
 }
 
-/* Recursion */
-static int read_config(const char *filename,
-		       const char *name,
-		       int dump_only,
-		       int removing,
-		       struct module_options **options,
-		       struct module_command **commands,
-		       struct module_alias **alias,
-		       struct module_blacklist **blacklist);
+static int parse_config_scan(const char *filename,
+			     const char *name,
+			     int dump_only,
+			     int removing,
+			     struct module_options **options,
+			     struct module_command **commands,
+			     struct module_alias **alias,
+			     struct module_blacklist **blacklist);
 
-/* FIXME: Maybe should be extended to "alias a b [and|or c]...". --RR */
-static int read_config_file(const char *filename,
+static int parse_config_file(const char *filename,
 			    const char *name,
 			    int dump_only,
 			    int removing,
@@ -1231,17 +1230,24 @@ static int read_config_file(const char *filename,
 			char *newfilename;
 
 			newfilename = strsep_skipspace(&ptr, "\t ");
-			if (!newfilename)
+			if (!newfilename) {
 				grammar(cmd, filename, linenum);
-			else {
-				if (!read_config(newfilename, name,
-						 dump_only, removing,
-						 options, commands, &newalias,
-						 blacklist))
-					warn("Failed to open included"
-					      " config file %s: %s\n",
-					      newfilename, strerror(errno));
-
+			} else {
+				warn("\"include %s\" is deprecated, "
+				     "please use /etc/modprobe.d\n", newfilename);
+				if (strncmp(newfilename, "/etc/modprobe.d",
+					    strlen("/etc/modprobe.d")) == 0) {
+					warn("\"include /etc/modprobe.d\" is "
+					     "the default, ignored\n");
+				} else {
+					if (!parse_config_scan(newfilename, name,
+							      dump_only, removing,
+							      options, commands, &newalias,
+							      blacklist))
+						warn("Failed to open included"
+						      " config file %s: %s\n",
+						      newfilename, strerror(errno));
+				}
 				/* Files included override aliases,
 				   etc that was already set ... */
 				if (newalias)
@@ -1300,73 +1306,29 @@ static int read_config_file(const char *filename,
 	return 1;
 }
 
-/* Simple format, ignore lines starting with #, one command per line.
-   Returns true or false. */
-static int read_config(const char *filename,
-		       const char *name,
-		       int dump_only,
-		       int removing,
-		       struct module_options **options,
-		       struct module_command **commands,
-		       struct module_alias **aliases,
-		       struct module_blacklist **blacklist)
-{
-	DIR *dir;
-	int ret = 0;
-
-	/* Reiser4 has file/directory duality: treat it as both. */
-	dir = opendir(filename);
-	if (dir) {
-		struct dirent *i;
-		while ((i = readdir(dir)) != NULL) {
-			if (!streq(i->d_name,".") && !streq(i->d_name,"..")
-			    && config_filter(i->d_name)) {
-				char sub[strlen(filename) + 1
-					 + strlen(i->d_name) + 1];
-
-				sprintf(sub, "%s/%s", filename, i->d_name);
-				if (!read_config(sub, name,
-						 dump_only, removing, options,
-						 commands, aliases, blacklist))
-					warn("Failed to open"
-					     " config file %s: %s\n",
-					     sub, strerror(errno));
-			}
-		}
-		closedir(dir);
-		ret = 1;
-	}
-
-	if (read_config_file(filename, name, dump_only, removing,
-			     options, commands, aliases, blacklist))
-		ret = 1;
-
-	return ret;
-}
-
-/* Read binary index file containing aliases only */
-/* fallback to legacy aliases file as necessary */
-static int read_config_file_bin(const char *filename,
-			    const char *name,
-			    int dump_only,
-			    int removing,
-			    struct module_options **options,
-			    struct module_command **commands,
-			    struct module_alias **aliases,
-			    struct module_blacklist **blacklist)
+/* fallback to plain-text aliases file as necessary */
+static int read_aliases_file(const char *filename,
+			     const char *name,
+			     int dump_only,
+			     int removing,
+			     struct module_options **options,
+			     struct module_command **commands,
+			     struct module_alias **aliases,
+			     struct module_blacklist **blacklist)
 {
 	struct index_value *realnames;
 	struct index_value *realname;
 	char *binfile;
 	struct index_file *index;
 
+	if (!use_binary_indexes)
+		goto plain_text;
+
 	nofail_asprintf(&binfile, "%s.bin", filename);
 	index = index_file_open(binfile);
 	if (!index) {
 		free(binfile);
-		
-		return read_config_file(filename, name, dump_only, removing,
-					options, commands, aliases, blacklist);
+		goto plain_text;
 	}
 
 	if (dump_only) {
@@ -1375,51 +1337,126 @@ static int read_config_file_bin(const char *filename,
 		index_file_close(index);
 		return 1;
 	}
-	
+
 	realnames = index_searchwild(index, name);
 	for (realname = realnames; realname; realname = realname->next)
 		*aliases = add_alias(realname->value, *aliases);
 	index_values_free(realnames);
-	
+
 	free(binfile);
 	index_file_close(index);
 	return 1;
+
+plain_text:
+	return parse_config_file(filename, name, dump_only, removing,
+				 options, commands, aliases, blacklist);
 }
 
-static const char *default_configs[] = 
+static int parse_config_scan(const char *filename,
+			     const char *name,
+			     int dump_only,
+			     int removing,
+			     struct module_options **options,
+			     struct module_command **commands,
+			     struct module_alias **aliases,
+			     struct module_blacklist **blacklist)
 {
-	"/etc/modprobe.conf",
-	"/etc/modprobe.d",
-};
+	DIR *dir;
+	int ret = 0;
 
-static void read_toplevel_config(const char *filename,
-				 const char *name,
-				 int dump_only,
-				 int removing,
-				 struct module_options **options,
-				 struct module_command **commands,
-				 struct module_alias **aliases,
-				 struct module_blacklist **blacklist)
+	dir = opendir(filename);
+	if (dir) {
+		struct file_entry {
+			struct list_head node;
+			char name[];
+		};
+		LIST_HEAD(files_list);
+		struct file_entry *fe, *fe_tmp;
+		struct dirent *i;
+
+		/* sort files from directory into list */
+		while ((i = readdir(dir)) != NULL) {
+			size_t len;
+
+			if (i->d_name[0] == '.')
+				continue;
+			if (!config_filter(i->d_name))
+				continue;
+
+			len = strlen(i->d_name);
+			if (len < 6 ||
+			    (strcmp(&i->d_name[len-5], ".conf") != 0 &&
+			     strcmp(&i->d_name[len-6], ".alias") != 0))
+				warn("All config files need .conf: %s/%s, "
+				     "it will be ignored in a future release.\n",
+				     filename, i->d_name);
+			fe = malloc(sizeof(struct file_entry) + len + 1);
+			if (fe == NULL)
+				continue;
+			strcpy(fe->name, i->d_name);
+			list_for_each_entry(fe_tmp, &files_list, node)
+				if (strcmp(fe_tmp->name, fe->name) >= 0)
+					break;
+			list_add_tail(&fe->node, &fe_tmp->node);
+		}
+		closedir(dir);
+
+		/* parse list of files */
+		list_for_each_entry_safe(fe, fe_tmp, &files_list, node) {
+			char *cfgfile;
+
+			nofail_asprintf(&cfgfile, "%s/%s", filename, fe->name);
+			if (!parse_config_file(cfgfile, name,
+					       dump_only, removing,
+					       options, commands,
+					       aliases, blacklist))
+				warn("Failed to open config file "
+				     "%s: %s\n", fe->name, strerror(errno));
+			free(cfgfile);
+			list_del(&fe->node);
+			free(fe);
+		}
+
+		ret = 1;
+	} else {
+		if (parse_config_file(filename, name, dump_only, removing,
+				      options, commands, aliases, blacklist))
+			ret = 1;
+	}
+	return ret;
+}
+
+/* Read binary index file containing aliases only */
+static void parse_toplevel_config(const char *filename,
+				  const char *name,
+				  int dump_only,
+				  int removing,
+				  struct module_options **options,
+				  struct module_command **commands,
+				  struct module_alias **aliases,
+				  struct module_blacklist **blacklist)
 {
-	unsigned int i;
-
 	if (filename) {
-		if (!read_config(filename, name, dump_only, removing,
-				 options, commands, aliases, blacklist))
+		if (!parse_config_scan(filename, name, dump_only, removing,
+				       options, commands, aliases, blacklist))
 			fatal("Failed to open config file %s: %s\n",
 			      filename, strerror(errno));
 		return;
 	}
 
-	/* Try defaults. */
-	for (i = 0; i < ARRAY_SIZE(default_configs); i++) {
-		read_config(default_configs[i], name, dump_only, removing,
-				options, commands, aliases, blacklist);
-	}
+	/* deprecated config file */
+	if (parse_config_file("/etc/modprobe.conf", name, dump_only, removing,
+			      options, commands, aliases, blacklist) > 0)
+		warn("Deprecated config file /etc/modprobe.conf, "
+		      "all config files belong into /etc/modprobe.d/.\n");
+
+	/* default config */
+	parse_config_scan("/etc/modprobe.d", name, dump_only, removing,
+			  options, commands, aliases, blacklist);
 }
 
 /* Read possible module arguments from the kernel command line. */
-static int read_kcmdline(int dump_only, struct module_options **options)
+static int parse_kcmdline(int dump_only, struct module_options **options)
 {
 	char *line;
 	unsigned int linenum = 0;
@@ -1751,21 +1788,14 @@ int main(int argc, char *argv[])
 		struct module_alias *aliases = NULL;
 		struct module_blacklist *blacklist = NULL;
 
-		read_toplevel_config(config, "", 1, 0,
-			     &modoptions, &commands, &aliases, &blacklist);
+		parse_toplevel_config(config, "", 1, 0, &modoptions,
+				      &commands, &aliases, &blacklist);
 		/* Read module options from kernel command line */
-		read_kcmdline(1, &modoptions);
-		if (use_binary_indexes) {
-			read_config_file_bin(aliasfilename, "", 1, 0,
-			     &modoptions, &commands, &aliases, &blacklist);
-			read_config_file_bin(symfilename, "", 1, 0,
-			     &modoptions, &commands, &aliases, &blacklist);
-		} else {
-			read_config(aliasfilename, "", 1, 0,
-			     &modoptions, &commands, &aliases, &blacklist);
-			read_config(symfilename, "", 1, 0,
-			     &modoptions, &commands, &aliases, &blacklist);
-		}
+		parse_kcmdline(1, &modoptions);
+		parse_config_file(aliasfilename, "", 1, 0, &modoptions,
+				  &commands, &aliases, &blacklist);
+		parse_config_file(symfilename, "", 1, 0, &modoptions,
+				  &commands, &aliases, &blacklist);
 		exit(0);
 	}
 
@@ -1795,23 +1825,18 @@ int main(int argc, char *argv[])
 		underscores(modulearg);
 
 		/* Returns the resolved alias, options */
-		read_toplevel_config(config, modulearg, 0,
+		parse_toplevel_config(config, modulearg, 0,
 		     remove, &modoptions, &commands, &aliases, &blacklist);
 
 		/* Read module options from kernel command line */
-		read_kcmdline(0, &modoptions);
+		parse_kcmdline(0, &modoptions);
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
-		if (!aliases
-		    && strncmp(modulearg, "symbol:", strlen("symbol:")) == 0) {
-			if (use_binary_indexes)
-				read_config_file_bin(symfilename, modulearg, 0,
-					remove, &modoptions, &commands,
-					&aliases, &blacklist);
-			else
-				read_config(symfilename, modulearg, 0,
-					remove, &modoptions, &commands,
-					&aliases, &blacklist);
+		if (!aliases &&
+		    strncmp(modulearg, "symbol:", strlen("symbol:")) == 0) {
+			parse_config_file(symfilename, modulearg, 0,
+					  remove, &modoptions, &commands,
+					  &aliases, &blacklist);
 		}
 		if (!aliases) {
 			if(!strchr(modulearg, ':'))
@@ -1821,16 +1846,10 @@ int main(int argc, char *argv[])
 			if (list_empty(&list)
 			    && !find_command(modulearg, commands))
 			{
-				if (use_binary_indexes)
-					read_config_file_bin(aliasfilename,
-						modulearg, 0, remove,
-						&modoptions, &commands,
-						&aliases, &blacklist);
-				else
-					read_config(aliasfilename,
-						modulearg, 0, remove,
-						&modoptions, &commands,
-						&aliases, &blacklist);
+				read_aliases_file(aliasfilename,
+						  modulearg, 0, remove,
+						  &modoptions, &commands,
+						  &aliases, &blacklist);
 			}
 		}
 

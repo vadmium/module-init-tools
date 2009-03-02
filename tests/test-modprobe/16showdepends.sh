@@ -59,8 +59,8 @@ insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko " ]
 [ `wc -c < tests/tmp/stderr` = 0 ]
 
 # Module commands printed, ignored.
-mkdir -p tests/tmp/etc
-cat > tests/tmp/etc/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 install noexport_nodep-$BITNESS echo noexport_nodep-$BITNESS
 install export_nodep-$BITNESS echo export_nodep-$BITNESS
 install noexport_dep-$BITNESS echo noexport_dep-$BITNESS
@@ -81,7 +81,7 @@ install echo noexport_doubledep-$BITNESS" ]
 [ `wc -c < tests/tmp/stderr` = 0 ]
 
 # Module options printed.
-cat > tests/tmp/etc/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 options noexport_nodep-$BITNESS opt1
 options export_nodep-$BITNESS opt2
 options noexport_dep-$BITNESS opt3
@@ -102,7 +102,7 @@ insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko opt5" ]
 [ `wc -c < tests/tmp/stderr` = 0 ]
 
 # Via aliases works.
-cat > tests/tmp/etc/modprobe.conf <<EOF
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 options noexport_nodep-$BITNESS opt1
 alias foo noexport_nodep-$BITNESS
 options foo fooopt

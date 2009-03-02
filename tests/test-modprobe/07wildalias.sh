@@ -9,8 +9,8 @@ mkdir -p $MODULE_DIR
 touch $MODULE_DIR/modules.dep
 
 # Create a simple config file.
-mkdir -p tests/tmp/etc
-cat > tests/tmp/etc/modprobe.conf <<EOF
+mkdir -p tests/tmp/etc/modprobe.d
+cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 # Various aliases
 alias *wildcard-_* foo
 alias /dev/test* bar

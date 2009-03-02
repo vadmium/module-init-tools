@@ -14,10 +14,10 @@ echo "# A comment" > $MODULE_DIR/modules.dep
 echo "noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 echo "bogus-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
-mkdir -p tests/tmp/etc
-echo "install some-command ./modprobe crap && echo SUCCESS" > tests/tmp/etc/modprobe.conf 
-echo "remove some-command ./modprobe -r crap && echo SUCCESS" >> tests/tmp/etc/modprobe.conf 
-echo "alias foobar crap" >> tests/tmp/etc/modprobe.conf 
+mkdir -p tests/tmp/etc/modprobe.d
+echo "install some-command ./modprobe crap && echo SUCCESS" > tests/tmp/etc/modprobe.d/modprobe.conf 
+echo "remove some-command ./modprobe -r crap && echo SUCCESS" >> tests/tmp/etc/modprobe.d/modprobe.conf 
+echo "alias foobar crap" >> tests/tmp/etc/modprobe.d/modprobe.conf 
 
 SIZE=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 

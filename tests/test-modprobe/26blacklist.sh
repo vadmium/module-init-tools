@@ -22,8 +22,8 @@ echo "alias bar alias-$BITNESS" > $MODULE_DIR/modules.alias
 [ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE " ]
 
 # Blacklist makes it fail.
-mkdir -p tests/tmp/etc
-echo "blacklist alias-$BITNESS" > tests/tmp/etc/modprobe.conf
+mkdir -p tests/tmp/etc/modprobe.d
+echo "blacklist alias-$BITNESS" > tests/tmp/etc/modprobe.d/modprobe.conf
 [ "`./modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
 
 # Blacklist doesn't effect other aliases.
@@ -31,11 +31,11 @@ echo "alias bar foo" >> $MODULE_DIR/modules.alias
 [ "`./modprobe bar 2>&1`" = "INIT_MODULE: 5 " ]
 
 # Blacklist both.
-echo "blacklist foo" >> tests/tmp/etc/modprobe.conf
+echo "blacklist foo" >> tests/tmp/etc/modprobe.d/modprobe.conf
 [ "`./modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
 
 # Remove blacklist, all works.
-rm -f tests/tmp/etc/modprobe.conf
+rm -f tests/tmp/etc/modprobe.d/modprobe.conf
 RESULT="`./modprobe bar 2>&1`"
 [ "$RESULT" = "INIT_MODULE: $SIZE 
 INIT_MODULE: 5 " ] || [ "$RESULT" = "INIT_MODULE: 5 

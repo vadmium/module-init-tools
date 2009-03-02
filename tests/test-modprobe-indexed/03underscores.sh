@@ -33,13 +33,12 @@ touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
 touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Set up config file.
-mkdir -p tests/tmp/etc
-echo "alias alias-_ noexport-nodep_$BITNESS" > tests/tmp/etc/modprobe.conf
-echo "options export-nodep_$BITNESS option-_" >> tests/tmp/etc/modprobe.conf
-echo "install test-_ echo install-_" >> tests/tmp/etc/modprobe.conf
-echo "remove test-_ echo remove-_" >> tests/tmp/etc/modprobe.conf
-echo "include tests/tmp/include-_" >> tests/tmp/etc/modprobe.conf
-echo "install test-include echo Included" >> tests/tmp/include-_
+mkdir -p tests/tmp/etc/modprobe.d
+echo "alias alias-_ noexport-nodep_$BITNESS" > tests/tmp/etc/modprobe.d/modprobe.conf
+echo "options export-nodep_$BITNESS option-_" >> tests/tmp/etc/modprobe.d/modprobe.conf
+echo "install test-_ echo install-_" >> tests/tmp/etc/modprobe.d/modprobe.conf
+echo "remove test-_ echo remove-_" >> tests/tmp/etc/modprobe.d/modprobe.conf
+echo "install test-include echo Included" >> tests/tmp/etc/modprobe.d/modprobe-include.conf
 
 SIZE1=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 SIZE2=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
