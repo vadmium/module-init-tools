@@ -473,6 +473,9 @@
 	<refentrytitle>lsmod</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>,
       <citerefentry>
+	<refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>,
+      <citerefentry>
 	<refentrytitle>modprobe.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
