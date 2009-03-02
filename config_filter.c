@@ -9,6 +9,7 @@ int config_filter(const char *name)
 	static const char *const skip_prefix[] = {
 		".",
 		"~",
+		"CVS",
 		NULL
 	};
 
