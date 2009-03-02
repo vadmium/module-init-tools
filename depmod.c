@@ -592,8 +592,6 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
 		else if (strncmp(tmp->search_path, oldpath, tmp->len) == 0)
 			prio_old = i;
 	}
-	if (prio_builtin < 0)
-		prio_builtin = i;
 	if (prio_new < 0)
 		prio_new = prio_builtin;
 	if (prio_old < 0)
@@ -1434,10 +1432,19 @@ int main(int argc, char *argv[])
 	/* For backward compatibility add "updates" to the head of the search
 	 * list here. But only if there was no "search" option specified.
 	 */
+	if (!search) {
+		char *dirname;
+		size_t len;
 
-	if (!search)
-		search = add_search("updates", strlen("updates"), search);
-	
+		len = strlen(basedir)
+		    + strlen(MODULE_DIR)
+		    + strlen(version)
+		    + strlen("/updates");
+		dirname = NOFAIL(malloc(len + 1));
+		sprintf(dirname, "%s%s%s/updates", basedir,
+			MODULE_DIR, version);
+		search = add_search(dirname, len, search);
+	}
 	if (!all) {
 		/* Do command line args. */
 		for (opt = optind; opt < argc; opt++) {
