@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for modules.alias usage.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -11,7 +11,7 @@ mkdir -p $MODULE_DIR/kernel
 ln tests/data/$BITNESS/alias/alias-$BITNESS.ko \
    $MODULE_DIR/kernel
 
-SIZE=$(echo `wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`)
+SIZE=`wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`
 
 echo "/lib/modules/$MODTEST_UNAME/kernel/alias-$BITNESS.ko:" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/kernel/foo.ko:" >> $MODULE_DIR/modules.dep
@@ -53,4 +53,3 @@ OUT="`./modprobe bar 2>&1`"
 [ "$OUT" = "INIT_MODULE: $SIZE option2 option1
 INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1
 INIT_MODULE: $SIZE option2 option1" ]
-done

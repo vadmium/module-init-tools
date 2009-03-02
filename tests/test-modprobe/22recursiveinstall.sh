@@ -1,14 +1,14 @@
 #! /bin/sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -18,11 +18,11 @@ export_nodep-$BITNESS.ko:
 EOF
 
 # Insertion
-SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
-SIZE_NOEXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`)
+SIZE_EXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
+SIZE_NOEXPORT_DEP=`wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`
 
-# Empty sysfs
-rm -rf tests/tmp/sys
+# Empty /sys/module/
+mkdir -p tests/tmp/sys/module
 
 # Check it pulls in both.
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
@@ -59,5 +59,3 @@ echo "install noexport_dep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.conf
 
 [ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 SYSTEM: COMMAND" ]
-
-done

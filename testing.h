@@ -67,13 +67,14 @@ static long modtest_create_module(const char *name, size_t size)
 	return -1;
 }
 
+static const struct timespec modtest_delay = {
+	.tv_sec = 0,
+	.tv_nsec = 500 * 1000 * 1000
+};
+
 static long modtest_init_module(void *map, unsigned long size,
 				const char *optstring)
 {
-	const struct timespec delay = {
-		.tv_sec = 0,
-		.tv_nsec = 500 * 1000 * 1000
-	};
 
 	if (getenv("MODPROBE_WAIT")) {
 		int fd;
@@ -82,7 +83,7 @@ static long modtest_init_module(void *map, unsigned long size,
 		printf("Looping on %s\n", file);
 		fflush(stdout);
 		while ((fd = open(file, O_RDONLY)) < 0)
-			nanosleep(&delay, NULL);
+			nanosleep(&modtest_delay, NULL);
 		close(fd);
 		printf("Removing %s\n", file);
 		unlink(file);
@@ -112,7 +113,7 @@ static long modtest_delete_module(const char *modname, unsigned int flags)
 		printf("Looping on %s\n", file);
 		fflush(stdout);
 		while ((fd = open(file, O_RDONLY)) < 0)
-			sleep(1);
+			nanosleep(&modtest_delay, NULL);
 		close(fd);
 		printf("Removing %s\n", file);
 		fflush(stdout);

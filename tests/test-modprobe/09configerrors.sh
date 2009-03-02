@@ -1,5 +1,4 @@
 #! /bin/sh
-
 # Test various config file errors.
 
 rm -rf tests/tmp/*

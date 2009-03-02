@@ -1,8 +1,6 @@
 #! /bin/sh
 # Test wildcard install/remove commands.
 
-for BITNESS in 32 64; do
-
 rm -rf tests/tmp/*
 
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
@@ -33,5 +31,3 @@ EOF
 [ "`./modprobe -r wildcard_- 2>&1`" = "removing wildcard__." ]
 [ "`./modprobe -r anotherwildcard-_ 2>&1`" = "removing anotherwildcard__." ]
 [ "`./modprobe -r anotherwildcard-_aaa 2>&1`" = "removing anotherwildcard__aaa." ]
-
-done

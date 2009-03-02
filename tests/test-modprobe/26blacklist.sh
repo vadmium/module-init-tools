@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for blacklist usage.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -11,7 +11,7 @@ mkdir -p $MODULE_DIR/kernel
 ln tests/data/$BITNESS/alias/alias-$BITNESS.ko \
    $MODULE_DIR/kernel
 
-SIZE=$(echo `wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`)
+SIZE=`wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`
 
 echo "/lib/modules/$MODTEST_UNAME/kernel/alias-$BITNESS.ko:" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/kernel/foo.ko:" >> $MODULE_DIR/modules.dep
@@ -40,4 +40,3 @@ RESULT="`./modprobe bar 2>&1`"
 [ "$RESULT" = "INIT_MODULE: $SIZE 
 INIT_MODULE: 5 " ] || [ "$RESULT" = "INIT_MODULE: 5 
 INIT_MODULE: $SIZE " ]
-done

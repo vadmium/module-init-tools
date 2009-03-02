@@ -1,7 +1,7 @@
 #! /bin/sh
 # Test for spaces in configuration files: based on 04config.sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
@@ -63,11 +63,11 @@ alias   alias_to_baz   baz
 EOF
 
 # Create inputs
-ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_dep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep
@@ -79,24 +79,11 @@ export_nodep-$BITNESS.ko:
 export_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
 EOF
 
-# Now make a fake /sys/module structure for the test
-mkdir -p tests/tmp/sys/module
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-touch tests/tmp/sys/module/export_dep_$BITNESS/initstate
-touch tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
-
-SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE_EXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
-SIZE_NOEXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`)
-SIZE_EXPORT_DEP=$(echo `wc -c < tests/data/$BITNESS/normal/export_dep-$BITNESS.ko`)
-SIZE_NOEXPORT_DOUBLEDEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`)
+SIZE_NOEXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE_EXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
+SIZE_NOEXPORT_DEP=`wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`
+SIZE_EXPORT_DEP=`wc -c < tests/data/$BITNESS/normal/export_dep-$BITNESS.ko`
+SIZE_NOEXPORT_DOUBLEDEP=`wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`
 
 # Test ignoring install & remove.
 
@@ -193,5 +180,3 @@ SYSTEM: echo Removing   export_nodep" ]
 [ "`./modprobe -r alias_to_foo 2>&1`" = "SYSTEM: echo Removing   foo" ]
 [ "`./modprobe -r alias_to_bar 2>&1`" = "SYSTEM: echo Removing   bar" ]
 [ "`./modprobe -r alias_to_baz 2>&1`" = "SYSTEM: echo Removing   baz" ]
-
-done

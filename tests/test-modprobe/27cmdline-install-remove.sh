@@ -1,12 +1,12 @@
 #! /bin/sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep file.
@@ -28,5 +28,3 @@ echo "install othertarget echo \$CMDLINE_OPTS otheropts" >> tests/tmp/etc/modpro
 [ "`./modprobe othertarget 'foo="bar baz"' 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]
 # With unquoted args
 [ "`./modprobe othertarget foo=\"bar baz\" 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]
-
-done

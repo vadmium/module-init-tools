@@ -479,6 +479,16 @@ static void filename2modname(char *modname, const char *filename)
 	modname[i] = '\0';
 }
 
+/* convert to relative path if possible */
+static const char *compress_path(const char *path, const char *basedir)
+{
+	int len = strlen(basedir);
+
+	if (strncmp(path, basedir, len) == 0)
+		path += len + 1;
+	return path;
+}
+
 static void output_deps(struct module *modules,
 			FILE *out, char *dirname)
 {
@@ -488,11 +498,12 @@ static void output_deps(struct module *modules,
 		struct list_head *j, *tmp;
 		order_dep_list(i, i);
 
-		fprintf(out, "%s:", i->pathname + strlen(dirname)+1);
+		fprintf(out, "%s:", compress_path(i->pathname, dirname));
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
 				= list_entry(j, struct module, dep_list);
-			fprintf(out, " %s", dep->pathname + strlen(dirname)+1);
+			fprintf(out, " %s",
+			        compress_path(dep->pathname, dirname));
 			list_del_init(j);
 		}
 		fprintf(out, "\n");
@@ -518,13 +529,16 @@ static void output_deps_bin(struct module *modules,
 		
 		order_dep_list(i, i);
 		
-		filename2modname(modname, i->pathname + strlen(dirname)+1);
-		nofail_asprintf(&line, "%s:", i->pathname + strlen(dirname)+1);
+		filename2modname(modname, i->pathname);
+		nofail_asprintf(&line, "%s:",
+		                compress_path(i->pathname, dirname));
 		p = line;
 		list_for_each_safe(j, tmp, &i->dep_list) {
 			struct module *dep
 				= list_entry(j, struct module, dep_list);
-			nofail_asprintf(&line, "%s %s", p, dep->pathname + strlen(dirname)+1);
+			nofail_asprintf(&line, "%s %s",
+			                p,
+			                compress_path(dep->pathname, dirname));
 			free(p);
 			p = line;
 			list_del_init(j);
@@ -839,7 +853,11 @@ static char *underscores(char *string)
 		case '-':
 			string[i] = '_';
 			break;
-		
+
+		case ']':
+			warn("Unmatched bracket in %s\n", string);
+			break;
+
 		case '[':
 			i += strcspn(&string[i], "]");
 			if (!string[i])
@@ -1392,7 +1410,13 @@ int main(int argc, char *argv[])
 	if (!all) {
 		/* Do command line args. */
 		for (opt = optind; opt < argc; opt++) {
-			struct module *new = grab_module(NULL, argv[opt]);
+			struct module *new;
+
+			if (argv[opt][0] != '/')
+				fatal("modules must be specified using absolute paths.\n"
+					"\"%s\" is a relative path\n", argv[opt]);
+
+			new = grab_module(NULL, argv[opt]);
 			if (!new) {
 				/* cmd-line specified modules must exist */
 				fatal("grab_module() failed for module %s\n", argv[opt]);

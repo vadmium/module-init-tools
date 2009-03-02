@@ -1,22 +1,16 @@
 #! /bin/sh
 # Check underscore synonymity everywhere.
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
-   tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
+   tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
-
-
-# Now make a fake /sys/module structure for the test
-mkdir -p tests/tmp/sys/module
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-touch tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
 
 # Set up modules.dep file.
 echo "# A comment" > $MODULE_DIR/modules.dep
@@ -32,8 +26,8 @@ echo "remove test-_ echo remove-_" >> tests/tmp/etc/modprobe.conf
 echo "include tests/tmp/include-_" >> tests/tmp/etc/modprobe.conf
 echo "install test-include echo Included" >> tests/tmp/include-_
 
-SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+SIZE1=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE2=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 
 # On command line (-r and normal)
 [ "`./modprobe noexport-nodep_$BITNESS 2>&1`" = "INIT_MODULE: $SIZE1 " ]
@@ -60,5 +54,3 @@ SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
 # NOT in include commands
 [ "`./modprobe test-include 2>&1`" = "SYSTEM: echo Included" ]
 [ "`./modprobe test_include 2>&1`" = "SYSTEM: echo Included" ]
-
-done

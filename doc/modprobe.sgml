@@ -36,6 +36,7 @@
       <arg><option>-n</option></arg>
       <arg><option>-i</option></arg>
       <arg><option>-q</option></arg>
+      <arg><option>-b</option></arg>
       <arg><option>-o</option> <replaceable>modulename</replaceable></arg>
       <arg><replaceable>modulename</replaceable></arg>
       <arg rep='repeat'><option><replaceable>module parameters</replaceable></option></arg>
@@ -329,7 +330,7 @@
 	    and
 	    <citerefentry>
 	      <refentrytitle>basename</refentrytitle><manvolnum>1</manvolnum>
-	    </citerefentry> or a more flexible alternative.
+	    </citerefentry> for a more flexible alternative.
 	 </para>
         </listitem>
       </varlistentry>
@@ -423,7 +424,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--use-blacklist</option>
+        <term><option>-b</option> <option>--use-blacklist</option>
         </term>
         <listitem>
 	  <para>

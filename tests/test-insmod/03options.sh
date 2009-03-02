@@ -1,6 +1,6 @@
 #! /bin/sh
 
-SIZE=$(echo `wc -c < tests/test-insmod/02simple.sh`)
+SIZE=`wc -c < tests/test-insmod/02simple.sh`
 # Old options are ignored.
 [ "`./insmod -p tests/test-insmod/02simple.sh`" = "INIT_MODULE: $SIZE " ]
 [ "`./insmod -s tests/test-insmod/02simple.sh`" = "INIT_MODULE: $SIZE " ]

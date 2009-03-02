@@ -1,17 +1,18 @@
 #! /bin/sh
 # Test old-style module crap.
-for BITNESS in 32 64; do
+
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR/drivers/type
-ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR/drivers/type
 
 mkdir -p $MODULE_DIR/other/type
-ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko \
    $MODULE_DIR/other/type
 
 # Set up modules.dep file.
@@ -19,8 +20,8 @@ echo "# A comment" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/other/type/export_nodep-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
-SIZE1=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
-SIZE2=$(echo `wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`)
+SIZE1=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE2=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 
 # -l lists all of them (either order)
 [ "`./modprobe -l 2>&1`" = "/lib/modules/$MODTEST_UNAME/drivers/type/noexport_nodep-$BITNESS.ko
@@ -68,5 +69,3 @@ INIT_MODULE: $SIZE2 " ]
 # Does second even if first screws up.
 [ "`./modprobe -a crap export_nodep-$BITNESS 2>&1`" = "WARNING: Module crap not found.
 INIT_MODULE: $SIZE2 " ]
-
-done

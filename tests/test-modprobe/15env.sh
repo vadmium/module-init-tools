@@ -1,12 +1,12 @@
 #! /bin/sh
 
-for BITNESS in 32 64; do
+BITNESS=32
 
 rm -rf tests/tmp/*
 
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
+ln tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 # Now create modules.dep and modules.conf
@@ -17,7 +17,7 @@ echo install foo ./modprobe noexport_nodep-$BITNESS > tests/tmp/etc/modprobe.con
 echo install foo ./modprobe bar > tests/tmp/etc/modprobe2.conf
 echo install bar echo DOING BAR >> tests/tmp/etc/modprobe2.conf
 
-SIZE_NOEXPORT_NODEP=$(echo `wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`)
+SIZE_NOEXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 
 # Test normal args, then in env.
 [ "`./modprobe -v noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko 
@@ -54,4 +54,3 @@ DOING BAR" ]
 [ "`MODPROBE_OPTIONS='-C /etc/modprobe2.conf' ./modprobe -v foo 2>&1`" = "install ./modprobe bar
 install echo DOING BAR
 DOING BAR" ]
-done
