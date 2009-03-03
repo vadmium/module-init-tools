@@ -1883,6 +1883,9 @@ int main(int argc, char *argv[])
 	free(aliasfilename);
 	free(symfilename);
 	free(optstring);
-	
-	return 0;
+
+	if (warn)
+		return 1;
+	else
+		return 0;
 }
