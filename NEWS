@@ -1,0 +1,10 @@
+NEWS for module-init-tools
+--------------------------
+
+* New mailing list: linux-modules@vger.kernel.org
+* Release 3.7 is pending at the moment.
+* Release 3.6 was a regular maintenance release.
+* Release 3.5 included a lot of cleanups, new module indexing
+
+Please send patches (or preferably git pull requests) to:
+	Jon Masters <jcm@jonmasters.org>
