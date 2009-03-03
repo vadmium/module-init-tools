@@ -10,6 +10,12 @@
 /* Do we use syslog for messages or stderr? */
 int logging = 0;
 
+/* Do we want to silently drop all warnings? */
+int quiet = 0;
+
+/* Number of times warn() has been called */
+int warned = 0;
+
 void message(const char *prefix, const char *fmt, va_list *arglist)
 {
 	int ret;
@@ -34,13 +40,13 @@ void message(const char *prefix, const char *fmt, va_list *arglist)
 	free(buf);
 }
 
-int warned = 0;
 void warn(const char *fmt, ...)
 {
 	va_list arglist;
 	warned++;
 	va_start(arglist, fmt);
-	message("WARNING: ", fmt, &arglist);
+	if (!quiet)
+		message("WARNING: ", fmt, &arglist);
 	va_end(arglist);
 }
 

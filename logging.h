@@ -4,6 +4,9 @@
 /* Do we use syslog for messages or stderr? */
 extern int logging;
 
+/* Do we want to silent drop all warnings? */
+extern int quiet;
+
 /* Number of times warn() has been called */
 extern int warned;
 
