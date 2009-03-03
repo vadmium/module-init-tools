@@ -1544,7 +1544,7 @@ static char *gather_options(char *argv[])
 	return optstring;
 }
 
-static void handle_module(const char *modname,
+static int handle_module(const char *modname,
 			  struct list_head *todo_list,
 			  const char *newname,
 			  int remove,
@@ -1559,7 +1559,6 @@ static void handle_module(const char *modname,
 			  int ignore_proc,
 			  int strip_vermagic,
 			  int strip_modversion,
-			  int unknown_silent,
 			  const char *cmdline_opts,
 			  int flags)
 {
@@ -1572,12 +1571,12 @@ static void handle_module(const char *modname,
 		if (command && !ignore_commands) {
 			do_command(modname, command, verbose, dry_run, error,
 				   remove ? "remove":"install", cmdline_opts);
-			return;
+			return 0;
 		}
 
-		if (!unknown_silent)
+		if (!quiet)
 			error("Module %s not found.\n", modname);
-		return;
+		return 1;
 	}
 
 	if (remove)
@@ -1588,6 +1587,8 @@ static void handle_module(const char *modname,
 		       first_time, error, dry_run, verbose, modoptions,
 		       commands, ignore_commands, ignore_proc, strip_vermagic,
 		       strip_modversion, cmdline_opts);
+
+	return 0;
 }
 
 static struct option options[] = { { "verbose", 0, NULL, 'v' },
@@ -1627,7 +1628,6 @@ int main(int argc, char *argv[])
 	int dry_run = 0;
 	int remove = 0;
 	int verbose = 0;
-	int unknown_silent = 0;
 	int list_only = 0;
 	int all = 0;
 	int ignore_commands = 0;
@@ -1646,6 +1646,7 @@ int main(int argc, char *argv[])
 	char *aliasfilename, *symfilename;
 	errfn_t error = fatal;
 	int flags = O_NONBLOCK|O_EXCL;
+	int was_error = 0;
 
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
@@ -1670,7 +1671,7 @@ int main(int argc, char *argv[])
 			add_to_env_var(config);
 			break;
 		case 'q':
-			unknown_silent = 1;
+			quiet = 1;
 			add_to_env_var("-q");
 			break;
 		case 'D':
@@ -1851,14 +1852,15 @@ int main(int argc, char *argv[])
 							 opts, modoptions);
 
 				read_depends(dirname, aliases->module, &list);
-				handle_module(aliases->module, &list, newname,
-					      remove, opts, first_time, err,
+				if (handle_module(aliases->module, &list,
+					      newname, remove, opts,
+					      first_time, err,
 					      dry_run, verbose, modoptions,
 					      commands, ignore_commands,
 					      ignore_proc, strip_vermagic,
 					      strip_modversion,
-					      unknown_silent,
-					      optstring, flags);
+					      optstring, flags))
+					was_error = 1;
 
 				aliases = aliases->next;
 				INIT_LIST_HEAD(&list);
@@ -1868,12 +1870,13 @@ int main(int argc, char *argv[])
 			    && find_blacklist(modulearg, blacklist))
 				continue;
 
-			handle_module(modulearg, &list, newname, remove,
+			if (handle_module(modulearg, &list, newname, remove,
 				      optstring, first_time, error, dry_run,
 				      verbose, modoptions, commands,
 				      ignore_commands, ignore_proc,
 				      strip_vermagic, strip_modversion,
-				      unknown_silent, optstring, flags);
+				      optstring, flags))
+				was_error = 1;
 		}
 	}
 	if (logging)
@@ -1884,8 +1887,8 @@ int main(int argc, char *argv[])
 	free(symfilename);
 	free(optstring);
 
-	if (warn)
-		return 1;
+	if (was_error)
+		exit(1);
 	else
-		return 0;
+		exit(0);
 }
