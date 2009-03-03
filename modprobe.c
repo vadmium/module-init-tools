@@ -1575,9 +1575,8 @@ static void handle_module(const char *modname,
 			return;
 		}
 
-		if (unknown_silent)
-			exit(1);
-		error("Module %s not found.\n", modname);
+		if (!unknown_silent)
+			error("Module %s not found.\n", modname);
 		return;
 	}
 
