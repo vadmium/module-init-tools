@@ -42,9 +42,6 @@ DIST_DIR := /home/rusty/devel/kernel/www/modules/
 
 MAINTAINERCLEANFILES := $(man_MANS)
 
-# According to Warren Togami, RH has docbook2man in the docbook-utils rpm.
-DOCBOOKTOMAN := $(shell if command -v docbook-to-man >/dev/null 2>&1; then echo docbook-to-man; else echo docbook2man; fi)
-
 # docbook2man writes file itself, doesn't do stdout.
 %.8: doc/%.sgml
 	if [ "$(DOCBOOKTOMAN)" = "docbook2man" ]; then                     \

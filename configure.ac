@@ -16,6 +16,12 @@ AC_ARG_ENABLE(zlib,
 fi])
 
 AC_PROG_CC
+
+AC_CHECK_PROGS(DOCBOOKTOMAN, docbook-to-man docbook2man, [no],)
+if test x"$DOCBOOKTOMAN" = xno
+then
+	AC_MSG_ERROR([docbook2man not found])
+fi
  
 # Delay adding the zlib_flags until after AC_PROG_CC, so we can distinguish
 # between a broken cc and a working cc but missing libz.a.
