@@ -161,24 +161,19 @@ static void filename2modname(char *modname, const char *filename)
 	modname[i] = '\0';
 }
 
-static int lock_file(const char *filename)
+/* We used to lock with a write flock but that allows regular users to block
+ * module load by having a read lock on the module file (no way to bust the
+ * existing locks without killing the offending process). Instead, we now
+ * do the system call/init_module and allow the kernel to fail us instead.
+ */
+static int open_file(const char *filename)
 {
-	int fd = open(filename, O_RDWR, 0);
+	int fd = open(filename, O_RDONLY, 0);
 
-	if (fd >= 0) {
-		struct flock lock;
-		lock.l_type = F_WRLCK;
-		lock.l_whence = SEEK_SET;
-		lock.l_start = 0;
-		lock.l_len = 1;
-		fcntl(fd, F_SETLKW, &lock);
-	} else
-		/* Read-only filesystem?  There goes locking... */
-		fd = open(filename, O_RDONLY, 0);
 	return fd;
 }
 
-static void unlock_file(int fd)
+static void close_file(int fd)
 {
 	/* Valgrind is picky... */
 	close(fd);
@@ -876,8 +871,7 @@ static void insmod(struct list_head *list,
 		       strip_vermagic, strip_modversion, "");
 	}
 
-	/* Lock before we look, in case it's initializing. */
-	fd = lock_file(mod->filename);
+	fd = open_file(mod->filename);
 	if (fd < 0) {
 		error("Could not open '%s': %s\n",
 		      mod->filename, strerror(errno));
@@ -895,8 +889,7 @@ static void insmod(struct list_head *list,
 
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
-		/* It might recurse: unlock. */
-		unlock_file(fd);
+		close_file(fd);
 		do_command(mod->modname, command, verbose, dry_run, error,
 			   "install", cmdline_opts);
 		goto out_optstring;
@@ -944,7 +937,7 @@ static void insmod(struct list_head *list,
  out:
 	release_file(map, len);
  out_unlock:
-	unlock_file(fd);
+	close_file(fd);
  out_optstring:
 	free(optstring);
 	return;
@@ -965,14 +958,10 @@ static void rmmod(struct list_head *list,
 {
 	const char *command;
 	unsigned int usecount = 0;
-	int lock;
 	struct module *mod = list_entry(list->next, struct module, list);
 
 	/* Take first one off the list. */
 	list_del(&mod->list);
-
-	/* Ignore failure; it's best effort here. */
-	lock = lock_file(mod->filename);
 
 	if (!name)
 		name = mod->modname;
@@ -980,11 +969,9 @@ static void rmmod(struct list_head *list,
 	/* Even if renamed, find commands to orig. name. */
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
-		/* It might recurse: unlock. */
-		unlock_file(lock);
 		do_command(mod->modname, command, verbose, dry_run, error,
 			   "remove", cmdline_opts);
-		goto remove_rest_no_unlock;
+		goto remove_rest;
 	}
 
 	if (module_in_kernel(name, &usecount) == 0)
@@ -1010,8 +997,6 @@ static void rmmod(struct list_head *list,
 	}
 
  remove_rest:
-	unlock_file(lock);
- remove_rest_no_unlock:
 	/* Now do things we depend. */
 	if (!list_empty(list))
 		rmmod(list, NULL, 0, warn, dry_run, verbose, commands,
