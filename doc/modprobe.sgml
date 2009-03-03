@@ -156,6 +156,7 @@
       </varlistentry>
       <varlistentry>
         <term><option>-n</option> <option>--dry-run</option>
+        <option>--show</option>
         </term>
         <listitem>
           <para>This option does everything but actually insert or
@@ -354,6 +355,7 @@
       </varlistentry>
       <varlistentry>
         <term><option>--set-version</option>
+        <term><option>-S</option> <option>--set-version</option>
         </term>
         <listitem>
           <para>
@@ -367,7 +369,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--show-depends</option>
+        <term><option>-D</option> <option>--show-depends</option>
         </term>
         <listitem>
           <para>
@@ -434,6 +436,25 @@
 	    <refentrytitle>udev</refentrytitle><manvolnum>7</manvolnum>
 	    </citerefentry>.
 	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-k</option> <option>--autoclean</option>
+        </term>
+        <listitem>
+          <para>
+            It does not actually do anything.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-d</option> <option>--dirname</option>
+        </term>
+        <listitem>
+          <para>
+            Directory where modules can be found, /lib/modules/RELEASE
+            by default.
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>
