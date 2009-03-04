@@ -1605,7 +1605,6 @@ static struct option options[] = { { "verbose", 0, NULL, 'v' },
 				   { "remove", 0, NULL, 'r' },
 				   { "wait", 0, NULL, 'w' },
 				   { "showconfig", 0, NULL, 'c' },
-				   { "autoclean", 0, NULL, 'k' },
 				   { "quiet", 0, NULL, 'q' },
 				   { "show", 0, NULL, 'n' },
 				   { "dry-run", 0, NULL, 'n' },
@@ -1659,7 +1658,7 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "vVC:o:rknqQsclt:aifbwd:", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "vVC:o:rnqQsclt:aifbwd:", options, NULL)) != -1){
 		switch (opt) {
 		case 'v':
 			add_to_env_var("-v");
@@ -1705,9 +1704,6 @@ int main(int argc, char *argv[])
 		case 'a':
 			all = 1;
 			error = warn;
-			break;
-		case 'k':
-			/* FIXME: This should actually do something */
 			break;
 		case 'n':
 			dry_run = 1;
