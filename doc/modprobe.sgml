@@ -439,15 +439,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-k</option> <option>--autoclean</option>
-        </term>
-        <listitem>
-          <para>
-            It does not actually do anything.
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>-d</option> <option>--dirname</option>
         </term>
         <listitem>
