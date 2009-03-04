@@ -839,7 +839,7 @@ static void do_command(const char *modname,
 }
 
 /* Actually do the insert.  Frees second arg. */
-static void insmod(struct list_head *list,
+static int insmod(struct list_head *list,
 		   char *optstring,
 		   const char *newname,
 		   int first_time,
@@ -859,6 +859,7 @@ static void insmod(struct list_head *list,
 	void *map;
 	const char *command;
 	struct module *mod = list_entry(list->next, struct module, list);
+	int rc = 0;
 
 	/* Take us off the list. */
 	list_del(&mod->list);
@@ -866,9 +867,14 @@ static void insmod(struct list_head *list,
 	/* Do things we (or parent) depend on first, but don't die if
 	 * they fail. */
 	if (!list_empty(list)) {
-		insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
+		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
 		       dry_run, verbose, options, commands, 0, ignore_proc,
-		       strip_vermagic, strip_modversion, "");
+		       strip_vermagic, strip_modversion, "")) != 0) {
+			error("Error inserting %s (%s): %s\n",
+				mod->modname, mod->filename,
+				insert_moderror(errno));
+			goto out_optstring;
+		}
 	}
 
 	fd = open_file(mod->filename);
@@ -933,6 +939,7 @@ static void insmod(struct list_head *list,
 			error("Error inserting %s (%s): %s\n",
 			      mod->modname, mod->filename,
 			      insert_moderror(errno));
+			rc = 1;
 	}
  out:
 	release_file(map, len);
@@ -940,7 +947,7 @@ static void insmod(struct list_head *list,
 	close_file(fd);
  out_optstring:
 	free(optstring);
-	return;
+	return rc;
 }
 
 /* Do recursive removal. */
