@@ -1,6 +1,11 @@
 Some TODOs, grouped by the individual utilty
 --------------------------------------------
 
+build
+-----
+	* Fix "make dist" to build documentation.
+	* Fix "make distcheck" at the same time.
+
 modprobe
 --------
 	* Enforce use of *.conf files in /etc/modprobe.d as filename extension.
