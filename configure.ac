@@ -32,7 +32,9 @@ AC_PROG_RANLIB
 AC_CHECK_PROGS(DOCBOOKTOMAN, docbook-to-man docbook2man, [no],)
 if test x"$DOCBOOKTOMAN" = xno
 then
-	AC_MSG_ERROR([docbook2man not found])
+	AC_MSG_WARN([docbook2man not found])
+	# fail with a meaningfull error if $DOCBOOKTOMAN called by the makefile
+	DOCBOOKTOMAN=docbook2man
 fi
  
 # Delay adding the zlib_flags until after AC_PROG_CC, so we can distinguish
