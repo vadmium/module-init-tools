@@ -33,7 +33,8 @@ OR,
 	depmod 2.5.50
 
 6) If you want to hack on the source:
-	aclocal && automake --add-missing --copy && autoconf
+	autoreconf -i
+	(or in full: aclocal && automake --add-missing --copy && autoconf)
 
 If this is all too complicated, I recommend getting and installing the
 source rpm or debian package instead.
