@@ -2,6 +2,8 @@ AC_INIT(module-init-tools,3.7-pre7)
 
 AC_CANONICAL_SYSTEM
 
+AX_ENABLE_BUILDDIR([build])
+
 # Use -no-portability since we're never going to use module-init-tools on
 # non-Linux systems and it's reasonable to expect GNU-compatibility here.
 AM_INIT_AUTOMAKE([-Wno-portability])

@@ -6,6 +6,9 @@ set -e
 if [ x"$1" = x"-v" ]; then VERBOSE=1; shift; fi
 if [ x"$1" = x"-v" -o x"$1" = x"-vv" ]; then VERBOSE=1; EXTRA_ARGS=-x; shift; fi
 
+# Run by "make check" from build directory
+if [ -n "$srcdir" ]; then cd "$srcdir"; fi
+
 # Creates a temporary file and exports the name of the file to
 # the provided argument.  Exits on error.
 # 
@@ -41,16 +44,28 @@ create_tempfile()
 }
 export -f create_tempfile
 
+if [ ! -e "tests/build" ]; then
+    echo Making build directory for tests
+    mkdir tests/build
+fi
+if [ ! -e "tests/tmp" ]; then
+    echo Making temporary directory for tests
+    mkdir tests/tmp
+fi
+
 for config in --enable-zlib --disable-zlib; do
     echo Building with $config...
-    ./configure $config CFLAGS="-DJUST_TESTING -g -Wall" >/dev/null
+
+    cd tests/build
+    ../../configure $config CFLAGS="-DJUST_TESTING -g -Wall" >/dev/null
     make clean >/dev/null
     # ismod.static doesn't build with -DJUST_TESTING and --enable-zlib
     make insmod.static >/dev/null 2>&1 || touch insmod.static
     make all >/dev/null
+    cd ../..
 
     echo Testing with $config...
-    if grep -q CONFIG_USE_ZLIB=1 Makefile; then
+    if grep -q CONFIG_USE_ZLIB=1 tests/build/Makefile; then
 	CONFIG_HAVE_ZLIB=1
 	export CONFIG_HAVE_ZLIB
     else
@@ -58,7 +73,7 @@ for config in --enable-zlib --disable-zlib; do
     fi
 
     # Create endianness links
-    case `file modprobe` in
+    case `file tests/build/modprobe` in
 	*MSB*) ENDIAN=be;;
 	*LSB*) ENDIAN=le;;
 	*) echo Unknown endian! >&2; exit 1;;
@@ -66,7 +81,7 @@ for config in --enable-zlib --disable-zlib; do
     ln -sfn 64-$ENDIAN tests/data/64
     ln -sfn 32-$ENDIAN tests/data/32
 
-    PATH=`pwd`:$PATH
+    PATH=`pwd`/tests/build:$PATH
 
     # By default, we want to look like a new kernel.
     MODTEST_UNAME=2.6.27
@@ -77,16 +92,14 @@ for config in --enable-zlib --disable-zlib; do
 
     if [ $# -eq 1 ]; then DOING=0; else DOING=1; fi
 
-    if [ ! -e "tests/tmp" ]; then
-        echo Making temporary directory for tests
-	mkdir tests/tmp
-    fi 
-	
-
     for dir in `find tests/* -type d | sort`
       do
-    # data and tmp dirs don't contain tests.
-      case "$dir" in tests/data*) continue;; tests/tmp*) continue;; esac
+    # data, build and tmp dirs don't contain tests.
+      case "$dir" in
+	tests/data*) continue;;
+	tests/build*) continue;;
+	tests/tmp*) continue;;
+      esac
 
       if [ -z "$VERBOSE" ]; then
 	  echo -n Running tests for $dir.
@@ -111,8 +124,6 @@ for config in --enable-zlib --disable-zlib; do
 	      fi
 	  else
 	      echo Test for $f failed.
-	      # Dangerous to leave these lying around
-	      make distclean >/dev/null
 	      exit 1
 	  fi
       done

@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
 insmod_SOURCES = insmod.c testing.h
 lsmod_SOURCES = lsmod.c testing.h
 modprobe_SOURCES = modprobe.c logging.c index.c zlibsupport.c config_filter.c logging.h index.h testing.h zlibsupport.h config_filter.h
@@ -26,7 +28,7 @@ dist_man_MANS = $(MAN5) $(MAN8)
 # If they haven't overridden mandir, fix it (never /man!)
 mandir =$(shell if [ @mandir@ = $(prefix)/man ]; then if [ $(prefix) = / ]; then echo /usr/share/man; else echo $(prefix)/share/man; fi; else echo @mandir@; fi)
 
-TESTSUITE := $(shell find tests -type f ! -name '*~') tests/vg-suppressions
+TESTSUITE := $(shell test -e @srcdir@/tests && find @srcdir@/tests -type f ! -name '*~')
 
 EXTRA_DIST = generate-modprobe.conf modprobe.devfs FAQ CODING stress_modules.sh install-with-care $(SGML) $(man_MANS) $(TESTSUITE)
 

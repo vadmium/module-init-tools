@@ -8,7 +8,7 @@ SIZE=`wc -c < tests/test-insmod/02simple.sh`
 [ "`insmod -p -f -s tests/test-insmod/02simple.sh`" = "INIT_MODULE: $SIZE " ]
 
 # --version and -v
-VERSION=`grep ^VERSION Makefile | sed 's/.*=[ 	]*//'`
+VERSION=`grep ^VERSION tests/build/Makefile | sed 's/.*=[ 	]*//'`
 [ "`insmod -V`" = "module-init-tools version $VERSION" ]
 [ "`insmod --version`" = "module-init-tools version $VERSION" ]
 
