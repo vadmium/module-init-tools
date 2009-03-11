@@ -31,7 +31,7 @@ cp tests/data/$BITNESS$ENDIAN/map/ccw_map-$BITNESS.ko \
 gzip `find $MODULE_DIR -name '*.ko'`
 
 # Expect no output.
-[ "`./depmod`" = "" ]
+[ "`depmod`" = "" ]
 
 # Check PCI: expect 2 lines
 [ `grep -vc '^#' < $MODULE_DIR/modules.pcimap` = 2 ]
@@ -94,7 +94,7 @@ mv $MODULE_DIR/modules.inputmap $MODULE_DIR/modules.inputmap.old
 mv $MODULE_DIR/modules.ofmap $MODULE_DIR/modules.ofmap.old
 
 # Synonyms
-[ "`./depmod -a`" = "" ]
+[ "`depmod -a`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -104,7 +104,7 @@ diff -u $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.isapnpmap
 diff -u $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.inputmap
 diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 
-[ "`./depmod -A`" = "" ]
+[ "`depmod -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -114,7 +114,7 @@ diff -u $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.isapnpmap
 diff -u $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.inputmap
 diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 
-[ "`./depmod -e -A`" = "" ]
+[ "`depmod -e -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -124,7 +124,7 @@ diff -u $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.isapnpmap
 diff -u $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.inputmap
 diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 
-[ "`./depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -138,16 +138,16 @@ diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 grep -hv '^#' $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.ccwmap.old $MODULE_DIR/modules.ieee1394map.old $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.ofmap.old > tests/tmp/out
 
 # Stdout versions.
-./depmod -n | grep -v '^#' > tests/tmp/stdout
+depmod -n | grep -v '^#' > tests/tmp/stdout
 diff -u tests/tmp/out tests/tmp/stdout
 
-./depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.dep
+depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.dep
 diff -u tests/tmp/out tests/tmp/stdout
 
-./depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
+depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
 diff -u tests/tmp/out tests/tmp/stdout
 
-./depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
+depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
 diff -u tests/tmp/out tests/tmp/stdout
 
 done

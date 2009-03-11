@@ -19,36 +19,36 @@ echo "/lib/modules/$MODTEST_UNAME/kernel/foo.ko:" >> $MODULE_DIR/modules.dep
 echo Test > $MODULE_DIR/kernel/foo.ko
 
 # Shouldn't complain if can't open modules.alias
-[ "`./modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
+[ "`modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
 
 # Now, alias found in modules.alias works.
 echo "alias bar alias-$BITNESS" > $MODULE_DIR/modules.alias
-[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE " ]
+[ "`modprobe bar 2>&1`" = "INIT_MODULE: $SIZE " ]
 
 # Normal alias should override it.
 mkdir -p tests/tmp/etc/modprobe.d
 echo 'alias bar foo' > tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
 
 # If there's a real module, alias from modules.alias must NOT override.
 echo "alias foo alias-$BITNESS" > $MODULE_DIR/modules.alias
-[ "`./modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
 
 # If there's an install command, modules.alias must not override.
 echo 'install bar echo foo' > tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe bar 2>&1`" = "SYSTEM: echo foo" ]
+[ "`modprobe bar 2>&1`" = "SYSTEM: echo foo" ]
 echo 'remove bar echo foo remove' > tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe -r bar 2>&1`" = "SYSTEM: echo foo remove" ]
+[ "`modprobe -r bar 2>&1`" = "SYSTEM: echo foo remove" ]
 
 # Should gather up options from other alias name as well.
 echo "alias bar alias-$BITNESS" > $MODULE_DIR/modules.alias
 echo "options bar option1" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "options alias-$BITNESS option2" >> tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option2 option1" ]
+[ "`modprobe bar 2>&1`" = "INIT_MODULE: $SIZE option2 option1" ]
 
 # Duplicated alias: both get probed (either order)
 echo "alias bar foo" >> $MODULE_DIR/modules.alias
-OUT="`./modprobe bar 2>&1`"
+OUT="`modprobe bar 2>&1`"
 
 [ "$OUT" = "INIT_MODULE: $SIZE option2 option1
 INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1

@@ -14,7 +14,7 @@ alias
 alias foo
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'alias'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'alias'
 WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'alias'
 FATAL: Module foo not found." ]
 
@@ -24,7 +24,7 @@ options
 options foo
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'options'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'options'
 WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'options'
 FATAL: Module foo not found." ]
 
@@ -33,7 +33,7 @@ cat > tests/tmp/etc/modprobe.d/modprobe.conf <<EOF
 include
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'include'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'include'
 FATAL: Module foo not found." ]
 
 # Bad install syntax
@@ -42,7 +42,7 @@ install
 install foo
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'install'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'install'
 WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'install'
 FATAL: Module foo not found." ]
 
@@ -52,7 +52,7 @@ remove
 remove foo
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'remove'
 WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
@@ -62,7 +62,7 @@ complete junk and stuff
 rubbish
 EOF
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'complete'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 1: ignoring bad line starting with 'complete'
 WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'rubbish'
 FATAL: Module foo not found." ]
 
@@ -70,32 +70,32 @@ FATAL: Module foo not found." ]
 echo "#comment" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "remove" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 echo "" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "remove" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 echo "  # Comment" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "remove" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 2: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 echo "  # Comment \\" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "with multiple lines" >> tests/tmp/etc/modprobe.d/modprobe.conf
 echo "remove" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 3: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 3: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 echo "remove foo \\" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "  bar" >> tests/tmp/etc/modprobe.d/modprobe.conf
 echo "remove" >> tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 3: ignoring bad line starting with 'remove'
+[ "`modprobe foo 2>&1`" = "WARNING: /etc/modprobe.d/modprobe.conf line 3: ignoring bad line starting with 'remove'
 FATAL: Module foo not found." ]
 
 

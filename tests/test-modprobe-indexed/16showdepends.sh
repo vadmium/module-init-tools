@@ -24,15 +24,15 @@ export_nodep_$BITNESS export_nodep-$BITNESS.ko:
 export_dep_$BITNESS export_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
 EOF
 # Build modules.dep.bin, which modprobe will prefer
-./modindex -o $MODULE_DIR/modules.dep.bin < $MODULE_DIR/modules.dep.temp
+modindex -o $MODULE_DIR/modules.dep.bin < $MODULE_DIR/modules.dep.temp
 
-[ "`./modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe --show-depends noexport_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
+[ "`modprobe --show-depends export_nodep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
+[ "`modprobe --show-depends noexport_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe --show-depends export_dep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko " ]
-[ "`./modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe --show-depends noexport_doubledep-$BITNESS 2>>tests/tmp/stderr`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko " ]
 

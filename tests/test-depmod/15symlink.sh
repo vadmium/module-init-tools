@@ -27,7 +27,7 @@ ln -s ../../../updates $MODULE_DIR/updates
 ln tests/data/$BITNESS$ENDIAN/rename/rename-new-$BITNESS.ko tests/tmp/updates
 
 # Expect no output.
-[ "`./depmod 2>&1`" = "" ]
+[ "`depmod 2>&1`" = "" ]
 
 # Check modules.dep results: expect 6 lines
 [ `grep -vc '^#' < $MODULE_DIR/modules.dep` = 6 ]
@@ -50,79 +50,79 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
 # Synonyms
-[ "`./depmod $MODTEST_UNAME`" = "" ]
+[ "`depmod $MODTEST_UNAME`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -a`" = "" ]
+[ "`depmod -a`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -a $MODTEST_UNAME`" = "" ]
+[ "`depmod -a $MODTEST_UNAME`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -A`" = "" ]
+[ "`depmod -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -A $MODTEST_UNAME`" = "" ]
+[ "`depmod -A $MODTEST_UNAME`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e -A`" = "" ]
+[ "`depmod -e -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --all`" = "" ]
+[ "`depmod --all`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --quick`" = "" ]
+[ "`depmod --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e --quick`" = "" ]
+[ "`depmod -e --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod -e --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --errsyms --quick`" = "" ]
+[ "`depmod --errsyms --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --errsyms --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod --errsyms --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -132,19 +132,19 @@ mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 grep -vh '^#' $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.symbols.old > $MODULE_DIR/modules.all.old
 
 # Stdout versions.
-./depmod -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

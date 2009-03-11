@@ -32,7 +32,7 @@ echo "live" > tests/tmp/sys/module/export_dep_$BITNESS/initstate
 SIZE_EXPORT_NODEP=`wc -c < tests/data/$BITNESS/normal/export_nodep-$BITNESS.ko`
 SIZE_NOEXPORT_DOUBLEDEP=`wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`
 
-[ "`./modprobe -v noexport_doubledep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v noexport_doubledep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 INIT_MODULE: $SIZE_EXPORT_NODEP 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko 
 INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP " ]

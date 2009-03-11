@@ -23,7 +23,7 @@ ln tests/data/$BITNESS$ENDIAN/complex/complex_a-$BITNESS.ko \
    $MODULE_DIR
 
 # Expect no output.
-[ "`./depmod 2>&1`" = "" ]
+[ "`depmod 2>&1`" = "" ]
 
 # Check results: expect 5 lines
 [ `grep -vc '^#' < $MODULE_DIR/modules.dep` = 5 ]
@@ -43,19 +43,19 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
 # Synonyms
-[ "`./depmod -a`" = "" ]
+[ "`depmod -a`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -A`" = "" ]
+[ "`depmod -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -e -A`" = "" ]
+[ "`depmod -e -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
@@ -63,19 +63,19 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 grep -vh '^#' $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.symbols.old > $MODULE_DIR/modules.all.old
 
 # Stdout versions.
-./depmod -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -a -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

@@ -19,7 +19,7 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
 ALL="/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko"
 
 # Expect no output.
-[ "`./depmod $ALL 2>&1`" = "" ]
+[ "`depmod $ALL 2>&1`" = "" ]
 
 # Check modules.dep results: expect 5 lines
 [ `grep -vc '^#' < $MODULE_DIR/modules.dep` = 5 ]
@@ -41,31 +41,31 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
 # Synonyms
-[ "`./depmod $MODTEST_UNAME $ALL`" = "" ]
+[ "`depmod $MODTEST_UNAME $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e $ALL`" = "" ]
+[ "`depmod -e $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod -e $MODTEST_VERSION $ALL`" = "" ]
+[ "`depmod -e $MODTEST_VERSION $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --errsyms $ALL`" = "" ]
+[ "`depmod --errsyms $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`./depmod --errsyms $MODTEST_VERSION $ALL`" = "" ]
+[ "`depmod --errsyms $MODTEST_VERSION $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -75,15 +75,15 @@ mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 grep -vh '^#' $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.symbols.old > $MODULE_DIR/modules.all.old
 
 # Stdout versions.
-./depmod -n $ALL | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n $ALL | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -e -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

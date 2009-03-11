@@ -20,11 +20,11 @@ echo "install noexport_nodep-$BITNESS modprobe --ignore-install noexport_nodep-$
 echo "install othertarget echo \$CMDLINE_OPTS otheropts" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
 # With quoted args
-[ "`./modprobe noexport_nodep-$BITNESS 'foo="bar baz"' 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]
+[ "`modprobe noexport_nodep-$BITNESS 'foo="bar baz"' 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]
 # With unquoted args
-[ "`./modprobe noexport_nodep-$BITNESS foo=\"bar baz\" 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]
+[ "`modprobe noexport_nodep-$BITNESS foo=\"bar baz\" 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]
 
 # Same with other target.
-[ "`./modprobe othertarget 'foo="bar baz"' 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]
+[ "`modprobe othertarget 'foo="bar baz"' 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]
 # With unquoted args
-[ "`./modprobe othertarget foo=\"bar baz\" 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]
+[ "`modprobe othertarget foo=\"bar baz\" 2>&1`" = "SYSTEM: echo foo=\"bar baz\" otheropts" ]

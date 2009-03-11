@@ -13,7 +13,7 @@ ln tests/data/$BITNESS$ENDIAN/alias/alias-$BITNESS.ko \
    $MODULE_DIR
 
 # Expect no normal output.
-[ "`./depmod 2>&1`" = "" ]
+[ "`depmod 2>&1`" = "" ]
 
 # Check results: expect 2 lines.
 [ `grep -vc '^#' < $MODULE_DIR/modules.alias` = 2 ]
@@ -30,7 +30,7 @@ ln tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko \
    $MODULE_DIR
 
 # Expect no normal output.
-[ "`./depmod 2>&1`" = "" ]
+[ "`depmod 2>&1`" = "" ]
 
 # Check results: expect 2 lines.
 [ `grep -vc '^#' < $MODULE_DIR/modules.alias` = 2 ]

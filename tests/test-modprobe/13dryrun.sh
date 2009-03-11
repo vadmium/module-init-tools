@@ -25,26 +25,26 @@ export_nodep-$BITNESS.ko:
 export_dep-$BITNESS.ko: export_nodep-$BITNESS.ko
 EOF
 
-[ "`./modprobe -v -n noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
-[ "`./modprobe -v -n noexport_nodep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko OPTIONS" ]
+[ "`modprobe -v -n noexport_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko " ]
+[ "`modprobe -v -n noexport_nodep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko OPTIONS" ]
 
-[ "`./modprobe -v -n export_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
-[ "`./modprobe -v -n export_nodep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko OPTIONS" ]
+[ "`modprobe -v -n export_nodep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko " ]
+[ "`modprobe -v -n export_nodep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko OPTIONS" ]
 
-[ "`./modprobe -v -n noexport_dep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n noexport_dep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko " ]
-[ "`./modprobe -v -n noexport_dep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n noexport_dep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko OPTIONS" ]
 
-[ "`./modprobe -v -n export_dep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n export_dep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko " ]
-[ "`./modprobe -v -n export_dep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n export_dep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko OPTIONS" ]
 
-[ "`./modprobe -v -n noexport_doubledep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n noexport_doubledep-$BITNESS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko " ]
-[ "`./modprobe -v -n noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko OPTIONS" ]
 
@@ -52,7 +52,7 @@ insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko OPTIONS" ]
 mkdir -p tests/tmp/etc/modprobe.d
 echo "alias foo noexport_doubledep-$BITNESS" > tests/tmp/etc/modprobe.d/modprobe.conf
 echo "options noexport_doubledep-$BITNESS OPTIONS" >> tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`./modprobe -v -n foo 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
+[ "`modprobe -v -n foo 2>&1`" = "insmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko 
 insmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko OPTIONS" ]
 
@@ -70,12 +70,12 @@ echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
 echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Removal
-[ "`./modprobe -v -n -r noexport_nodep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko" ]
-[ "`./modprobe -v -n -r export_nodep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-[ "`./modprobe -v -n -r noexport_dep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko
+[ "`modprobe -v -n -r noexport_nodep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko" ]
+[ "`modprobe -v -n -r export_nodep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
+[ "`modprobe -v -n -r noexport_dep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-[ "`./modprobe -v -n -r export_dep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
+[ "`modprobe -v -n -r export_dep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]
-[ "`./modprobe -v -n -r noexport_doubledep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko
+[ "`modprobe -v -n -r noexport_doubledep-$BITNESS 2>&1`" = "rmmod /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko
 rmmod /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko" ]

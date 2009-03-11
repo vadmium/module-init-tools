@@ -19,15 +19,15 @@ remove *wildcard-_* echo removing \$MODPROBE_MODULE.
 EOF
 
 # Install...
-[ "`./modprobe wildcard-_aaa 2>&1`" = "installing wildcard__aaa." ]
-[ "`./modprobe wildcard-_ 2>&1`" = "installing wildcard__." ]
-[ "`./modprobe wildcard_- 2>&1`" = "installing wildcard__." ]
-[ "`./modprobe anotherwildcard-_ 2>&1`" = "installing anotherwildcard__." ]
-[ "`./modprobe anotherwildcard-_aaa 2>&1`" = "installing anotherwildcard__aaa." ]
+[ "`modprobe wildcard-_aaa 2>&1`" = "installing wildcard__aaa." ]
+[ "`modprobe wildcard-_ 2>&1`" = "installing wildcard__." ]
+[ "`modprobe wildcard_- 2>&1`" = "installing wildcard__." ]
+[ "`modprobe anotherwildcard-_ 2>&1`" = "installing anotherwildcard__." ]
+[ "`modprobe anotherwildcard-_aaa 2>&1`" = "installing anotherwildcard__aaa." ]
 
 # Remove...
-[ "`./modprobe -r wildcard-_aaa 2>&1`" = "removing wildcard__aaa." ]
-[ "`./modprobe -r wildcard-_ 2>&1`" = "removing wildcard__." ]
-[ "`./modprobe -r wildcard_- 2>&1`" = "removing wildcard__." ]
-[ "`./modprobe -r anotherwildcard-_ 2>&1`" = "removing anotherwildcard__." ]
-[ "`./modprobe -r anotherwildcard-_aaa 2>&1`" = "removing anotherwildcard__aaa." ]
+[ "`modprobe -r wildcard-_aaa 2>&1`" = "removing wildcard__aaa." ]
+[ "`modprobe -r wildcard-_ 2>&1`" = "removing wildcard__." ]
+[ "`modprobe -r wildcard_- 2>&1`" = "removing wildcard__." ]
+[ "`modprobe -r anotherwildcard-_ 2>&1`" = "removing anotherwildcard__." ]
+[ "`modprobe -r anotherwildcard-_aaa 2>&1`" = "removing anotherwildcard__aaa." ]

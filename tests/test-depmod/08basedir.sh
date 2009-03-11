@@ -17,7 +17,7 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
    $MODULE_DIR
 
 # Expect no output.
-[ "`./depmod -b /BASEDIR 2>&1`" = "" ]
+[ "`depmod -b /BASEDIR 2>&1`" = "" ]
 
 # Check results: expect 5 lines
 [ `grep -vc '^#' < $MODULE_DIR/modules.dep` = 5 ]
@@ -31,27 +31,27 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
 # Synonyms
-[ "`./depmod -b /BASEDIR  -a`" = "" ]
+[ "`depmod -b /BASEDIR  -a`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -b /BASEDIR -A`" = "" ]
+[ "`depmod -b /BASEDIR -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -b /BASEDIR -e -A`" = "" ]
+[ "`depmod -b /BASEDIR -e -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod -b /BASEDIR -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -b /BASEDIR -e -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod --basedir /BASEDIR -e -A $MODTEST_VERSION 2>&1`" = "" ]
+[ "`depmod --basedir /BASEDIR -e -A $MODTEST_VERSION 2>&1`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`./depmod --basedir=/BASEDIR -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod --basedir=/BASEDIR -e -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
@@ -59,19 +59,19 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 grep -vh '^#' $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.symbols > $MODULE_DIR/modules.all.old
 
 # Stdout versions.
-./depmod -b /BASEDIR -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -b /BASEDIR -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -b /BASEDIR -a -n | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -b /BASEDIR -a -n | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -b /BASEDIR -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -b /BASEDIR -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-./depmod -b /BASEDIR -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -b /BASEDIR -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

@@ -35,26 +35,26 @@ SIZE_NOEXPORT_DOUBLEDEP=`wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$
 # Empty /sys/module/
 mkdir -p tests/tmp/sys/module
 
-[ "`./modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
-[ "`./modprobe noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP OPTIONS" ]
+[ "`modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP " ]
+[ "`modprobe noexport_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP OPTIONS" ]
 
-[ "`./modprobe export_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP " ]
-[ "`./modprobe export_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP OPTIONS" ]
+[ "`modprobe export_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP " ]
+[ "`modprobe export_nodep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP OPTIONS" ]
 
-[ "`./modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
-[ "`./modprobe noexport_dep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe noexport_dep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_NOEXPORT_DEP OPTIONS" ]
 
-[ "`./modprobe export_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe export_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_EXPORT_DEP " ]
-[ "`./modprobe export_dep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe export_dep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_EXPORT_DEP OPTIONS" ]
 
-[ "`./modprobe noexport_doubledep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe noexport_doubledep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_EXPORT_DEP 
 INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP " ]
-[ "`./modprobe noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
+[ "`modprobe noexport_doubledep-$BITNESS OPTIONS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_EXPORT_DEP 
 INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP OPTIONS" ]
 
@@ -72,13 +72,13 @@ echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
 echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Removal
-[ "`./modprobe -r noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]
-[ "`./modprobe -r export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-[ "`./modprobe -r noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
+[ "`modprobe -r noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]
+[ "`modprobe -r export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
+[ "`modprobe -r noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-[ "`./modprobe -r export_dep-$BITNESS 2>&1`" = "DELETE_MODULE: export_dep_$BITNESS EXCL 
+[ "`modprobe -r export_dep-$BITNESS 2>&1`" = "DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-[ "`./modprobe -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_doubledep_$BITNESS EXCL 
+[ "`modprobe -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_doubledep_$BITNESS EXCL 
 DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 
@@ -100,6 +100,6 @@ echo 0 > tests/tmp/sys/module/noexport_dep_$BITNESS/refcnt
 echo 0 > tests/tmp/sys/module/export_dep_$BITNESS/refcnt
 echo 0 > tests/tmp/sys/module/newname/refcnt
 
-[ "`./modprobe -o newname -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: newname EXCL 
+[ "`modprobe -o newname -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: newname EXCL 
 DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]

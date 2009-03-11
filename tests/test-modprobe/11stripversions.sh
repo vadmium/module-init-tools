@@ -25,20 +25,20 @@ echo "# A comment" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/rename-version-$BITNESS.ko:" >> $MODULE_DIR/modules.dep
 
 # Check it without removing.
-[ "`./modprobe rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
+[ "`modprobe rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
 [ "`section_attributes tests/tmp/out __versions`" = "__versions A" ]
 [ "`section_attributes tests/tmp/out __vermagic`" = "__vermagic A" ]
 
 # Now remove them (turns off ALLOC bit)
-[ "`./modprobe --force rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
+[ "`modprobe --force rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
 [ "`section_attributes tests/tmp/out __versions`" = "__versions 0" ]
 [ "`section_attributes tests/tmp/out __vermagic`" = "__vermagic 0" ]
 
 # Now remove them individually instead.
-[ "`./modprobe --force-vermagic rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
+[ "`modprobe --force-vermagic rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
 [ "`section_attributes tests/tmp/out __versions`" = "__versions A" ]
 [ "`section_attributes tests/tmp/out __vermagic`" = "__vermagic 0" ]
-[ "`./modprobe --force-modversion rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
+[ "`modprobe --force-modversion rename-version-$BITNESS 2> tests/tmp/out`" = "" ]
 [ "`section_attributes tests/tmp/out __versions`" = "__versions 0" ]
 [ "`section_attributes tests/tmp/out __vermagic`" = "__vermagic A" ]
 

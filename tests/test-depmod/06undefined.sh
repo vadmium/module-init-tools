@@ -15,12 +15,12 @@ ln tests/data/$BITNESS$ENDIAN/unknown/unknown-$BITNESS.ko \
 touch tests/tmp/empty
 
 # Without -e, doesn't matter.
-[ "`./depmod -F /empty 2>&1`" = "" ]
+[ "`depmod -F /empty 2>&1`" = "" ]
 
 # Without -F doesn't matter
-[ "`./depmod -e 2>&1`" = "" ]
+[ "`depmod -e 2>&1`" = "" ]
 
-[ "`./depmod -e -F /empty 2>&1`" = "WARNING: /lib/modules/$MODTEST_UNAME/unknown-$BITNESS.ko needs unknown symbol undefined" ]
+[ "`depmod -e -F /empty 2>&1`" = "WARNING: /lib/modules/$MODTEST_UNAME/unknown-$BITNESS.ko needs unknown symbol undefined" ]
 
 done
 done

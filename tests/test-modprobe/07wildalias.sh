@@ -17,11 +17,11 @@ alias /dev/test* bar
 EOF
 
 # Simple test.
-[ "`./modprobe wildcard-_aaa 2>&1`" = "FATAL: Module foo not found." ]
-[ "`./modprobe wildcard-_ 2>&1`" = "FATAL: Module foo not found." ]
-[ "`./modprobe wildcard_- 2>&1`" = "FATAL: Module foo not found." ]
-[ "`./modprobe anotherwildcard-_ 2>&1`" = "FATAL: Module foo not found." ]
-[ "`./modprobe anotherwildcard-_aaa 2>&1`" = "FATAL: Module foo not found." ]
-[ "`./modprobe /dev/test 2>&1`" = "FATAL: Module bar not found." ]
-[ "`./modprobe /dev/test/tmp 2>&1`" = "FATAL: Module bar not found." ]
-[ "`./modprobe /dev/test7  2>&1`" = "FATAL: Module bar not found." ]
+[ "`modprobe wildcard-_aaa 2>&1`" = "FATAL: Module foo not found." ]
+[ "`modprobe wildcard-_ 2>&1`" = "FATAL: Module foo not found." ]
+[ "`modprobe wildcard_- 2>&1`" = "FATAL: Module foo not found." ]
+[ "`modprobe anotherwildcard-_ 2>&1`" = "FATAL: Module foo not found." ]
+[ "`modprobe anotherwildcard-_aaa 2>&1`" = "FATAL: Module foo not found." ]
+[ "`modprobe /dev/test 2>&1`" = "FATAL: Module bar not found." ]
+[ "`modprobe /dev/test/tmp 2>&1`" = "FATAL: Module bar not found." ]
+[ "`modprobe /dev/test7  2>&1`" = "FATAL: Module bar not found." ]

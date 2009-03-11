@@ -66,12 +66,7 @@ for config in --enable-zlib --disable-zlib; do
     ln -sfn 64-$ENDIAN tests/data/64
     ln -sfn 32-$ENDIAN tests/data/32
 
-    # Make them run the valgrind wrappers, if available.
-    if type valgrind 2>/dev/null; then
-	PATH=`pwd`/tests:$PATH
-    else
-	PATH=`pwd`:$PATH
-    fi
+    PATH=`pwd`:$PATH
 
     # By default, we want to look like a new kernel.
     MODTEST_UNAME=2.6.27

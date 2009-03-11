@@ -15,15 +15,15 @@ ln tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko \
 echo "/lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko: /lib/modules/$MODTEST_UNAME/modinfo-crap-$BITNESS.ko" > $MODULE_DIR/modules.dep
 
 # Found by reading modules.dep
-OUTPUT1=`./modinfo modinfo-$BITNESS 2>&1 | md5sum`
+OUTPUT1=`modinfo modinfo-$BITNESS 2>&1 | md5sum`
 # Found by absolute path.
-OUTPUT2=`./modinfo /lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko 2>&1 | md5sum`
+OUTPUT2=`modinfo /lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko 2>&1 | md5sum`
 
 # Same except for filename
 [ x"$OUTPUT1" = x"$OUTPUT2" ]
 
 # Expect 10 lines.
-OUTPUT=`./modinfo tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1`
+OUTPUT=`modinfo tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1`
 [ `echo "$OUTPUT" | wc -l` -eq 10 ]
 
 # Test each one.
@@ -38,13 +38,13 @@ OUTPUT=`./modinfo tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1`
 [ "`echo "$OUTPUT" | grep ' undescribed'`" =         "parm:           undescribed:int" ]
 
 # Test filename from modules.dep
-[ "`./modinfo modinfo-$BITNESS | grep filename`" =    "filename:       /lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko" ]
+[ "`modinfo modinfo-$BITNESS | grep filename`" =    "filename:       /lib/modules/$MODTEST_UNAME/modinfo-$BITNESS.ko" ]
 
 # Test multiple modules on cmdline.
-[ `./modinfo tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1 | wc -l` -eq 20 ]
+[ `modinfo tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1 | wc -l` -eq 20 ]
 
 # Test 0-fill
-[ "`./modinfo -0 tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1 | tr -dc '\000' | tr '\000' @`" = "@@@@@@@@@@" ]
+[ "`modinfo -0 tests/data/$BITNESS$ENDIAN/modinfo/modinfo-$BITNESS.ko 2>&1 | tr -dc '\000' | tr '\000' @`" = "@@@@@@@@@@" ]
 
 done
 done

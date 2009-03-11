@@ -15,7 +15,7 @@ ln tests/data/$BITNESS$ENDIAN/loop/loop1-$BITNESS.ko \
    $MODULE_DIR
 
 # Expect no normal output.
-[ "`./depmod 2>tests/tmp/stderr`" = "" ]
+[ "`depmod 2>tests/tmp/stderr`" = "" ]
 
 # Check results: expect 0 lines (all have loops).
 [ `grep -vc '^#' < $MODULE_DIR/modules.dep` = 0 ]

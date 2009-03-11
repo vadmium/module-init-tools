@@ -14,7 +14,7 @@ echo 'newstyle 107 0 - unknownfield' >> tests/tmp/proc/modules
 echo 'newstyle2 108 0 newstyle2_dep, unknownfield unknownfield2' >> tests/tmp/proc/modules
 
 # This should be true
-[ "`./lsmod`" = "Module                  Size  Used by
+[ "`lsmod`" = "Module                  Size  Used by
 foo                      100  0 
 bar                      101  1 
 baz                      102  1 baz_dep

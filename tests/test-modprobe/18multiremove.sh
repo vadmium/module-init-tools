@@ -39,5 +39,5 @@ echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
 echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
 
 # Removal
-[ "`./modprobe -r noexport_nodep-$BITNESS export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL 
+[ "`modprobe -r noexport_nodep-$BITNESS export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
