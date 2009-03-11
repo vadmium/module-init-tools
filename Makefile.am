@@ -58,7 +58,7 @@ MAINTAINERCLEANFILES := $(man_MANS)
 	fi
 
 # docbook2man creates extra crap files which need cleaning.
-distclean: killbuildmanpages
+distclean-local: killbuildmanpages
 
 killbuildmanpages:
 	rm -f doc/*.tmp manpage.refs manpage.links
