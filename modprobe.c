@@ -1281,7 +1281,10 @@ static int parse_config_file(const char *filename,
 			}
 		} else if (strcmp(cmd, "config") == 0) {
 			char *tmp = strsep_skipspace(&ptr, "\t ");
-			if (strcmp(tmp, "binary_indexes") == 0) {
+
+			if (!tmp)
+				grammar(cmd, filename, linenum);
+			else if (strcmp(tmp, "binary_indexes") == 0) {
 				tmp = strsep_skipspace(&ptr, "\t ");
 				if (strcmp(tmp, "yes") == 0)
 					use_binary_indexes = 1;
