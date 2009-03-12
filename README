@@ -34,7 +34,7 @@ OR,
 
 6) If you want to hack on the source:
 	autoreconf -i
-	(or in full: aclocal && automake --add-missing --copy && autoconf)
+	(or in full: aclocal -I m4 && automake --add-missing --copy && autoconf)
 
 If this is all too complicated, I recommend getting and installing the
 source rpm or debian package instead.
