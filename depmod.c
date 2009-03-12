@@ -21,6 +21,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+#include "util.h"
 #include "zlibsupport.h"
 #include "depmod.h"
 #include "logging.h"
@@ -58,7 +59,6 @@ struct module_search
 	size_t len;
 };
 
-static int verbose;
 static unsigned int skipchars;
 static unsigned int make_map_files = 1; /* default to on */
 static unsigned int force_map_files = 0; /* default to on */
@@ -157,7 +157,7 @@ static void load_system_map(const char *filename)
 			continue;
 
 		/* Covers gpl-only and normal symbols. */
-		if (strncmp(ptr+1, ksymstr, ksymstr_len) == 0)
+		if (strstarts(ptr+1, ksymstr))
 			add_symbol(ptr+1+ksymstr_len, NULL);
 	}
 
@@ -238,12 +238,6 @@ static void exec_old_depmod(char *argv[])
 		"Version requires old depmod, but couldn't run %s: %s\n",
 		oldname, strerror(errno));
 	exit(2);
-}
-
-static void grammar(const char *cmd, const char *filename, unsigned int line)
-{
-	warn("%s line %u: ignoring bad line starting with '%s'\n",
-						filename, line, cmd);
 }
 
 
@@ -457,28 +451,6 @@ static void del_module(struct module **modules, struct module *delme)
 	deleted = delme;
 }
 
-/* Convert filename to the module name.  Works if filename == modname, too. */
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
-	}
-	modname[i] = '\0';
-}
-
 /* convert to relative path if possible */
 static const char *compress_path(const char *path, const char *basedir)
 {
@@ -579,13 +551,13 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
  * order
  */
 	for (ovtmp = overrides; ovtmp != NULL; ovtmp = ovtmp->next) {
-		if (strcmp(ovtmp->modfile, newpath) == 0)
+		if (streq(ovtmp->modfile, newpath))
 			return 1;
-		if (strcmp(ovtmp->modfile, oldpath) == 0)
+		if (streq(ovtmp->modfile, oldpath))
 			return 0;
 	}
 	for (i = 0, tmp = search; tmp != NULL; tmp = tmp->next, i++) {
-		if (strcmp(tmp->search_path, MODULE_BUILTIN_KEY) == 0)
+		if (streq(tmp->search_path, MODULE_BUILTIN_KEY))
 			prio_builtin = i;
 		else if (strncmp(tmp->search_path, newpath, tmp->len) == 0)
 			prio_new = i;
@@ -724,7 +696,7 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 			line[len - 1] = '\0';
 
 		for (pos = &list; (mod = *pos); pos = &(*pos)->next) {
-			if (strcmp(line, mod->pathname + dir_len) == 0) {
+			if (streq(line, mod->pathname + dir_len)) {
 				mod->order = linenum;
 				*pos = mod->next;
 				mod->next = NULL;
@@ -753,7 +725,7 @@ static struct module *parse_modules(struct module *list)
 	}
 	
 	for (i = list; i; i = i->next)
-		i->ops->calculate_deps(i, verbose);
+		i->ops->calculate_deps(i);
 	
 	/* Strip out modules with dependency loops. */
  again:
@@ -820,51 +792,6 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 	index_destroy(index);
 }
 
-static const char *next_string(const char *string, unsigned long *secsize)
-{
-	/* Skip non-zero chars */
-	while (string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-
-	/* Skip any zero padding. */
-	while (!string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-	return string;
-}
-
-/* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
-static char *underscores(char *string)
-{
-	unsigned int i;
-
-	if (!string)
-		return NULL;
-		
-	for (i = 0; string[i]; i++) {
-		switch (string[i]) {
-		case '-':
-			string[i] = '_';
-			break;
-
-		case ']':
-			warn("Unmatched bracket in %s\n", string);
-			break;
-
-		case '[':
-			i += strcspn(&string[i], "]");
-			if (!string[i])
-				warn("Unmatched bracket in %s\n", string);
-		}
-	}
-	return string;
-}
-
 static void output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -887,7 +814,7 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 		for (p = i->ops->get_modinfo(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			if (strncmp(p, "alias=", strlen("alias=")) == 0)
+			if (strstarts(p, "alias="))
 				fprintf(out, "alias %s %s\n",
 					p + strlen("alias="), modname);
 		}
@@ -927,7 +854,7 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		for (p = i->ops->get_modinfo(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			if (strncmp(p, "alias=", strlen("alias=")) == 0) {
+			if (strstarts(p, "alias=")) {
 				alias = NOFAIL(strdup(p + strlen("alias=")));
 				underscores(alias);
 				duplicate = index_insert(index, alias, modname, i->order);
@@ -1016,52 +943,6 @@ static int depfile_out_of_date(const char *dirname)
 	return any_modules_newer(dirname, st.st_mtime);
 }
 
-static char *getline_wrapped(FILE *file, unsigned int *linenum)
-{
-	int size = 256;
-	int i = 0;
-	char *buf = NOFAIL(malloc(size));
-	for(;;) {
-		int ch = getc_unlocked(file);
-		
-		switch(ch) {
-		case EOF:
-			if (i == 0) {
-				free(buf);
-				return NULL;
-			}
-			/* else fall through */
-			
-		case '\n':
-			if (linenum)
-				(*linenum)++;
-			if (i == size)
-				buf = NOFAIL(realloc(buf, size + 1));
-			buf[i] = '\0';
-			return buf;
-			
-		case '\\':
-			ch = getc_unlocked(file);
-			
-			if (ch == '\n') {
-				if (linenum)
-					(*linenum)++;
-				continue;
-			}
-			/* else fall through */
-		
-		default:
-			buf[i++] = ch;
-	
-			if (i == size) {
-				size *= 2;
-				buf = NOFAIL(realloc(buf, size));
-			}
-		}
-	}
-}
-
-
 static char *strsep_skipspace(char **string, char *delim)
 {
 	if (!*string)
@@ -1135,7 +1016,7 @@ static int parse_config_file(const char *filename,
 			continue;
 		}
 
-		if (strcmp(cmd, "search") == 0) {
+		if (streq(cmd, "search")) {
 			char *search_path;
 			
 			while ((search_path = strsep_skipspace(&ptr, "\t "))) {
@@ -1148,18 +1029,13 @@ static int parse_config_file(const char *filename,
 							     0, *search);
 					continue;
 				}
-				len = strlen(basedir)
-				    + strlen(MODULE_DIR)
-				    + strlen(kernelversion)
-				    + 1
-				    + strlen(search_path);
-				dirname = NOFAIL(malloc(len + 1));
-				sprintf(dirname, "%s%s%s/%s", basedir,
+				nofail_asprintf(&dirname, "%s%s%s/%s", basedir,
 					MODULE_DIR, kernelversion, search_path);
+				len = strlen(dirname);
 				*search = add_search(dirname, len, *search);
 				free(dirname);
 			}
-		} else if (strcmp(cmd, "override") == 0) {
+		} else if (streq(cmd, "override")) {
 			char *pathname = NULL, *version, *subdir;
 			modname = strsep_skipspace(&ptr, "\t ");
 			version = strsep_skipspace(&ptr, "\t ");
@@ -1169,19 +1045,12 @@ static int parse_config_file(const char *filename,
 			    strcmp(version, "*") != 0)
 				continue;
 
-			pathname = NOFAIL(malloc(strlen(basedir)
-				               + strlen(MODULE_DIR)
-					       + strlen(kernelversion)
-					       + strlen(subdir)
-					       + strlen(modname)
-					       + strlen(".ko")
-					       + 3));
-			sprintf(pathname, "%s%s%s/%s/%s.ko", basedir,
+			nofail_asprintf(&pathname, "%s%s%s/%s/%s.ko", basedir,
 				MODULE_DIR, kernelversion, subdir, modname);
 
 			*overrides = add_override(pathname, *overrides);
 			free(pathname);
-		} else if (strcmp(cmd, "include") == 0) {
+		} else if (streq(cmd, "include")) {
 			char *newfilename;
 
 			newfilename = strsep_skipspace(&ptr, "\t ");
@@ -1190,8 +1059,7 @@ static int parse_config_file(const char *filename,
 			} else {
 				warn("\"include %s\" is deprecated, "
 				     "please use /etc/depmod.d\n", newfilename);
-				if (strncmp(newfilename, "/etc/depmod.d",
-					    strlen("/etc/depmod.d")) == 0) {
+				if (strstarts(newfilename, "/etc/depmod.d")) {
 					warn("\"include /etc/depmod.d\" is "
 					     "the default, ignored\n");
 				} else {
@@ -1203,16 +1071,16 @@ static int parse_config_file(const char *filename,
 					     newfilename, strerror(errno));
 				}
 			}
-		} else if (strcmp(cmd, "make_map_files") == 0) {
+		} else if (streq(cmd, "make_map_files")) {
 			char *option;
 
 			option = strsep_skipspace(&ptr, "\t ");
 			if (!option)
 				grammar(cmd, filename, linenum);
 			else {
-				if (0 == strncmp(option, "yes", 3))
+				if (streq(option, "yes"))
 					make_map_files = 1;
-				else if (0 == strncmp(option, "no", 2))
+				else if (streq(option, "no"))
 					make_map_files = 0;
 				else
 					grammar(cmd, filename, linenum);
@@ -1416,10 +1284,7 @@ int main(int argc, char *argv[])
 	if (optind == argc)
 		all = 1;
 
-	dirname = NOFAIL(malloc(strlen(basedir)
-			 + strlen(MODULE_DIR)
-			 + strlen(version) + 1));
-	sprintf(dirname, "%s%s%s", basedir, MODULE_DIR, version);
+	nofail_asprintf(&dirname, "%s%s%s", basedir, MODULE_DIR, version);
 
 	if (maybe_all) {
 		if (!doing_stdout && !depfile_out_of_date(dirname))
@@ -1436,13 +1301,9 @@ int main(int argc, char *argv[])
 		char *dirname;
 		size_t len;
 
-		len = strlen(basedir)
-		    + strlen(MODULE_DIR)
-		    + strlen(version)
-		    + strlen("/updates");
-		dirname = NOFAIL(malloc(len + 1));
-		sprintf(dirname, "%s%s%s/updates", basedir,
-			MODULE_DIR, version);
+		nofail_asprintf(&dirname, "%s%s%s/updates", basedir,
+				MODULE_DIR, version);
+		len = strlen(dirname);
 		search = add_search(dirname, len, search);
 	}
 	if (!all) {

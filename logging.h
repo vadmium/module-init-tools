@@ -4,14 +4,26 @@
 /* Do we use syslog for messages or stderr? */
 extern int logging;
 
-/* Do we want to silent drop all warnings? */
+/* Do we want to silently drop all warnings? */
 extern int quiet;
 
 /* Number of times warn() has been called */
 extern int warned;
 
+/* Do we want informative messages as well as errors? */
+extern int verbose;
+
 extern void fatal(const char *fmt, ...);
+extern void error(const char *fmt, ...);
 extern void warn(const char *fmt, ...);
+extern void info(const char *fmt, ...);
+
+static inline void grammar(const char *cmd,
+			   const char *filename, unsigned int line)
+{
+	warn("%s line %u: ignoring bad line starting with '%s'\n",
+	     filename, line, cmd);
+}
 
 #define NOFAIL(ptr)  do_nofail((ptr), __FILE__, __LINE__, #ptr)
 

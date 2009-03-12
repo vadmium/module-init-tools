@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include "depmod.h"
+#include "util.h"
 #include "logging.h"
 #include "moduleops.h"
 #include "tables.h"

@@ -86,7 +86,7 @@ static char *PERBIT(get_modinfo)(struct module *module, unsigned long *size)
 #endif
 
 /* Calculate the dependencies for this module */
-static void PERBIT(calculate_deps)(struct module *module, int verbose)
+static void PERBIT(calculate_deps)(struct module *module)
 {
 	unsigned int i;
 	unsigned long size;
@@ -139,10 +139,9 @@ static void PERBIT(calculate_deps)(struct module *module, int verbose)
 				== STB_WEAK);
 			owner = find_symbol(name, module->pathname, weak);
 			if (owner) {
-				if (verbose)
-					printf("%s needs \"%s\": %s\n",
-					       module->pathname, name,
-					       owner->pathname);
+				info("%s needs \"%s\": %s\n",
+				       module->pathname, name,
+				       owner->pathname);
 				add_dep(module, owner);
 			}
 		}

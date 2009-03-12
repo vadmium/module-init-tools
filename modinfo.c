@@ -12,11 +12,10 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <sys/mman.h>
+
+#include "util.h"
 #include "zlibsupport.h"
 #include "backwards_compat.c"
-
-#define streq(a,b) (strcmp((a),(b)) == 0)
-#define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
 
 #ifndef MODULE_DIR
 #define MODULE_DIR "/lib/modules"
@@ -96,24 +95,6 @@ static void *get_section(void *file, unsigned long filesize,
 	default:
 		return NULL;
 	}
-}
-
-static const char *next_string(const char *string, unsigned long *secsize)
-{
-	/* Skip non-zero chars */
-	while (string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-
-	/* Skip any zero padding. */
-	while (!string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-	return string;
 }
 
 struct param

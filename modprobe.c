@@ -39,9 +39,7 @@
 #include <sys/wait.h>
 #include <syslog.h>
 
-#define streq(a,b) (strcmp((a),(b)) == 0)
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
+#include "util.h"
 #include "zlibsupport.h"
 #include "logging.h"
 #include "index.h"
@@ -67,12 +65,6 @@ struct module {
 
 typedef void (*errfn_t)(const char *fmt, ...);
 
-static void grammar(const char *cmd, const char *filename, unsigned int line)
-{
-	warn("%s line %u: ignoring bad line starting with '%s'\n",
-	     filename, line, cmd);
-}
-
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
@@ -83,82 +75,15 @@ static void print_usage(const char *progname)
 	exit(1);
 }
 
-static char *getline_wrapped(FILE *file, unsigned int *linenum)
-{
-	int size = 256;
-	int i = 0;
-	char *buf = NOFAIL(malloc(size));
-	for(;;) {
-		int ch = getc_unlocked(file);
-		
-		switch(ch) {
-		case EOF:
-			if (i == 0) {
-				free(buf);
-				return NULL;
-			}
-			/* else fall through */
-			
-		case '\n':
-			if (linenum)
-				(*linenum)++;
-			if (i == size)
-				buf = NOFAIL(realloc(buf, size + 1));
-			buf[i] = '\0';
-			return buf;
-			
-		case '\\':
-			ch = getc_unlocked(file);
-			
-			if (ch == '\n') {
-				if (linenum)
-					(*linenum)++;
-				continue;
-			}
-			/* else fall through */
-		
-		default:
-			buf[i++] = ch;
-	
-			if (i == size) {
-				size *= 2;
-				buf = NOFAIL(realloc(buf, size));
-			}
-		}
-	}
-}
-
 static struct module *find_module(const char *filename, struct list_head *list)
 {
 	struct module *i;
 
 	list_for_each_entry(i, list, list) {
-		if (strcmp(i->filename, filename) == 0)
+		if (streq(i->filename, filename))
 			return i;
 	}
 	return NULL;
-}
-
-/* Convert filename to the module name.  Works if filename == modname, too. */
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
-	}
-	modname[i] = '\0';
 }
 
 /* We used to lock with a write flock but that allows regular users to block
@@ -401,7 +326,7 @@ static void *get_section32(void *file,
 		
 	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames + sechdrs[i].sh_name, name) == 0) {
+		if (streq(secnames + sechdrs[i].sh_name, name)) {
 			*secsize = sechdrs[i].sh_size;
 			return file + sechdrs[i].sh_offset;
 		}
@@ -428,7 +353,7 @@ static void *get_section64(void *file,
 		
 	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames + sechdrs[i].sh_name, name) == 0) {
+		if (streq(secnames + sechdrs[i].sh_name, name)) {
 			*secsize = sechdrs[i].sh_size;
 			return file + sechdrs[i].sh_offset;
 		}
@@ -491,7 +416,7 @@ static void invalidate_section32(void *mod, const char *secname)
 	unsigned int i;
 
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames+sechdrs[i].sh_name, secname) == 0)
+		if (streq(secnames+sechdrs[i].sh_name, secname))
 			sechdrs[i].sh_flags &= ~SHF_ALLOC;
 }
 
@@ -503,7 +428,7 @@ static void invalidate_section64(void *mod, const char *secname)
 	unsigned int i;
 
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames+sechdrs[i].sh_name, secname) == 0)
+		if (streq(secnames+sechdrs[i].sh_name, secname))
 			sechdrs[i].sh_flags &= ~(unsigned long long)SHF_ALLOC;
 }
 
@@ -525,24 +450,6 @@ static void strip_section(struct module *module,
 	}
 }
 
-static const char *next_string(const char *string, unsigned long *secsize)
-{
-	/* Skip non-zero chars */
-	while (string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-
-	/* Skip any zero padding. */
-	while (!string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-	return string;
-}
-
 static void clear_magic(struct module *module, void *mod, unsigned long len)
 {
 	const char *p;
@@ -555,7 +462,7 @@ static void clear_magic(struct module *module, void *mod, unsigned long len)
 	for (p = get_section(mod, len, ".modinfo", &modlen);
 	     p;
 	     p = next_string(p, &modlen)) {
-		if (strncmp(p, "vermagic=", strlen("vermagic=")) == 0) {
+		if (strstarts(p, "vermagic=")) {
 			memset((char *)p, 0, strlen(p));
 			return;
 		}
@@ -651,7 +558,7 @@ static  int
 find_blacklist(const char *modname, const struct module_blacklist *blacklist)
 {
 	while (blacklist) {
-		if (strcmp(blacklist->modulename, modname) == 0)
+		if (streq(blacklist->modulename, modname))
 			return 1;
 		blacklist = blacklist->next;
 	}
@@ -720,7 +627,7 @@ static char *add_extra_options(const char *modname,
 			       const struct module_options *options)
 {
 	while (options) {
-		if (strcmp(options->modulename, modname) == 0)
+		if (streq(options->modulename, modname))
 			optstring = prepend_option(optstring, options->options);
 		options = options->next;
 	}
@@ -794,23 +701,10 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	return 1;
 }
 
-/* If we don't flush, then child processes print before we do */
-static void verbose_printf(int verbose, const char *fmt, ...)
-{
-	va_list arglist;
-
-	if (verbose) {
-		va_start(arglist, fmt);
-		vprintf(fmt, arglist);
-		fflush(stdout);
-		va_end(arglist);
-	}
-}
-
 /* Do an install/remove command: replace $CMDLINE_OPTS if it's specified. */
 static void do_command(const char *modname,
 		       const char *command,
-		       int verbose, int dry_run,
+		       int dry_run,
 		       errfn_t error,
 		       const char *type,
 		       const char *cmdline_opts)
@@ -827,7 +721,7 @@ static void do_command(const char *modname,
 		replaced_cmd = new;
 	}
 
-	verbose_printf(verbose, "%s %s\n", type, replaced_cmd);
+	info("%s %s\n", type, replaced_cmd);
 	if (dry_run)
 		return;
 
@@ -845,7 +739,6 @@ static int insmod(struct list_head *list,
 		   int first_time,
 		   errfn_t error,
 		   int dry_run,
-		   int verbose,
 		   const struct module_options *options,
 		   const struct module_command *commands,
 		   int ignore_commands,
@@ -864,11 +757,10 @@ static int insmod(struct list_head *list,
 	/* Take us off the list. */
 	list_del(&mod->list);
 
-	/* Do things we (or parent) depend on first, but don't die if
-	 * they fail. */
+	/* Do things we (or parent) depend on first. */
 	if (!list_empty(list)) {
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
-		       dry_run, verbose, options, commands, 0, ignore_proc,
+		       dry_run, options, commands, 0, ignore_proc,
 		       strip_vermagic, strip_modversion, "")) != 0) {
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
@@ -896,7 +788,7 @@ static int insmod(struct list_head *list,
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
 		close_file(fd);
-		do_command(mod->modname, command, verbose, dry_run, error,
+		do_command(mod->modname, command, dry_run, error,
 			   "install", cmdline_opts);
 		goto out_optstring;
 	}
@@ -920,7 +812,7 @@ static int insmod(struct list_head *list,
 	/* Config file might have given more options */
 	optstring = add_extra_options(mod->modname, optstring, options);
 
-	verbose_printf(verbose, "insmod %s %s\n", mod->filename, optstring);
+	info("insmod %s %s\n", mod->filename, optstring);
 
 	if (dry_run)
 		goto out;
@@ -956,7 +848,6 @@ static void rmmod(struct list_head *list,
 		  int first_time,
 		  errfn_t error,
 		  int dry_run,
-		  int verbose,
 		  struct module_command *commands,
 		  int ignore_commands,
 		  int ignore_inuse,
@@ -976,7 +867,7 @@ static void rmmod(struct list_head *list,
 	/* Even if renamed, find commands to orig. name. */
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
-		do_command(mod->modname, command, verbose, dry_run, error,
+		do_command(mod->modname, command, dry_run, error,
 			   "remove", cmdline_opts);
 		goto remove_rest;
 	}
@@ -990,7 +881,7 @@ static void rmmod(struct list_head *list,
 		goto remove_rest;
 	}
 
-	verbose_printf(verbose, "rmmod %s\n", mod->filename);
+	info("rmmod %s\n", mod->filename);
 
 	if (dry_run)
 		goto remove_rest;
@@ -1006,7 +897,7 @@ static void rmmod(struct list_head *list,
  remove_rest:
 	/* Now do things we depend. */
 	if (!list_empty(list))
-		rmmod(list, NULL, 0, warn, dry_run, verbose, commands,
+		rmmod(list, NULL, 0, warn, dry_run, commands,
 		      0, 1, "", flags);
 	return;
 
@@ -1090,33 +981,6 @@ static int type_matches(const char *path, const char *subpath)
 	return ret;
 }
 
-/* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
-static char *underscores(char *string)
-{
-	unsigned int i;
-
-	if (!string)
-		return NULL;
-
-	for (i = 0; string[i]; i++) {
-		switch (string[i]) {
-		case '-':
-			string[i] = '_';
-			break;
-
-		case ']':
-			warn("Unmatched bracket in %s\n", string);
-			break;
-
-		case '[':
-			i += strcspn(&string[i], "]");
-			if (!string[i])
-				warn("Unmatched bracket in %s\n", string);
-			break;
-		}
-	}
-	return string;
-}
 
 static int do_wildcard(const char *dirname,
 		       const char *type,
@@ -1209,7 +1073,7 @@ static int parse_config_file(const char *filename,
 			continue;
 		}
 
-		if (strcmp(cmd, "alias") == 0) {
+		if (streq(cmd, "alias")) {
 			char *wildcard = strsep_skipspace(&ptr, "\t ");
 			char *realname = strsep_skipspace(&ptr, "\t ");
 
@@ -1217,7 +1081,7 @@ static int parse_config_file(const char *filename,
 				grammar(cmd, filename, linenum);
 			else if (fnmatch(underscores(wildcard),name,0) == 0)
 				*aliases = add_alias(underscores(realname), *aliases);
-		} else if (strcmp(cmd, "include") == 0) {
+		} else if (streq(cmd, "include")) {
 			struct module_alias *newalias = NULL;
 			char *newfilename;
 
@@ -1227,8 +1091,7 @@ static int parse_config_file(const char *filename,
 			} else {
 				warn("\"include %s\" is deprecated, "
 				     "please use /etc/modprobe.d\n", newfilename);
-				if (strncmp(newfilename, "/etc/modprobe.d",
-					    strlen("/etc/modprobe.d")) == 0) {
+				if (strstarts(newfilename, "/etc/modprobe.d")) {
 					warn("\"include /etc/modprobe.d\" is "
 					     "the default, ignored\n");
 				} else {
@@ -1245,7 +1108,7 @@ static int parse_config_file(const char *filename,
 				if (newalias)
 					*aliases = newalias;
 			}
-		} else if (strcmp(cmd, "options") == 0) {
+		} else if (streq(cmd, "options")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1254,7 +1117,7 @@ static int parse_config_file(const char *filename,
 				*options = add_options(underscores(modname),
 						       ptr, *options);
 			}
-		} else if (strcmp(cmd, "install") == 0) {
+		} else if (streq(cmd, "install")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1263,7 +1126,7 @@ static int parse_config_file(const char *filename,
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
 			}
-		} else if (strcmp(cmd, "blacklist") == 0) {
+		} else if (streq(cmd, "blacklist")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname)
 				grammar(cmd, filename, linenum);
@@ -1271,7 +1134,7 @@ static int parse_config_file(const char *filename,
 				*blacklist = add_blacklist(underscores(modname),
 							*blacklist);
 			}
-		} else if (strcmp(cmd, "remove") == 0) {
+		} else if (streq(cmd, "remove")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1280,13 +1143,16 @@ static int parse_config_file(const char *filename,
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
 			}
-		} else if (strcmp(cmd, "config") == 0) {
+		} else if (streq(cmd, "config")) {
 			char *tmp = strsep_skipspace(&ptr, "\t ");
-			if (strcmp(tmp, "binary_indexes") == 0) {
+
+			if (!tmp)
+				grammar(cmd, filename, linenum);
+			else if (streq(tmp, "binary_indexes")) {
 				tmp = strsep_skipspace(&ptr, "\t ");
-				if (strcmp(tmp, "yes") == 0)
+				if (streq(tmp, "yes"))
 					use_binary_indexes = 1;
-				if (strcmp(tmp, "no") == 0)
+				if (streq(tmp, "no"))
 					use_binary_indexes = 0;
 			}
 		} else
@@ -1559,7 +1425,6 @@ static int handle_module(const char *modname,
 			  int first_time,
 			  errfn_t error,
 			  int dry_run,
-			  int verbose,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
 			  int ignore_commands,
@@ -1576,7 +1441,7 @@ static int handle_module(const char *modname,
 		   handle case where the first is completely bogus. */
 		command = find_command(modname, commands);
 		if (command && !ignore_commands) {
-			do_command(modname, command, verbose, dry_run, error,
+			do_command(modname, command, dry_run, error,
 				   remove ? "remove":"install", cmdline_opts);
 			return 0;
 		}
@@ -1587,11 +1452,11 @@ static int handle_module(const char *modname,
 	}
 
 	if (remove)
-		rmmod(todo_list, newname, first_time, error, dry_run, verbose,
+		rmmod(todo_list, newname, first_time, error, dry_run,
 		      commands, ignore_commands, 0, cmdline_opts, flags);
 	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
-		       first_time, error, dry_run, verbose, modoptions,
+		       first_time, error, dry_run, modoptions,
 		       commands, ignore_commands, ignore_proc, strip_vermagic,
 		       strip_modversion, cmdline_opts);
 
@@ -1633,7 +1498,6 @@ int main(int argc, char *argv[])
 	int dump_only = 0;
 	int dry_run = 0;
 	int remove = 0;
-	int verbose = 0;
 	int list_only = 0;
 	int all = 0;
 	int ignore_commands = 0;
@@ -1820,8 +1684,7 @@ int main(int argc, char *argv[])
 		parse_kcmdline(0, &modoptions);
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
-		if (!aliases &&
-		    strncmp(modulearg, "symbol:", strlen("symbol:")) == 0) {
+		if (!aliases && strstarts(modulearg, "symbol:")) {
 			parse_config_file(symfilename, modulearg, 0,
 					  remove, &modoptions, &commands,
 					  &aliases, &blacklist);
@@ -1858,7 +1721,7 @@ int main(int argc, char *argv[])
 				if (handle_module(aliases->module, &list,
 					      newname, remove, opts,
 					      first_time, err,
-					      dry_run, verbose, modoptions,
+					      dry_run, modoptions,
 					      commands, ignore_commands,
 					      ignore_proc, strip_vermagic,
 					      strip_modversion,
@@ -1875,7 +1738,7 @@ int main(int argc, char *argv[])
 
 			if (handle_module(modulearg, &list, newname, remove,
 				      optstring, first_time, error, dry_run,
-				      verbose, modoptions, commands,
+				      modoptions, commands,
 				      ignore_commands, ignore_proc,
 				      strip_vermagic, strip_modversion,
 				      optstring, flags))
