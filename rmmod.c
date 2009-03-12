@@ -48,7 +48,7 @@ static void mod_in_use(const char *modname, char *usedby)
 {
 	/* New /proc/modules uses a single "-" to mean "nothing".  Old
            one just puts nothing there. */
-	if (usedby[0] == '-' || strcmp(usedby, "") == 0) {
+	if (usedby[0] == '-' || streq(usedby, "")) {
 		error("Module %s is in use\n", modname);
 		return;
 	}

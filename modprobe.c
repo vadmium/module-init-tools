@@ -80,7 +80,7 @@ static struct module *find_module(const char *filename, struct list_head *list)
 	struct module *i;
 
 	list_for_each_entry(i, list, list) {
-		if (strcmp(i->filename, filename) == 0)
+		if (streq(i->filename, filename))
 			return i;
 	}
 	return NULL;
@@ -326,7 +326,7 @@ static void *get_section32(void *file,
 		
 	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames + sechdrs[i].sh_name, name) == 0) {
+		if (streq(secnames + sechdrs[i].sh_name, name)) {
 			*secsize = sechdrs[i].sh_size;
 			return file + sechdrs[i].sh_offset;
 		}
@@ -353,7 +353,7 @@ static void *get_section64(void *file,
 		
 	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames + sechdrs[i].sh_name, name) == 0) {
+		if (streq(secnames + sechdrs[i].sh_name, name)) {
 			*secsize = sechdrs[i].sh_size;
 			return file + sechdrs[i].sh_offset;
 		}
@@ -416,7 +416,7 @@ static void invalidate_section32(void *mod, const char *secname)
 	unsigned int i;
 
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames+sechdrs[i].sh_name, secname) == 0)
+		if (streq(secnames+sechdrs[i].sh_name, secname))
 			sechdrs[i].sh_flags &= ~SHF_ALLOC;
 }
 
@@ -428,7 +428,7 @@ static void invalidate_section64(void *mod, const char *secname)
 	unsigned int i;
 
 	for (i = 1; i < hdr->e_shnum; i++)
-		if (strcmp(secnames+sechdrs[i].sh_name, secname) == 0)
+		if (streq(secnames+sechdrs[i].sh_name, secname))
 			sechdrs[i].sh_flags &= ~(unsigned long long)SHF_ALLOC;
 }
 
@@ -558,7 +558,7 @@ static  int
 find_blacklist(const char *modname, const struct module_blacklist *blacklist)
 {
 	while (blacklist) {
-		if (strcmp(blacklist->modulename, modname) == 0)
+		if (streq(blacklist->modulename, modname))
 			return 1;
 		blacklist = blacklist->next;
 	}
@@ -627,7 +627,7 @@ static char *add_extra_options(const char *modname,
 			       const struct module_options *options)
 {
 	while (options) {
-		if (strcmp(options->modulename, modname) == 0)
+		if (streq(options->modulename, modname))
 			optstring = prepend_option(optstring, options->options);
 		options = options->next;
 	}
@@ -1073,7 +1073,7 @@ static int parse_config_file(const char *filename,
 			continue;
 		}
 
-		if (strcmp(cmd, "alias") == 0) {
+		if (streq(cmd, "alias")) {
 			char *wildcard = strsep_skipspace(&ptr, "\t ");
 			char *realname = strsep_skipspace(&ptr, "\t ");
 
@@ -1081,7 +1081,7 @@ static int parse_config_file(const char *filename,
 				grammar(cmd, filename, linenum);
 			else if (fnmatch(underscores(wildcard),name,0) == 0)
 				*aliases = add_alias(underscores(realname), *aliases);
-		} else if (strcmp(cmd, "include") == 0) {
+		} else if (streq(cmd, "include")) {
 			struct module_alias *newalias = NULL;
 			char *newfilename;
 
@@ -1109,7 +1109,7 @@ static int parse_config_file(const char *filename,
 				if (newalias)
 					*aliases = newalias;
 			}
-		} else if (strcmp(cmd, "options") == 0) {
+		} else if (streq(cmd, "options")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1118,7 +1118,7 @@ static int parse_config_file(const char *filename,
 				*options = add_options(underscores(modname),
 						       ptr, *options);
 			}
-		} else if (strcmp(cmd, "install") == 0) {
+		} else if (streq(cmd, "install")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1127,7 +1127,7 @@ static int parse_config_file(const char *filename,
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
 			}
-		} else if (strcmp(cmd, "blacklist") == 0) {
+		} else if (streq(cmd, "blacklist")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname)
 				grammar(cmd, filename, linenum);
@@ -1135,7 +1135,7 @@ static int parse_config_file(const char *filename,
 				*blacklist = add_blacklist(underscores(modname),
 							*blacklist);
 			}
-		} else if (strcmp(cmd, "remove") == 0) {
+		} else if (streq(cmd, "remove")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				grammar(cmd, filename, linenum);
@@ -1144,16 +1144,16 @@ static int parse_config_file(const char *filename,
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
 			}
-		} else if (strcmp(cmd, "config") == 0) {
+		} else if (streq(cmd, "config")) {
 			char *tmp = strsep_skipspace(&ptr, "\t ");
 
 			if (!tmp)
 				grammar(cmd, filename, linenum);
-			else if (strcmp(tmp, "binary_indexes") == 0) {
+			else if (streq(tmp, "binary_indexes")) {
 				tmp = strsep_skipspace(&ptr, "\t ");
-				if (strcmp(tmp, "yes") == 0)
+				if (streq(tmp, "yes"))
 					use_binary_indexes = 1;
-				if (strcmp(tmp, "no") == 0)
+				if (streq(tmp, "no"))
 					use_binary_indexes = 0;
 			}
 		} else

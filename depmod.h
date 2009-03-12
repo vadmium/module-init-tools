@@ -9,9 +9,6 @@ void add_symbol(const char *name, struct module *owner);
 struct module *find_symbol(const char *name, const char *modname, int weak);
 void add_dep(struct module *mod, struct module *depends_on);
 
-/* I hate strcmp. */
-#define streq(a,b) (strcmp((a),(b)) == 0)
-
 struct module
 {
 	/* Next module in list of all modules */

@@ -551,13 +551,13 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
  * order
  */
 	for (ovtmp = overrides; ovtmp != NULL; ovtmp = ovtmp->next) {
-		if (strcmp(ovtmp->modfile, newpath) == 0)
+		if (streq(ovtmp->modfile, newpath))
 			return 1;
-		if (strcmp(ovtmp->modfile, oldpath) == 0)
+		if (streq(ovtmp->modfile, oldpath))
 			return 0;
 	}
 	for (i = 0, tmp = search; tmp != NULL; tmp = tmp->next, i++) {
-		if (strcmp(tmp->search_path, MODULE_BUILTIN_KEY) == 0)
+		if (streq(tmp->search_path, MODULE_BUILTIN_KEY))
 			prio_builtin = i;
 		else if (strncmp(tmp->search_path, newpath, tmp->len) == 0)
 			prio_new = i;
@@ -696,7 +696,7 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 			line[len - 1] = '\0';
 
 		for (pos = &list; (mod = *pos); pos = &(*pos)->next) {
-			if (strcmp(line, mod->pathname + dir_len) == 0) {
+			if (streq(line, mod->pathname + dir_len)) {
 				mod->order = linenum;
 				*pos = mod->next;
 				mod->next = NULL;
@@ -1016,7 +1016,7 @@ static int parse_config_file(const char *filename,
 			continue;
 		}
 
-		if (strcmp(cmd, "search") == 0) {
+		if (streq(cmd, "search")) {
 			char *search_path;
 			
 			while ((search_path = strsep_skipspace(&ptr, "\t "))) {
@@ -1072,7 +1072,7 @@ static int parse_config_file(const char *filename,
 					     newfilename, strerror(errno));
 				}
 			}
-		} else if (strcmp(cmd, "make_map_files") == 0) {
+		} else if (streq(cmd, "make_map_files")) {
 			char *option;
 
 			option = strsep_skipspace(&ptr, "\t ");

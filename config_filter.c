@@ -1,6 +1,7 @@
-#include "config_filter.h"
-
 #include <string.h>
+
+#include "util.h"
+#include "config_filter.h"
 
 int config_filter(const char *name)
 {
@@ -38,7 +39,7 @@ int config_filter(const char *name)
 
 	for (p = skip_suffix; *p; p++) {
 		if (strlen(name) >= strlen(*p) &&
-		    strcmp(*p, strchr(name, 0) - strlen(*p)) == 0)
+		    streq(*p, strchr(name, 0) - strlen(*p)))
 		    return 0;
  	}
 
