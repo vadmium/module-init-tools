@@ -261,10 +261,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	if (!argv[optind]) {
-		if (all) {
-			/* FIXME implement */
-			exit(1);
-		}
 		fprintf(stderr, "no module names given\n");
 		print_usage(argv[0]);
 	}
