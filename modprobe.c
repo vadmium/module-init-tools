@@ -864,8 +864,7 @@ static int insmod(struct list_head *list,
 	/* Take us off the list. */
 	list_del(&mod->list);
 
-	/* Do things we (or parent) depend on first, but don't die if
-	 * they fail. */
+	/* Do things we (or parent) depend on first. */
 	if (!list_empty(list)) {
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
 		       dry_run, verbose, options, commands, 0, ignore_proc,
