@@ -1148,18 +1148,13 @@ static int parse_config_file(const char *filename,
 							     0, *search);
 					continue;
 				}
-				len = strlen(basedir)
-				    + strlen(MODULE_DIR)
-				    + strlen(kernelversion)
-				    + 1
-				    + strlen(search_path);
-				dirname = NOFAIL(malloc(len + 1));
-				sprintf(dirname, "%s%s%s/%s", basedir,
+				nofail_asprintf(&dirname, "%s%s%s/%s", basedir,
 					MODULE_DIR, kernelversion, search_path);
+				len = strlen(dirname);
 				*search = add_search(dirname, len, *search);
 				free(dirname);
 			}
-		} else if (strcmp(cmd, "override") == 0) {
+		} else if (streq(cmd, "override")) {
 			char *pathname = NULL, *version, *subdir;
 			modname = strsep_skipspace(&ptr, "\t ");
 			version = strsep_skipspace(&ptr, "\t ");
@@ -1169,19 +1164,12 @@ static int parse_config_file(const char *filename,
 			    strcmp(version, "*") != 0)
 				continue;
 
-			pathname = NOFAIL(malloc(strlen(basedir)
-				               + strlen(MODULE_DIR)
-					       + strlen(kernelversion)
-					       + strlen(subdir)
-					       + strlen(modname)
-					       + strlen(".ko")
-					       + 3));
-			sprintf(pathname, "%s%s%s/%s/%s.ko", basedir,
+			nofail_asprintf(&pathname, "%s%s%s/%s/%s.ko", basedir,
 				MODULE_DIR, kernelversion, subdir, modname);
 
 			*overrides = add_override(pathname, *overrides);
 			free(pathname);
-		} else if (strcmp(cmd, "include") == 0) {
+		} else if (streq(cmd, "include")) {
 			char *newfilename;
 
 			newfilename = strsep_skipspace(&ptr, "\t ");
@@ -1416,10 +1404,7 @@ int main(int argc, char *argv[])
 	if (optind == argc)
 		all = 1;
 
-	dirname = NOFAIL(malloc(strlen(basedir)
-			 + strlen(MODULE_DIR)
-			 + strlen(version) + 1));
-	sprintf(dirname, "%s%s%s", basedir, MODULE_DIR, version);
+	nofail_asprintf(&dirname, "%s%s%s", basedir, MODULE_DIR, version);
 
 	if (maybe_all) {
 		if (!doing_stdout && !depfile_out_of_date(dirname))
@@ -1436,13 +1421,9 @@ int main(int argc, char *argv[])
 		char *dirname;
 		size_t len;
 
-		len = strlen(basedir)
-		    + strlen(MODULE_DIR)
-		    + strlen(version)
-		    + strlen("/updates");
-		dirname = NOFAIL(malloc(len + 1));
-		sprintf(dirname, "%s%s%s/updates", basedir,
-			MODULE_DIR, version);
+		nofail_asprintf(&dirname, "%s%s%s/updates", basedir,
+				MODULE_DIR, version);
+		len = strlen(dirname);
 		search = add_search(dirname, len, search);
 	}
 	if (!all) {
