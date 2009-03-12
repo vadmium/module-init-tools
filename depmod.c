@@ -58,7 +58,6 @@ struct module_search
 	size_t len;
 };
 
-static int verbose;
 static unsigned int skipchars;
 static unsigned int make_map_files = 1; /* default to on */
 static unsigned int force_map_files = 0; /* default to on */
@@ -238,12 +237,6 @@ static void exec_old_depmod(char *argv[])
 		"Version requires old depmod, but couldn't run %s: %s\n",
 		oldname, strerror(errno));
 	exit(2);
-}
-
-static void grammar(const char *cmd, const char *filename, unsigned int line)
-{
-	warn("%s line %u: ignoring bad line starting with '%s'\n",
-						filename, line, cmd);
 }
 
 
@@ -753,7 +746,7 @@ static struct module *parse_modules(struct module *list)
 	}
 	
 	for (i = list; i; i = i->next)
-		i->ops->calculate_deps(i, verbose);
+		i->ops->calculate_deps(i);
 	
 	/* Strip out modules with dependency loops. */
  again:

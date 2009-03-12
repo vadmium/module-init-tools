@@ -67,12 +67,6 @@ struct module {
 
 typedef void (*errfn_t)(const char *fmt, ...);
 
-static void grammar(const char *cmd, const char *filename, unsigned int line)
-{
-	warn("%s line %u: ignoring bad line starting with '%s'\n",
-	     filename, line, cmd);
-}
-
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
@@ -794,23 +788,10 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	return 1;
 }
 
-/* If we don't flush, then child processes print before we do */
-static void verbose_printf(int verbose, const char *fmt, ...)
-{
-	va_list arglist;
-
-	if (verbose) {
-		va_start(arglist, fmt);
-		vprintf(fmt, arglist);
-		fflush(stdout);
-		va_end(arglist);
-	}
-}
-
 /* Do an install/remove command: replace $CMDLINE_OPTS if it's specified. */
 static void do_command(const char *modname,
 		       const char *command,
-		       int verbose, int dry_run,
+		       int dry_run,
 		       errfn_t error,
 		       const char *type,
 		       const char *cmdline_opts)
@@ -827,7 +808,7 @@ static void do_command(const char *modname,
 		replaced_cmd = new;
 	}
 
-	verbose_printf(verbose, "%s %s\n", type, replaced_cmd);
+	info("%s %s\n", type, replaced_cmd);
 	if (dry_run)
 		return;
 
@@ -845,7 +826,6 @@ static int insmod(struct list_head *list,
 		   int first_time,
 		   errfn_t error,
 		   int dry_run,
-		   int verbose,
 		   const struct module_options *options,
 		   const struct module_command *commands,
 		   int ignore_commands,
@@ -867,7 +847,7 @@ static int insmod(struct list_head *list,
 	/* Do things we (or parent) depend on first. */
 	if (!list_empty(list)) {
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
-		       dry_run, verbose, options, commands, 0, ignore_proc,
+		       dry_run, options, commands, 0, ignore_proc,
 		       strip_vermagic, strip_modversion, "")) != 0) {
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
@@ -895,7 +875,7 @@ static int insmod(struct list_head *list,
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
 		close_file(fd);
-		do_command(mod->modname, command, verbose, dry_run, error,
+		do_command(mod->modname, command, dry_run, error,
 			   "install", cmdline_opts);
 		goto out_optstring;
 	}
@@ -919,7 +899,7 @@ static int insmod(struct list_head *list,
 	/* Config file might have given more options */
 	optstring = add_extra_options(mod->modname, optstring, options);
 
-	verbose_printf(verbose, "insmod %s %s\n", mod->filename, optstring);
+	info("insmod %s %s\n", mod->filename, optstring);
 
 	if (dry_run)
 		goto out;
@@ -955,7 +935,6 @@ static void rmmod(struct list_head *list,
 		  int first_time,
 		  errfn_t error,
 		  int dry_run,
-		  int verbose,
 		  struct module_command *commands,
 		  int ignore_commands,
 		  int ignore_inuse,
@@ -975,7 +954,7 @@ static void rmmod(struct list_head *list,
 	/* Even if renamed, find commands to orig. name. */
 	command = find_command(mod->modname, commands);
 	if (command && !ignore_commands) {
-		do_command(mod->modname, command, verbose, dry_run, error,
+		do_command(mod->modname, command, dry_run, error,
 			   "remove", cmdline_opts);
 		goto remove_rest;
 	}
@@ -989,7 +968,7 @@ static void rmmod(struct list_head *list,
 		goto remove_rest;
 	}
 
-	verbose_printf(verbose, "rmmod %s\n", mod->filename);
+	info("rmmod %s\n", mod->filename);
 
 	if (dry_run)
 		goto remove_rest;
@@ -1005,7 +984,7 @@ static void rmmod(struct list_head *list,
  remove_rest:
 	/* Now do things we depend. */
 	if (!list_empty(list))
-		rmmod(list, NULL, 0, warn, dry_run, verbose, commands,
+		rmmod(list, NULL, 0, warn, dry_run, commands,
 		      0, 1, "", flags);
 	return;
 
@@ -1561,7 +1540,6 @@ static int handle_module(const char *modname,
 			  int first_time,
 			  errfn_t error,
 			  int dry_run,
-			  int verbose,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
 			  int ignore_commands,
@@ -1578,7 +1556,7 @@ static int handle_module(const char *modname,
 		   handle case where the first is completely bogus. */
 		command = find_command(modname, commands);
 		if (command && !ignore_commands) {
-			do_command(modname, command, verbose, dry_run, error,
+			do_command(modname, command, dry_run, error,
 				   remove ? "remove":"install", cmdline_opts);
 			return 0;
 		}
@@ -1589,11 +1567,11 @@ static int handle_module(const char *modname,
 	}
 
 	if (remove)
-		rmmod(todo_list, newname, first_time, error, dry_run, verbose,
+		rmmod(todo_list, newname, first_time, error, dry_run,
 		      commands, ignore_commands, 0, cmdline_opts, flags);
 	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
-		       first_time, error, dry_run, verbose, modoptions,
+		       first_time, error, dry_run, modoptions,
 		       commands, ignore_commands, ignore_proc, strip_vermagic,
 		       strip_modversion, cmdline_opts);
 
@@ -1635,7 +1613,6 @@ int main(int argc, char *argv[])
 	int dump_only = 0;
 	int dry_run = 0;
 	int remove = 0;
-	int verbose = 0;
 	int list_only = 0;
 	int all = 0;
 	int ignore_commands = 0;
@@ -1860,7 +1837,7 @@ int main(int argc, char *argv[])
 				if (handle_module(aliases->module, &list,
 					      newname, remove, opts,
 					      first_time, err,
-					      dry_run, verbose, modoptions,
+					      dry_run, modoptions,
 					      commands, ignore_commands,
 					      ignore_proc, strip_vermagic,
 					      strip_modversion,
@@ -1877,7 +1854,7 @@ int main(int argc, char *argv[])
 
 			if (handle_module(modulearg, &list, newname, remove,
 				      optstring, first_time, error, dry_run,
-				      verbose, modoptions, commands,
+				      modoptions, commands,
 				      ignore_commands, ignore_proc,
 				      strip_vermagic, strip_modversion,
 				      optstring, flags))
