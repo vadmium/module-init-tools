@@ -33,7 +33,7 @@ int config_filter(const char *name)
 	};
 
 	for (p = skip_prefix; *p; p++) {
-		if (strncmp(name, *p, strlen(*p)) == 0)
+		if (strstarts(name, *p))
 			return 0;
 	}
 

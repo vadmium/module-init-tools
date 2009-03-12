@@ -462,7 +462,7 @@ static void clear_magic(struct module *module, void *mod, unsigned long len)
 	for (p = get_section(mod, len, ".modinfo", &modlen);
 	     p;
 	     p = next_string(p, &modlen)) {
-		if (strncmp(p, "vermagic=", strlen("vermagic=")) == 0) {
+		if (strstarts(p, "vermagic=")) {
 			memset((char *)p, 0, strlen(p));
 			return;
 		}
@@ -1091,8 +1091,7 @@ static int parse_config_file(const char *filename,
 			} else {
 				warn("\"include %s\" is deprecated, "
 				     "please use /etc/modprobe.d\n", newfilename);
-				if (strncmp(newfilename, "/etc/modprobe.d",
-					    strlen("/etc/modprobe.d")) == 0) {
+				if (strstarts(newfilename, "/etc/modprobe.d")) {
 					warn("\"include /etc/modprobe.d\" is "
 					     "the default, ignored\n");
 				} else {
@@ -1685,8 +1684,7 @@ int main(int argc, char *argv[])
 		parse_kcmdline(0, &modoptions);
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
-		if (!aliases &&
-		    strncmp(modulearg, "symbol:", strlen("symbol:")) == 0) {
+		if (!aliases && strstarts(modulearg, "symbol:")) {
 			parse_config_file(symfilename, modulearg, 0,
 					  remove, &modoptions, &commands,
 					  &aliases, &blacklist);

@@ -157,7 +157,7 @@ static void load_system_map(const char *filename)
 			continue;
 
 		/* Covers gpl-only and normal symbols. */
-		if (strncmp(ptr+1, ksymstr, ksymstr_len) == 0)
+		if (strstarts(ptr+1, ksymstr))
 			add_symbol(ptr+1+ksymstr_len, NULL);
 	}
 
@@ -814,7 +814,7 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 		for (p = i->ops->get_modinfo(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			if (strncmp(p, "alias=", strlen("alias=")) == 0)
+			if (strstarts(p, "alias="))
 				fprintf(out, "alias %s %s\n",
 					p + strlen("alias="), modname);
 		}
@@ -854,7 +854,7 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		for (p = i->ops->get_modinfo(i, &size);
 		     p;
 		     p = next_string(p, &size)) {
-			if (strncmp(p, "alias=", strlen("alias=")) == 0) {
+			if (strstarts(p, "alias=")) {
 				alias = NOFAIL(strdup(p + strlen("alias=")));
 				underscores(alias);
 				duplicate = index_insert(index, alias, modname, i->order);
@@ -1059,8 +1059,7 @@ static int parse_config_file(const char *filename,
 			} else {
 				warn("\"include %s\" is deprecated, "
 				     "please use /etc/depmod.d\n", newfilename);
-				if (strncmp(newfilename, "/etc/depmod.d",
-					    strlen("/etc/depmod.d")) == 0) {
+				if (strstarts(newfilename, "/etc/depmod.d")) {
 					warn("\"include /etc/depmod.d\" is "
 					     "the default, ignored\n");
 				} else {
