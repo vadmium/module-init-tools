@@ -21,6 +21,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+#include "util.h"
 #include "zlibsupport.h"
 #include "depmod.h"
 #include "logging.h"
@@ -450,28 +451,6 @@ static void del_module(struct module **modules, struct module *delme)
 	deleted = delme;
 }
 
-/* Convert filename to the module name.  Works if filename == modname, too. */
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
-	}
-	modname[i] = '\0';
-}
-
 /* convert to relative path if possible */
 static const char *compress_path(const char *path, const char *basedir)
 {
@@ -813,51 +792,6 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 	index_destroy(index);
 }
 
-static const char *next_string(const char *string, unsigned long *secsize)
-{
-	/* Skip non-zero chars */
-	while (string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-
-	/* Skip any zero padding. */
-	while (!string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-	return string;
-}
-
-/* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
-static char *underscores(char *string)
-{
-	unsigned int i;
-
-	if (!string)
-		return NULL;
-		
-	for (i = 0; string[i]; i++) {
-		switch (string[i]) {
-		case '-':
-			string[i] = '_';
-			break;
-
-		case ']':
-			warn("Unmatched bracket in %s\n", string);
-			break;
-
-		case '[':
-			i += strcspn(&string[i], "]");
-			if (!string[i])
-				warn("Unmatched bracket in %s\n", string);
-		}
-	}
-	return string;
-}
-
 static void output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -1008,52 +942,6 @@ static int depfile_out_of_date(const char *dirname)
 
 	return any_modules_newer(dirname, st.st_mtime);
 }
-
-static char *getline_wrapped(FILE *file, unsigned int *linenum)
-{
-	int size = 256;
-	int i = 0;
-	char *buf = NOFAIL(malloc(size));
-	for(;;) {
-		int ch = getc_unlocked(file);
-		
-		switch(ch) {
-		case EOF:
-			if (i == 0) {
-				free(buf);
-				return NULL;
-			}
-			/* else fall through */
-			
-		case '\n':
-			if (linenum)
-				(*linenum)++;
-			if (i == size)
-				buf = NOFAIL(realloc(buf, size + 1));
-			buf[i] = '\0';
-			return buf;
-			
-		case '\\':
-			ch = getc_unlocked(file);
-			
-			if (ch == '\n') {
-				if (linenum)
-					(*linenum)++;
-				continue;
-			}
-			/* else fall through */
-		
-		default:
-			buf[i++] = ch;
-	
-			if (i == size) {
-				size *= 2;
-				buf = NOFAIL(realloc(buf, size));
-			}
-		}
-	}
-}
-
 
 static char *strsep_skipspace(char **string, char *delim)
 {

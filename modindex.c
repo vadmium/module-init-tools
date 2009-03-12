@@ -4,53 +4,9 @@
 #include <errno.h>
 #include <string.h>
 
+#include "util.h"
 #include "logging.h"
 #include "index.h"
-
-static char *getline_wrapped(FILE *file, unsigned int *linenum)
-{
-	int size = 256;
-	int i = 0;
-	char *buf = NOFAIL(malloc(size));
-	for(;;) {
-		int ch = getc_unlocked(file);
-		
-		switch(ch) {
-			case EOF:
-				if (i == 0) {
-					free(buf);
-					return NULL;
-				}
-				/* else fall through */
-			
-			case '\n':
-				if (linenum)
-					(*linenum)++;
-				if (i == size)
-					buf = NOFAIL(realloc(buf, size + 1));
-				buf[i] = '\0';
-				return buf;
-			
-			case '\\':
-				ch = getc_unlocked(file);
-			
-				if (ch == '\n') {
-					if (linenum)
-						(*linenum)++;
-					continue;
-				}
-				/* else fall through */
-		
-			default:
-				buf[i++] = ch;
-	
-				if (i == size) {
-					size *= 2;
-					buf = NOFAIL(realloc(buf, size));
-				}
-		}
-	}
-}
 
 static void write_index(const char *filename)
 {

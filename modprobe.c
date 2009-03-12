@@ -39,9 +39,7 @@
 #include <sys/wait.h>
 #include <syslog.h>
 
-#define streq(a,b) (strcmp((a),(b)) == 0)
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
+#include "util.h"
 #include "zlibsupport.h"
 #include "logging.h"
 #include "index.h"
@@ -77,51 +75,6 @@ static void print_usage(const char *progname)
 	exit(1);
 }
 
-static char *getline_wrapped(FILE *file, unsigned int *linenum)
-{
-	int size = 256;
-	int i = 0;
-	char *buf = NOFAIL(malloc(size));
-	for(;;) {
-		int ch = getc_unlocked(file);
-		
-		switch(ch) {
-		case EOF:
-			if (i == 0) {
-				free(buf);
-				return NULL;
-			}
-			/* else fall through */
-			
-		case '\n':
-			if (linenum)
-				(*linenum)++;
-			if (i == size)
-				buf = NOFAIL(realloc(buf, size + 1));
-			buf[i] = '\0';
-			return buf;
-			
-		case '\\':
-			ch = getc_unlocked(file);
-			
-			if (ch == '\n') {
-				if (linenum)
-					(*linenum)++;
-				continue;
-			}
-			/* else fall through */
-		
-		default:
-			buf[i++] = ch;
-	
-			if (i == size) {
-				size *= 2;
-				buf = NOFAIL(realloc(buf, size));
-			}
-		}
-	}
-}
-
 static struct module *find_module(const char *filename, struct list_head *list)
 {
 	struct module *i;
@@ -131,28 +84,6 @@ static struct module *find_module(const char *filename, struct list_head *list)
 			return i;
 	}
 	return NULL;
-}
-
-/* Convert filename to the module name.  Works if filename == modname, too. */
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
-	}
-	modname[i] = '\0';
 }
 
 /* We used to lock with a write flock but that allows regular users to block
@@ -517,24 +448,6 @@ static void strip_section(struct module *module,
 		warn("Unknown module format in %s: not forcing version\n",
 		     module->filename);
 	}
-}
-
-static const char *next_string(const char *string, unsigned long *secsize)
-{
-	/* Skip non-zero chars */
-	while (string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-
-	/* Skip any zero padding. */
-	while (!string[0]) {
-		string++;
-		if ((*secsize)-- <= 1)
-			return NULL;
-	}
-	return string;
 }
 
 static void clear_magic(struct module *module, void *mod, unsigned long len)
@@ -1068,33 +981,6 @@ static int type_matches(const char *path, const char *subpath)
 	return ret;
 }
 
-/* Careful!  Don't munge - in [ ] as per Debian Bug#350915 */
-static char *underscores(char *string)
-{
-	unsigned int i;
-
-	if (!string)
-		return NULL;
-
-	for (i = 0; string[i]; i++) {
-		switch (string[i]) {
-		case '-':
-			string[i] = '_';
-			break;
-
-		case ']':
-			warn("Unmatched bracket in %s\n", string);
-			break;
-
-		case '[':
-			i += strcspn(&string[i], "]");
-			if (!string[i])
-				warn("Unmatched bracket in %s\n", string);
-			break;
-		}
-	}
-	return string;
-}
 
 static int do_wildcard(const char *dirname,
 		       const char *type,

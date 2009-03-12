@@ -22,12 +22,11 @@
 #include <errno.h>
 #include <fnmatch.h>
 
+#include "util.h"
 #include "logging.h"
 #include "index.h"
 
 #include "testing.h"
-
-#define streq(a,b) (strcmp((a),(b)) == 0)
 
 /*
  * Index abstract data type (used only by depmod)

@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <syslog.h>
 
+#include "util.h"
 #include "logging.h"
 #include "testing.h"
 #include "backwards_compat.c"
@@ -106,27 +107,6 @@ static int check_usage(const char *modname)
  out:
 	fclose(module_list);
 	return (refs == 0) ? 0 : -EINVAL;
-}
-
-static void filename2modname(char *modname, const char *filename)
-{
-	const char *afterslash;
-	unsigned int i;
-
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
-
-	/* Convert to underscores, stop at first . */
-	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {
-		if (afterslash[i] == '-')
-			modname[i] = '_';
-		else
-			modname[i] = afterslash[i];
-	}
-	modname[i] = '\0';
 }
 
 static int rmmod(const char *path, int flags)
