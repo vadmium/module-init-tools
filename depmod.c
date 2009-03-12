@@ -1079,9 +1079,9 @@ static int parse_config_file(const char *filename,
 			if (!option)
 				grammar(cmd, filename, linenum);
 			else {
-				if (0 == strncmp(option, "yes", 3))
+				if (streq(option, "yes"))
 					make_map_files = 1;
-				else if (0 == strncmp(option, "no", 2))
+				else if (streq(option, "no"))
 					make_map_files = 0;
 				else
 					grammar(cmd, filename, linenum);
