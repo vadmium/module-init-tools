@@ -38,8 +38,6 @@ sbin_SCRIPTS = generate-modprobe.conf
 noinst_PROGRAMS=modindex
 INSTALL = $(SHELL) $(top_srcdir)/install-with-care
 
-TESTS = tests/runtests
-
 DIST_DIR := /home/rusty/devel/kernel/www/modules/
 
 MAINTAINERCLEANFILES := $(man_MANS)
