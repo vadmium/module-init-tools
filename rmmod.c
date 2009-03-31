@@ -30,7 +30,6 @@
 #include "util.h"
 #include "logging.h"
 #include "testing.h"
-#include "backwards_compat.c"
 
 extern long delete_module(const char *, unsigned int);
 
@@ -165,8 +164,6 @@ int main(int argc, char *argv[])
 	unsigned int flags = O_NONBLOCK|O_EXCL;
 	int i, opt, all = 0;
 	int ret, err;
-
-	try_old_version("rmmod", argv);
 
 	while ((opt = getopt_long(argc, argv,
 			"afh?swvV", options, NULL)) != EOF) {

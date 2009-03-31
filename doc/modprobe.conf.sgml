@@ -196,8 +196,8 @@
     <para>
       There is a <command>generate_modprobe.conf</command> program
       which should do a reasonable job of generating
-      <filename>modprobe.conf</filename> from your current (2.4 or
-      2.2) modules setup.
+      <filename>modprobe.conf</filename> from old (2.4 or 2.2)
+      module setups.
     </para>
     <para>
       Although the syntax is similar to the older

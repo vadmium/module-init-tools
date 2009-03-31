@@ -30,7 +30,6 @@
 
 #include "util.h"
 #include "testing.h"
-#include "backwards_compat.c"
 
 extern long init_module(void *, unsigned long, const char *);
 
@@ -120,10 +119,6 @@ int main(int argc, char *argv[])
 		p++;
 	else
 		p=argv[0];
-	if (strstr(p, "insmod.static"))
-		try_old_version("insmod.static", argv);
-	else
-		try_old_version("insmod", argv);
 
 	if (argv[1] && (streq(argv[1], "--version") || streq(argv[1], "-V"))) {
 		puts(PACKAGE " version " VERSION);

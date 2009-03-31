@@ -15,7 +15,7 @@
 
 #include "util.h"
 #include "zlibsupport.h"
-#include "backwards_compat.c"
+#include "testing.h"
 
 #ifndef MODULE_DIR
 #define MODULE_DIR "/lib/modules"
@@ -355,9 +355,6 @@ int main(int argc, char *argv[])
 	unsigned long infosize = 0;
 	int opt, ret = 0;
 	char *basedir = "";
-
-	if (!getenv("NEW_MODINFO"))
-		try_old_version("modinfo", argv);
 
 	endian_test.s = 1;
 	if (endian_test.c[1] == 1) my_endian = ELFDATA2MSB;

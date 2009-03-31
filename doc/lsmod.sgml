@@ -45,10 +45,9 @@
     <title>BACKWARDS COMPATIBILITY</title>
 
     <para>This version of <command>lsmod</command> is for kernels
-	<literal>2.5.48</literal> and above.  If it detects a kernel
-	with support for old-style modules, it will attempt to run
-	<command>lsmod.old</command> in its place, so it is completely
-	transparent to the user.</para>
+	<literal>2.5.48</literal> and above.  There is no support for
+	old-style modules (for which much of the work was done in
+	userspace).
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>

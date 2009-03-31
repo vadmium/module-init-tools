@@ -13,13 +13,13 @@ insmod_static_LDFLAGS = -static
 # We don't want the $(zlib_flags) here: that makes a dynamic executable
 insmod_static_LDADD = 
 
-EXTRA_insmod_SOURCES = backwards_compat.c
-EXTRA_lsmod_SOURCES = backwards_compat.c
+EXTRA_insmod_SOURCES =
+EXTRA_lsmod_SOURCES =
 EXTRA_modprobe_SOURCES = 
-EXTRA_rmmod_SOURCES = backwards_compat.c
-EXTRA_insmod_static_SOURCES = backwards_compat.c
+EXTRA_rmmod_SOURCES =
+EXTRA_insmod_static_SOURCES =
 EXTRA_depmod_SOURCES = moduleops_core.c
-EXTRA_modinfo_SOURCES = backwards_compat.c
+EXTRA_modinfo_SOURCES =
 
 MAN5 = modprobe.conf.5 modules.dep.5 depmod.conf.5
 MAN8 = depmod.8 insmod.8 lsmod.8 rmmod.8 modprobe.8 modinfo.8
@@ -94,48 +94,3 @@ $(DIST_DIR)/module-init-tools-testsuite-$(VERSION).tar.gz:
 	rm /tmp/module-init-tools-$(VERSION)
 
 release: check clean tarball
-
-moveold: check-for-sbin check-for-old move-old-targets
-
-check-for-sbin:
-	if [ "`echo $(DESTDIR)$(sbindir) | tr -s / /`" = /sbin ]; then :;    \
-	else								     \
-		echo moveold usually only makes sense when installing into /sbin; \
-		exit 1;							     \
-	fi
-
-check-for-old:
-	if [ -f /sbin/lsmod.old ]; then					\
-		echo Someone already moved old versions. >&2; exit 1;	\
-	fi
-
-# Don't just move symlinks, reset them to point to xxx.old.
-# RedHat 8.0 doesn't ship with readlink by default.  Use ls -l.
-# Also, make symlink from /bin to /sbin for lsmod (FHS compliant).
-move-old-targets:
-	for f in lsmod modprobe rmmod depmod insmod modinfo; do		    \
-	    if [ -L /sbin/$$f ]; then					    \
-		ln -sf `ls -l /sbin/$$f | sed 's/.* -> //'`.old /sbin/$$f;  \
-	    fi;								    \
-	    mv /sbin/$$f /sbin/$$f.old;					    \
-	    if [ -f /usr/share/man/man8/$$f.8.gz ]; then		    \
-		mv /usr/share/man/man8/$$f.8.gz				    \
-			/usr/share/man/man8/$$f.old.8.gz;		    \
-	    elif [ -f /usr/share/man/man8/$$f.8.bz2 ]; then		    \
-	        mv /usr/share/man/man8/$$f.8.bz2			    \
-			/usr/share/man/man8/$$f.old.8.bz2;		    \
-	    else							    \
-	        mv /usr/share/man/man8/$$f.8 /usr/share/man/man8/$$f.old.8; \
-	    fi;								    \
-	done
-	for f in kallsyms ksyms; do					    \
-	    if [ -L /sbin/$$f ]; then					    \
-		ln -sf `ls -l /sbin/$$f | sed 's/.* -> //'`.old /sbin/$$f;  \
-	    fi;								    \
-	done
-	ln -s /sbin/lsmod.old /bin/lsmod.old
-
-# For installs in /usr/local/sbin
-links:
-	for f in insmod modprobe rmmod depmod; do ln -s /sbin/$$f $(DESTDIR)$(sbindir)/$$f.old; done
-	for f in  lsmod; do ln -s /sbin/$$f $(DESTDIR)$(bindir)/$$f.old; done

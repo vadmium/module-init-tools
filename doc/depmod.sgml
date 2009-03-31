@@ -202,11 +202,8 @@
 
     <para>
       This version of <command>depmod</command> is for kernels
-      <literal>2.5.48</literal> and above.  If it detects a kernel
-      with support for old-style modules, or the version specified is
-      before <literal>2.5.48</literal>, it will attempt to run
-      <command>depmod.old</command> in its place, so it is completely
-      transparent to the user.
+      <literal>2.5.48</literal> and above.  There is no support
+      for old-style modules.
     </para>
   </refsect1>
   <refsect1>

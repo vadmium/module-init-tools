@@ -119,11 +119,9 @@
 
     <para>
       This version of <command>rmmod</command> is for kernels
-      <literal>2.5.48</literal> and above.  If it detects a kernel
-      with support for old-style modules (for which much of the work
-      was done in userspace), it will attempt to run
-      <command>rmmod.old</command> in its place, so it is completely
-      transparent to the user.
+      <literal>2.5.48</literal> and above.  There is no support for
+      old-style modules (for which much of the work was done in
+      userspace).
     </para>
   </refsect1>
   <refsect1>

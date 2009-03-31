@@ -140,20 +140,13 @@
     <title>BACKWARDS COMPATIBILITY</title>
 
     <para>This version of <command>modinfo</command> is for kernel
-	modules <literal>2.5.48</literal> and above.  If it detects a
-	kernel with support for old-style modules, it will attempt to
-	run <command>modprobe.old</command> in its place, so it is
-	completely transparent to the user.</para>
+	modules <literal>2.5.48</literal> and above.  There is no
+	support for old-style modules.
 
     <para>Note that the output of this version of
 	<command>modinfo</command> is simpler and more regular than
 	the older version: scripts attempting to use the default
 	output may get confused with complex fields.
-    </para>
-
-    <para>You can force the new <command>modinfo</command> to always
-	be used, by setting the <literal>NEW_MODINFO</literal>
-	environment variable.
     </para>
   </refsect1>
   <refsect1>

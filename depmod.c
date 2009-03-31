@@ -214,33 +214,6 @@ static int old_module_version(const char *version)
 	return 1;
 }
 
-static void exec_old_depmod(char *argv[])
-{
-	char *sep;
-	char pathname[strlen(argv[0])+1];
-	char oldname[strlen("depmod") + strlen(argv[0]) + sizeof(".old")];
-
-	memset(pathname, 0, strlen(argv[0])+1);
-	sep = strrchr(argv[0], '/');
-	if (sep)
-		memcpy(pathname, argv[0], sep - argv[0]+1);
-	sprintf(oldname, "%s%s.old", pathname, "depmod");
-
-	/* Recursion detection: we need an env var since we can't
-	   change argv[0] (as older modutils uses it to determine
-	   behavior). */
-	if (getenv("MODULE_RECURSE"))
-		return;
-	setenv("MODULE_RECURSE", "y", 0);
-
-	execvp(oldname, argv);
-	fprintf(stderr,
-		"Version requires old depmod, but couldn't run %s: %s\n",
-		oldname, strerror(errno));
-	exit(2);
-}
-
-
 static void print_usage(const char *name)
 {
 	fprintf(stderr,
@@ -1269,9 +1242,12 @@ int main(int argc, char *argv[])
 		version = NOFAIL(strdup(buf.release));
 	}
 
-	/* Run old version if required. */
-	if (old_module_version(version))
-		exec_old_depmod(argv);
+	/* Check for old version. */
+	if (old_module_version(version)) {
+		fprintf(stderr, "Kernel version %s requires old depmod\n",
+			version);
+		exit(2);
+	}
 
 	if (badopt) {
 		fprintf(stderr, "%s: malformed/unrecognized option '%s'\n",

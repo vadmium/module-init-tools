@@ -28,7 +28,6 @@
 #include <asm/unistd.h>
 
 #include "testing.h"
-#include "backwards_compat.c"
 
 static void print_usage(const char *progname)
 {
@@ -40,8 +39,6 @@ int main(int argc, char *argv[])
 {
 	char line[4096];
 	FILE *file;
-
-	try_old_version("lsmod", argv);
 
 	if (argc != 1)
 		print_usage("lsmod");
