@@ -7,7 +7,7 @@ substantial over time. Development is preferably done via git merges.
 * git trees don't contain pre-built config/Makefiles/etc. You'll need to
   run the following (in order):
 
-      aclocal
+      aclocal -I m4
       automake --add-missing --copy
       autoconf
 
