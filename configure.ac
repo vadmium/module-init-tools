@@ -1,4 +1,4 @@
-AC_INIT(module-init-tools,3.7-pre9)
+AC_INIT(module-init-tools,3.7)
 
 AC_CANONICAL_SYSTEM
 
