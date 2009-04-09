@@ -115,6 +115,13 @@
       This manual page Copyright 2006, Jon Masters, Red Hat, Inc.
     </para>
   </refsect1>
+    <refsect1>
+    <title>SEE ALSO</title>
+    <para><citerefentry>
+	<refentrytitle>depmod</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>
+    </para>
+  </refsect1>
 </refentry>
 
 <!-- Keep this comment at the end of the file

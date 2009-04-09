@@ -217,13 +217,13 @@
     <title>SEE ALSO</title>
     <para>
       <citerefentry>
+	<refentrytitle>depmod.conf</refentrytitle><manvolnum>5</manvolnum>
+      </citerefentry>,
+      <citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>modules.dep</refentrytitle><manvolnum>5</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-	<refentrytitle>depmod.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
   </refsect1>

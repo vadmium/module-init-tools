@@ -75,9 +75,6 @@
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>lsmod</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-	<refentrytitle>insmod.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
   </refsect1>

@@ -71,9 +71,7 @@
         </term>
         <listitem>
           <para>
-	    Print the modinfo version.  Note BACKWARDS COMPATIBILITY
-	    below: you might be printing the version of
-	    <command>modinfo.old</command>.
+	    Print the modinfo version.
 	  </para>
         </listitem>
       </varlistentry>
@@ -160,9 +158,6 @@
 
     <para><citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-	<refentrytitle>modinfo.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
 </para>
   </refsect1>

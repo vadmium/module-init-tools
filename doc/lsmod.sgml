@@ -63,9 +63,6 @@
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-	<refentrytitle>lsmod.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
 </para>
   </refsect1>

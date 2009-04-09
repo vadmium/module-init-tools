@@ -361,10 +361,7 @@
           <para>
 	    Set the kernel version, rather than using
 	    <citerefentry><refentrytitle>uname</refentrytitle><manvolnum>2</manvolnum></citerefentry> to decide on the kernel version (which dictates where to
-	    find the modules).  This also disables backwards
-	    compatibility checks (so 
-	    <citerefentry>
-	      <refentrytitle>modprobe.old</refentrytitle><manvolnum>8</manvolnum></citerefentry> will never be run).
+	    find the modules).
 	  </para>
         </listitem>
       </varlistentry>
@@ -484,9 +481,6 @@
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-	<refentrytitle>modprobe.old</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
   </refsect1>
