@@ -1,30 +1,21 @@
-READ INSTRUCTIONS CAREFULLY, OTHERWISE YOU MAY DESTROY YOUR OLD UTILS!
+PLEASE READ INSTRUCTIONS CAREFULLY.
+THIS WILL DESTROY THE OLD MODUTILS FOR PRE-2.6 KERNELS!
+THERE IS NO BACKWARDS COMPATABILITY.
 
-1a) If you want to install in /sbin:
-	./configure --prefix=/
-	make moveold (if installing for the first time).
-
-  "make moveold" renames the old insmod, modprobe, rmmod and lsmod to
-  insmod.old, modprobe.old, rmmod.old and lsmod.old, and the matching
-  manpages.
-
-OR,
-
-1b) If you want to install in /usr/local/sbin:
-	./configure
-	make links
-
-  "make links" makes links to the previous insmod, modprobe, rmmod and
-  lsmod (which are in /sbin) in /usr/local/sbin
-
-2) Now, build it:
-	make
-	make install
-
-3) If running for the first time, you might want to convert your old
-   modules.conf to modprobe.conf:
+1) If running for the first time, you might try to convert your old
+   modules.conf to modprobe.conf automatically:
 
 	./generate-modprobe.conf /etc/modprobe.conf
+
+2a) If you want to install in /sbin:
+	./configure --prefix= --mandir=/usr/share/man
+
+2b) If you want to install in /usr/local/sbin:
+	./configure
+
+3) Now, build it:
+	make
+	make install
 
 4) If you are using devfs, copy modprobe.devfs to /etc
 
