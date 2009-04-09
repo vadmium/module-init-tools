@@ -354,7 +354,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--set-version</option>
         <term><option>-S</option> <option>--set-version</option>
         </term>
         <listitem>

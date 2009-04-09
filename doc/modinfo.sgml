@@ -140,6 +140,7 @@
     <para>This version of <command>modinfo</command> is for kernel
 	modules <literal>2.5.48</literal> and above.  There is no
 	support for old-style modules.
+    </para>
 
     <para>Note that the output of this version of
 	<command>modinfo</command> is simpler and more regular than

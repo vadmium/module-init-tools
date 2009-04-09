@@ -48,6 +48,7 @@
 	<literal>2.5.48</literal> and above.  There is no support for
 	old-style modules (for which much of the work was done in
 	userspace).
+    </para>
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>
