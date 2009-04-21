@@ -30,6 +30,8 @@ static inline void __swap_bytes(const void *src, void *dest, unsigned int size)
 
 int native_endianness(void);
 
+int elf_ident(void *file, unsigned long fsize, int *conv);
+
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
 #define my_basename(path) ((strrchr((path), '/') ?: (path) - 1) + 1)

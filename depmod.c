@@ -283,25 +283,23 @@ static struct module *grab_module(const char *dirname, const char *filename)
 		goto fail_data;
 	}
 
-	/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
-	if (memcmp(new->data, ELFMAG, SELFMAG) != 0) {
-		warn("Module %s is not an elf object\n", new->pathname);
-		goto fail;
-	}
-
-	switch (((char *)new->data)[EI_CLASS]) {
+	switch (elf_ident(new->data, new->len, &new->conv)) {
 	case ELFCLASS32:
 		new->ops = &mod_ops32;
 		break;
 	case ELFCLASS64:
 		new->ops = &mod_ops64;
 		break;
-	default:
-		warn("Module %s has elf unknown identifier %i\n",
-		     new->pathname, ((char *)new->data)[EI_CLASS]);
+	case -ENOEXEC:
+		warn("Module %s is not an elf object\n", new->pathname);
 		goto fail;
-	}
-	new->conv = ((char *)new->data)[EI_DATA] != native_endianness();
+	case -EINVAL:
+		warn("Module %s has unknown endianness\n", new->pathname);
+		goto fail;
+ 	default:
+		warn("Module %s has unknown word size\n", new->pathname);
+ 		goto fail;
+ 	}
 	return new;
 
 fail:

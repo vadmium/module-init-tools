@@ -21,9 +21,9 @@
 #define MODULE_DIR "/lib/modules"
 #endif
 
-static int elf_endian;
+static int elf_conv;
 
-#define TO_NATIVE(x) END(x, elf_endian != native_endianness())
+#define TO_NATIVE(x) END(x, elf_conv)
 
 static void *get_section32(void *file, unsigned long *size, const char *name)
 {
@@ -59,21 +59,10 @@ static void *get_section64(void *file, unsigned long *size, const char *name)
 	return NULL;
 }
 
-static int elf_ident(void *mod, unsigned long size)
-{
-	/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
-	char *ident = mod;
-
-	if (size < EI_CLASS || memcmp(mod, ELFMAG, SELFMAG) != 0)
-		return ELFCLASSNONE;
-	elf_endian = ident[EI_DATA];
-	return ident[EI_CLASS];
-}
-
 static void *get_section(void *file, unsigned long filesize,
 			 unsigned long *size, const char *name)
 {
-	switch (elf_ident(file, filesize)) {
+	switch (elf_ident(file, filesize, &elf_conv)) {
 	case ELFCLASS32:
 		return get_section32(file, size, name);
 	case ELFCLASS64:

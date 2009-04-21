@@ -357,22 +357,12 @@ static void *get_section64(void *file,
 	return NULL;
 }
 
-static int elf_ident(void *mod, unsigned long size)
-{
-	/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
-	char *ident = mod;
-
-	if (size < EI_CLASS || memcmp(mod, ELFMAG, SELFMAG) != 0)
-		return ELFCLASSNONE;
-	return ident[EI_CLASS];
-}
-
 static void *get_section(void *file,
 			 unsigned long size,
 			 const char *name,
 			 unsigned long *secsize)
 {
-	switch (elf_ident(file, size)) {
+	switch (elf_ident(file, size, NULL)) {
 	case ELFCLASS32:
 		return get_section32(file, size, name, secsize);
 	case ELFCLASS64:
@@ -434,7 +424,7 @@ static void strip_section(struct module *module,
 			  unsigned long len,
 			  const char *secname)
 {
-	switch (elf_ident(mod, len)) {
+	switch (elf_ident(mod, len, NULL)) {
 	case ELFCLASS32:
 		invalidate_section32(mod, secname);
 		break;
@@ -936,7 +926,7 @@ void dump_modversions(const char *filename, errfn_t error)
                error("%s: %s\n", filename, strerror(errno));
                return;
        }
-       switch (elf_ident(file, size)) {
+       switch (elf_ident(file, size, NULL)) {
        case ELFCLASS32:
                info32 = get_section32(file, size, "__versions", &secsize);
                if (!info32)

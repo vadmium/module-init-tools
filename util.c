@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
+#include <elf.h>
 #include "logging.h"
 #include "util.h"
 
@@ -141,4 +143,22 @@ int __attribute__ ((pure)) native_endianness()
 	 * string as a 32-bit int, returns the correct endianness automagically.
 	 */
 	return (char) *((uint32_t*)("\1\0\0\2"));
+}
+
+/*
+ * Check ELF file header.
+ */
+int elf_ident(void *file, unsigned long fsize, int *conv)
+{
+	/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
+	unsigned char *ident = file;
+
+	if (fsize < EI_CLASS || memcmp(file, ELFMAG, SELFMAG) != 0)
+		return -ENOEXEC;	/* Not an ELF object */
+	if (ident[EI_DATA] == 0 || ident[EI_DATA] > 2)
+		return -EINVAL;		/* Unknown endianness */
+
+	if (conv != NULL)
+		*conv = native_endianness() != ident[EI_DATA];
+	return ident[EI_CLASS];
 }
