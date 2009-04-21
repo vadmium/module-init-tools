@@ -60,19 +60,4 @@ struct module
 	char pathname[0];
 };
 
-#define END(x, conv)							  \
-({									  \
-	typeof(x) __x;							  \
-	if (conv) __convert_endian(&(x), &(__x), sizeof(__x));		  \
-	else __x = (x);							  \
-	__x;								  \
-})
-
-static inline void __convert_endian(const void *src, void *dest,
-				    unsigned int size)
-{
-	unsigned int i;
-	for (i = 0; i < size; i++)
-		((unsigned char*)dest)[i] = ((unsigned char*)src)[size - i-1];
-}
 #endif /* MODINITTOOLS_DEPMOD_H */

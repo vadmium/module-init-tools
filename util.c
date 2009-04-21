@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "logging.h"
 #include "util.h"
@@ -129,4 +130,15 @@ const char *next_string(const char *string, unsigned long *secsize)
 			return NULL;
 	}
 	return string;
+}
+
+/*
+ * Get CPU endianness. 0 = unknown, 1 = ELFDATA2LSB = little, 2 = ELFDATA2MSB = big
+ */
+int __attribute__ ((pure)) native_endianness()
+{
+	/* Encoding the endianness enums in a string and then reading that
+	 * string as a 32-bit int, returns the correct endianness automagically.
+	 */
+	return (char) *((uint32_t*)("\1\0\0\2"));
 }

@@ -261,18 +261,6 @@ static int ends_in(const char *name, const char *ext)
 	return 0;
 }
 
-/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
-int needconv(const char *elfhdr)
-{
-	union { short s; char c[2]; } endian_test;
-
-	endian_test.s = 1;
-	if (endian_test.c[1] == 1) return elfhdr[EI_DATA] != ELFDATA2MSB;
-	if (endian_test.c[0] == 1) return elfhdr[EI_DATA] != ELFDATA2LSB;
-	else
-		abort();
-}
-
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;
@@ -313,7 +301,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 		     new->pathname, ((char *)new->data)[EI_CLASS]);
 		goto fail;
 	}
-	new->conv = needconv(new->data);
+	new->conv = ((char *)new->data)[EI_DATA] != native_endianness();
 	return new;
 
 fail:
@@ -1165,6 +1153,9 @@ int main(int argc, char *argv[])
 		*system_map = NULL;
 	int i;
 	const char *config = NULL;
+
+	if (native_endianness() == 0)
+		abort();
 
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */

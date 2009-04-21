@@ -22,22 +22,8 @@
 #endif
 
 static int elf_endian;
-static int my_endian;
 
-static inline void __endian(const void *src, void *dest, unsigned int size)
-{
-	unsigned int i;
-	for (i = 0; i < size; i++)
-		((unsigned char*)dest)[i] = ((unsigned char*)src)[size - i-1];
-}
-
-#define TO_NATIVE(x)							  \
-({									  \
-	typeof(x) __x;							  \
-	if (elf_endian != my_endian) __endian(&(x), &(__x), sizeof(__x)); \
-	else __x = x;							  \
-	__x;								  \
-})
+#define TO_NATIVE(x) END(x, elf_endian != native_endianness())
 
 static void *get_section32(void *file, unsigned long *size, const char *name)
 {
@@ -348,7 +334,6 @@ static void usage(const char *name)
 
 int main(int argc, char *argv[])
 {
-	union { short s; char c[2]; } endian_test;
 	const char *field = NULL;
 	const char *kernel = NULL;
 	char sep = '\n';
@@ -356,10 +341,7 @@ int main(int argc, char *argv[])
 	int opt, ret = 0;
 	char *basedir = "";
 
-	endian_test.s = 1;
-	if (endian_test.c[1] == 1) my_endian = ELFDATA2MSB;
-	else if (endian_test.c[0] == 1) my_endian = ELFDATA2LSB;
-	else
+	if (native_endianness() == 0)
 		abort();
 
 	while ((opt = getopt_long(argc,argv,"adlpVhn0F:k:b:",options,NULL)) >= 0){
