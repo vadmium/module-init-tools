@@ -303,75 +303,6 @@ static void replace_modname(struct module *module,
 	warn("Could not find old name in %s to replace!\n", module->filename);
 }
 
-static void *get_section32(void *file,
-			   unsigned long size,
-			   const char *name,
-			   unsigned long *secsize)
-{
-	Elf32_Ehdr *hdr = file;
-	Elf32_Shdr *sechdrs = file + hdr->e_shoff;
-	const char *secnames;
-	unsigned int i;
-
-	/* Too short? */
-	if (size < sizeof(*hdr))
-		return NULL;
-	if (size < hdr->e_shoff + hdr->e_shnum * sizeof(sechdrs[0]))
-		return NULL;
-	if (size < sechdrs[hdr->e_shstrndx].sh_offset)
-		return NULL;
-		
-	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
-	for (i = 1; i < hdr->e_shnum; i++)
-		if (streq(secnames + sechdrs[i].sh_name, name)) {
-			*secsize = sechdrs[i].sh_size;
-			return file + sechdrs[i].sh_offset;
-		}
-	return NULL;
-}
-
-static void *get_section64(void *file,
-			   unsigned long size,
-			   const char *name,
-			   unsigned long *secsize)
-{
-	Elf64_Ehdr *hdr = file;
-	Elf64_Shdr *sechdrs = file + hdr->e_shoff;
-	const char *secnames;
-	unsigned int i;
-
-	/* Too short? */
-	if (size < sizeof(*hdr))
-		return NULL;
-	if (size < hdr->e_shoff + hdr->e_shnum * sizeof(sechdrs[0]))
-		return NULL;
-	if (size < sechdrs[hdr->e_shstrndx].sh_offset)
-		return NULL;
-		
-	secnames = file + sechdrs[hdr->e_shstrndx].sh_offset;
-	for (i = 1; i < hdr->e_shnum; i++)
-		if (streq(secnames + sechdrs[i].sh_name, name)) {
-			*secsize = sechdrs[i].sh_size;
-			return file + sechdrs[i].sh_offset;
-		}
-	return NULL;
-}
-
-static void *get_section(void *file,
-			 unsigned long size,
-			 const char *name,
-			 unsigned long *secsize)
-{
-	switch (elf_ident(file, size, NULL)) {
-	case ELFCLASS32:
-		return get_section32(file, size, name, secsize);
-	case ELFCLASS64:
-		return get_section64(file, size, name, secsize);
-	default:
-		return NULL;
-	}
-}
-
 static void rename_module(struct module *module,
 			  void *mod,
 			  unsigned long len,
@@ -921,14 +852,15 @@ void dump_modversions(const char *filename, errfn_t error)
        struct modver32_info *info32;
        struct modver64_info *info64;
        int n;
+       int conv;
 
        if (!file) {
                error("%s: %s\n", filename, strerror(errno));
                return;
        }
-       switch (elf_ident(file, size, NULL)) {
+       switch (elf_ident(file, size, &conv)) {
        case ELFCLASS32:
-               info32 = get_section32(file, size, "__versions", &secsize);
+               info32 = get_section32(file, size, "__versions", &secsize, conv);
                if (!info32)
                        return;  /* Does not seem to be a kernel module */
                if (secsize % sizeof(struct modver32_info))
@@ -939,7 +871,7 @@ void dump_modversions(const char *filename, errfn_t error)
                break;
 
        case ELFCLASS64:
-               info64 = get_section64(file, size, "__versions", &secsize);
+               info64 = get_section64(file, size, "__versions", &secsize, conv);
                if (!info64)
                        return;  /* Does not seem to be a kernel module */
                if (secsize % sizeof(struct modver64_info))

@@ -162,3 +162,31 @@ int elf_ident(void *file, unsigned long fsize, int *conv)
 		*conv = native_endianness() != ident[EI_DATA];
 	return ident[EI_CLASS];
 }
+
+#define PERBIT(x) x##32
+#define ElfPERBIT(x) Elf32_##x
+#define ELFPERBIT(x) ELF32_##x
+#include "elf_core.c"
+
+#undef PERBIT
+#undef ElfPERBIT
+#undef ELFPERBIT
+#define PERBIT(x) x##64
+#define ElfPERBIT(x) Elf64_##x
+#define ELFPERBIT(x) ELF64_##x
+#include "elf_core.c"
+
+void *get_section(void *file, unsigned long filesize,
+		  const char *secname, unsigned long *secsize)
+{
+	int conv;
+
+	switch (elf_ident(file, filesize, &conv)) {
+	case ELFCLASS32:
+		return get_section32(file, filesize, secname, secsize, conv);
+	case ELFCLASS64:
+		return get_section64(file, filesize, secname, secsize, conv);
+	default:
+		return NULL;
+	}
+}

@@ -21,57 +21,6 @@
 #define MODULE_DIR "/lib/modules"
 #endif
 
-static int elf_conv;
-
-#define TO_NATIVE(x) END(x, elf_conv)
-
-static void *get_section32(void *file, unsigned long *size, const char *name)
-{
-	Elf32_Ehdr *hdr = file;
-	Elf32_Shdr *sechdrs = file + TO_NATIVE(hdr->e_shoff);
-	const char *secnames;
-	unsigned int i;
-
-	secnames = file
-		+ TO_NATIVE(sechdrs[TO_NATIVE(hdr->e_shstrndx)].sh_offset);
-	for (i = 1; i < TO_NATIVE(hdr->e_shnum); i++)
-		if (streq(secnames + TO_NATIVE(sechdrs[i].sh_name), name)) {
-			*size = TO_NATIVE(sechdrs[i].sh_size);
-			return file + TO_NATIVE(sechdrs[i].sh_offset);
-		}
-	return NULL;
-}
-
-static void *get_section64(void *file, unsigned long *size, const char *name)
-{
-	Elf64_Ehdr *hdr = file;
-	Elf64_Shdr *sechdrs = file + TO_NATIVE(hdr->e_shoff);
-	const char *secnames;
-	unsigned int i;
-
-	secnames = file
-		+ TO_NATIVE(sechdrs[TO_NATIVE(hdr->e_shstrndx)].sh_offset);
-	for (i = 1; i < TO_NATIVE(hdr->e_shnum); i++)
-		if (streq(secnames + TO_NATIVE(sechdrs[i].sh_name), name)) {
-			*size = TO_NATIVE(sechdrs[i].sh_size);
-			return file + TO_NATIVE(sechdrs[i].sh_offset);
-		}
-	return NULL;
-}
-
-static void *get_section(void *file, unsigned long filesize,
-			 unsigned long *size, const char *name)
-{
-	switch (elf_ident(file, filesize, &elf_conv)) {
-	case ELFCLASS32:
-		return get_section32(file, size, name);
-	case ELFCLASS64:
-		return get_section64(file, size, name);
-	default:
-		return NULL;
-	}
-}
-
 struct param
 {
 	struct param *next;
@@ -367,7 +316,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		info = get_section(mod, modulesize, &infosize, ".modinfo");
+		info = get_section(mod, modulesize, ".modinfo", &infosize);
 		if (!info) {
 			release_file(mod, modulesize);
 			free(filename);

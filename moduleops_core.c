@@ -1,27 +1,10 @@
 /* Load the given section: NULL on error. */
 static void *PERBIT(load_section)(ElfPERBIT(Ehdr) *hdr,
 			    const char *secname,
-			    unsigned long *size,
+			    unsigned long *secsize,
 			    int conv)
 {
-	ElfPERBIT(Shdr) *sechdrs;
-	unsigned int i;
-	char *secnames;
-
-	/* Grab section headers and strings so we can tell who is who */
-	sechdrs = (void *)hdr + END(hdr->e_shoff, conv);
-	secnames = (void *)hdr
-		+ END(sechdrs[END(hdr->e_shstrndx, conv)].sh_offset, conv);
-
-	/* Find the section they want */
-	for (i = 1; i < END(hdr->e_shnum, conv); i++) {
-		if (streq(secnames+END(sechdrs[i].sh_name, conv), secname)) {
-			*size = END(sechdrs[i].sh_size, conv);
-			return (void *)hdr + END(sechdrs[i].sh_offset, conv);
-		}
-	}
-	*size = 0;
-	return NULL;
+	return PERBIT(get_section)(hdr, 0, secname, secsize, conv);
 }
 
 static void PERBIT(load_symbols)(struct module *module)
