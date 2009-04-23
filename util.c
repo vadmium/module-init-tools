@@ -114,6 +114,18 @@ char *underscores(char *string)
 }
 
 /*
+ * Get the basename in a pathname.
+ * Unlike the standard implementation, this does not copy the string.
+ */
+char *my_basename(const char *path)
+{
+	const char *base = strrchr(path, '/');
+	if (base)
+		return (char *) base + 1;
+	return (char *) path;
+}
+
+/*
  * Find the next string in an ELF section.
  */
 const char *next_string(const char *string, unsigned long *secsize)

@@ -7,6 +7,7 @@ char *getline_wrapped(FILE *file, unsigned int *linenum);
 
 void filename2modname(char *modname, const char *filename);
 char *underscores(char *string);
+char *my_basename(const char *path);
 
 const char *next_string(const char *string, unsigned long *secsize);
 
@@ -40,6 +41,5 @@ void *get_section64(void *file, unsigned long filesize,
 
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
-#define my_basename(path) ((strrchr((path), '/') ?: (path) - 1) + 1)
 
 #endif
