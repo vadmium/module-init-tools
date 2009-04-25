@@ -1,17 +1,18 @@
 ACLOCAL_AMFLAGS = -I m4
 
-insmod_SOURCES = insmod.c util.c logging.c util.h logging.h testing.h
-lsmod_SOURCES = lsmod.c util.c logging.c util.h logging.h testing.h
-modprobe_SOURCES = modprobe.c util.c logging.c index.c zlibsupport.c config_filter.c util.h logging.h index.h testing.h zlibsupport.h config_filter.h
-rmmod_SOURCES = rmmod.c util.c logging.c util.h logging.h testing.h
-depmod_SOURCES = depmod.c util.c logging.c index.c moduleops.c tables.c zlibsupport.c config_filter.c util.h depmod.h logging.h index.h moduleops.h tables.h list.h testing.h  zlibsupport.h config_filter.h
-modinfo_SOURCES = modinfo.c util.c logging.c zlibsupport.c util.h testing.h zlibsupport.h
-modindex_SOURCES = modindex.c util.c logging.c index.c util.h logging.h index.h
+insmod_SOURCES = insmod.c testing.h
+lsmod_SOURCES = lsmod.c testing.h
+modprobe_SOURCES = modprobe.c zlibsupport.c zlibsupport.h testing.h
+rmmod_SOURCES = rmmod.c testing.h
+depmod_SOURCES = depmod.c zlibsupport.c moduleops.c tables.c \
+	zlibsupport.h moduleops.h tables.h testing.h
+modinfo_SOURCES = modinfo.c zlibsupport.c zlibsupport.h testing.h
+modindex_SOURCES = modindex.c zlibsupport.c zlibsupport.h testing.h
 
 insmod_static_SOURCES = insmod.c
 insmod_static_LDFLAGS = -static
 # We don't want the $(zlib_flags) here: that makes a dynamic executable
-insmod_static_LDADD = 
+insmod_static_LDADD = libmodtools.a
 
 EXTRA_insmod_SOURCES =
 EXTRA_lsmod_SOURCES =
@@ -20,6 +21,18 @@ EXTRA_rmmod_SOURCES =
 EXTRA_insmod_static_SOURCES =
 EXTRA_depmod_SOURCES = moduleops_core.c
 EXTRA_modinfo_SOURCES =
+
+libmodtools_a_SOURCES = util.c logging.c index.c config_filter.c \
+	util.h depmod.h logging.h index.h list.h config_filter.h
+libmodtools_a_CFLAGS = -ffunction-sections
+
+insmod_LDADD = $(LDADD) libmodtools.a
+lsmod_LDADD = $(LDADD) libmodtools.a
+modprobe_LDADD = $(LDADD) libmodtools.a
+rmmod_LDADD = $(LDADD) libmodtools.a
+depmod_LDADD = $(LDADD) libmodtools.a
+modinfo_LDADD = $(LDADD) libmodtools.a
+modindex_LDADD = $(LDADD) libmodtools.a
 
 MAN5 = modprobe.conf.5 modules.dep.5 depmod.conf.5
 MAN8 = depmod.8 insmod.8 lsmod.8 rmmod.8 modprobe.8 modinfo.8
@@ -36,6 +49,7 @@ sbin_PROGRAMS = insmod modprobe rmmod depmod modinfo insmod.static
 bin_PROGRAMS = lsmod
 sbin_SCRIPTS = generate-modprobe.conf
 noinst_PROGRAMS=modindex
+noinst_LIBRARIES = libmodtools.a
 INSTALL = $(SHELL) $(top_srcdir)/install-with-care
 
 DIST_DIR := /home/rusty/devel/kernel/www/modules/

@@ -18,6 +18,7 @@ AC_ARG_ENABLE(zlib,
 fi])
 
 AC_PROG_CC
+AC_PROG_RANLIB
 
 AC_CHECK_PROGS(DOCBOOKTOMAN, docbook-to-man docbook2man, [no],)
 if test x"$DOCBOOKTOMAN" = xno
