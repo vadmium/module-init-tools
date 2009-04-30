@@ -1,6 +1,3 @@
-# Heavily modified to work for module-init-tools
-#  - Alan Jenkins <alan-jenkins@tuffmail.co.uk>
-
 # ===========================================================================
 #           http://autoconf-archive.cryp.to/ax_enable_builddir.html
 # ===========================================================================
@@ -53,11 +50,12 @@
 #
 # LAST MODIFICATION
 #
-#   2008-04-12
+#   2009-03-09
 #
 # COPYLEFT
 #
-#   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
+#   Copyright (c) 2009 Guido U. Draheim <guidod@gmx.de>
+#   Copyright (c) 2009 Alan Jenkins <alan-jenkins@tuffmail.co.uk>
 #
 #   This program is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -88,6 +86,7 @@
 AC_DEFUN([AX_ENABLE_BUILDDIR],[
 AC_REQUIRE([AC_CANONICAL_HOST])[]dnl
 AC_REQUIRE([AX_CONFIGURE_ARGS])[]dnl
+AC_REQUIRE([AM_AUX_DIR_EXPAND])[]dnl
 AC_BEFORE([$0],[AM_INIT_AUTOMAKE])dnl
 AS_VAR_PUSHDEF([SUB],[ax_enable_builddir])dnl
 AS_VAR_PUSHDEF([AUX],[ax_enable_builddir_auxdir])dnl
@@ -133,12 +132,15 @@ fi fi
 test ".$SUB" = ".auto" && SUB="."
 dnl ac_path_prog uses "set dummy" to override $@ which would defeat the "exec"
 AC_PATH_PROG(SED,gsed sed, sed)
+AUX="$am_aux_dir"
 AS_VAR_POPDEF([SED])dnl
+AS_VAR_POPDEF([AUX])dnl
 AS_VAR_POPDEF([SUB])dnl
 AC_CONFIG_COMMANDS([buildir],[dnl .............. config.status ..............
 AS_VAR_PUSHDEF([SUB],[ax_enable_builddir])dnl
 AS_VAR_PUSHDEF([TOP],[top_srcdir])dnl
 AS_VAR_PUSHDEF([SRC],[ac_top_srcdir])dnl
+AS_VAR_PUSHDEF([AUX],[ax_enable_builddir_auxdir])dnl
 AS_VAR_PUSHDEF([SED],[ax_enable_builddir_sed])dnl
 pushdef([END],[Makefile.mk])dnl
 pushdef([_ALL],[ifelse([$3],,[-all],[$3])])dnl
@@ -200,7 +202,7 @@ s/ [[a-zA-Z0-9-]]*[]_ALL [[a-zA-Z0-9-]]*[]_ALL[]_ALL//g
 /[]_ALL[]_ALL/d
 a\\
 	@ HOST="\$(HOST)\" \\\\\\
-	; test ".\$\$HOST" = "." && HOST=$x sh ./config.guess $x \\\\\\
+	; test ".\$\$HOST" = "." && HOST=$x sh $AUX/config.guess $x \\\\\\
 	; BUILD=$x grep "^#### \$\$HOST " Makefile | sed -e 's/.*|//' $x \\\\\\
 	; use=$x basename "\$\@" _ALL $x; n=$x echo \$\$BUILD | wc -w $x \\\\\\
 	; echo "MAKE \$\$HOST : \$\$n * \$\@"; if test "\$\$n" = "0" ; then : \\\\\\
@@ -212,7 +214,7 @@ a\\
 dnl special rule add-on: "dist" copies the tarball to $(PUB). (source tree)
 /dist[]_ALL *:/a\\
 	@ HOST="\$(HOST)\" \\\\\\
-	; test ".\$\$HOST" = "." && HOST=$x sh ./config.guess $x \\\\\\
+	; test ".\$\$HOST" = "." && HOST=$x sh $AUX/config.guess $x \\\\\\
 	; BUILD=$x grep "^#### \$\$HOST " Makefile | sed -e 's/.*|//' $x \\\\\\
 	; found=$x echo \$\$BUILD | wc -w $x \\\\\\
 	; echo "MAKE \$\$HOST : \$\$found \$(PACKAGE)-\$(VERSION).tar.*" \\\\\\
@@ -236,10 +238,11 @@ dnl special rule add-on: "dist-foo" copies all the archives to $(PUB). (source t
 dnl special rule add-on: "distclean" removes all local builddirs completely
 /distclean[]_ALL *:/a\\
 	@ HOST="\$(HOST)\" \\\\\\
-	; test ".\$\$HOST" = "." && HOST=$x sh ./config.guess $x \\\\\\
+	; test ".\$\$HOST" = "." && HOST=$x sh $AUX/config.guess $x \\\\\\
 	; BUILD=$x grep "^#### .*|" Makefile | sed -e 's/.*|//' $x \\\\\\
 	; use=$x basename "\$\@" _ALL $x; n=$x echo \$\$BUILD | wc -w $x \\\\\\
 	; echo "MAKE \$\$HOST : \$\$n * \$\@ (all local builds)" \\\\\\
+	; test ".\$\$BUILD" = "." && BUILD="." \\\\\\
 	; for i in \$\$BUILD ; do test ".\$\$i" = "." && continue \\\\\\
 	; echo "# rm -r \$\$i"; done ; echo "# (sleep 3)" ; sleep 3 \\\\\\
 	; for i in \$\$BUILD ; do test ".\$\$i" = "." && continue \\\\\\
@@ -291,6 +294,7 @@ ax_enable_builddir_srcdir="$srcdir"                    # $srcdir
 ax_enable_builddir_host="$HOST"                        # $HOST / $host
 ax_enable_builddir_version="$VERSION"                  # $VERSION
 ax_enable_builddir_package="$PACKAGE"                  # $PACKAGE
+ax_enable_builddir_auxdir="$ax_enable_builddir_auxdir" # $AUX
 ax_enable_builddir_sed="$ax_enable_builddir_sed"       # $SED
 ax_enable_builddir="$ax_enable_builddir"               # $SUB
 ])dnl
