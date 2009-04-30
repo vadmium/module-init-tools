@@ -17,6 +17,15 @@ AC_ARG_ENABLE(zlib,
   zlib_flags="-Wl,-Bstatic -lz -Wl,-Bdynamic"
 fi])
 
+AC_ARG_ENABLE(zlib-dynamic,
+[  --enable-zlib-dynamic       Handle gzipped modules, zlib will be linked
+                               dynamically. Note that libz must be installed
+                               in /lib for this to work.],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(CONFIG_USE_ZLIB)
+  zlib_flags="-lz"
+fi])
+
 AC_PROG_CC
 AC_PROG_RANLIB
 
