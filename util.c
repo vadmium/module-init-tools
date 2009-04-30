@@ -67,11 +67,7 @@ void filename2modname(char *modname, const char *filename)
 	const char *afterslash;
 	unsigned int i;
 
-	afterslash = strrchr(filename, '/');
-	if (!afterslash)
-		afterslash = filename;
-	else
-		afterslash++;
+	afterslash = my_basename(filename);
 
 	/* Convert to underscores, stop at first . */
 	for (i = 0; afterslash[i] && afterslash[i] != '.'; i++) {

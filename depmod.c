@@ -273,13 +273,6 @@ int needconv(const char *elfhdr)
 		abort();
 }
 
-static char *my_basename(const char *name)
-{
-	const char *base = strrchr(name, '/');
-	if (base) return (char *)base + 1;
-	return (char *)name;
-}
-
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;

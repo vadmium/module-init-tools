@@ -4,15 +4,16 @@
 #include <ctype.h>
 #include "depmod.h"
 #include "tables.h"
+#include "util.h"
 
 /* Turn /lib/modules/2.5.49/kernel/foo.ko(.gz) => foo */
 static void make_shortname(char *dest, const char *src)
 {
 	char *ext;
-	const char *slash;
+	const char *bname;
 
-	slash = strrchr(src, '/') ?: src-1;
-	strcpy(dest, slash + 1);
+	bname = my_basename(src);
+	strcpy(dest, bname);
 	ext = strchr(dest, '.');
 	if (ext)
 		*ext = '\0';

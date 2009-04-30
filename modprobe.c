@@ -160,10 +160,7 @@ static int add_modules_dep_line(char *line,
 
 	/* Is this the module we are looking for? */
 	*ptr = '\0';
-	if (strrchr(line, '/'))
-		modname = strrchr(line, '/') + 1;
-	else
-		modname = line;
+	modname = my_basename(line);
 
 	len = strlen(modname);
 	if (strchr(modname, '.'))

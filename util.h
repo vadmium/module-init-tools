@@ -12,5 +12,6 @@ const char *next_string(const char *string, unsigned long *secsize);
 
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
+#define my_basename(path) ((strrchr((path), '/') ?: (path) - 1) + 1)
 
 #endif

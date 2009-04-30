@@ -114,11 +114,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	p = strrchr(argv[0], '/');
-	if (p)
-		p++;
-	else
-		p=argv[0];
+	p = my_basename(argv[0]);
 
 	if (argv[1] && (streq(argv[1], "--version") || streq(argv[1], "-V"))) {
 		puts(PACKAGE " version " VERSION);
