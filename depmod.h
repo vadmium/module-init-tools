@@ -26,18 +26,26 @@ struct module_tables {
 	void *of_table;
 };
 
+struct elf_file
+{
+	/* File operations */
+	struct module_ops *ops;
+
+	/* Convert endian? */
+	int conv;
+
+	/* File contents and length. */
+	void *data;
+	unsigned long len;
+};
+
+
 struct module;
 
 struct module
 {
 	/* Next module in list of all modules */
 	struct module *next;
-
-	/* 64 or 32 bit? */
-	struct module_ops *ops;
-
-	/* Convert endian? */
-	int conv;
 
 	/* Dependencies: filled in by ops->calculate_deps() */
 	unsigned int num_deps;
@@ -52,9 +60,7 @@ struct module
 	/* Tables extracted from module by ops->fetch_tables(). */
 	struct module_tables tables;
 
-	/* File contents and length. */
-	void *data;
-	unsigned long len;
+	struct elf_file file;
 
 	char *basename; /* points into pathname */
 	char pathname[0];

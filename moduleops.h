@@ -16,15 +16,15 @@ struct kernel_symbol64 {
 
 struct module_ops
 {
-	struct string_table *(*load_strings)(struct module *module,
+	struct string_table *(*load_strings)(struct elf_file *module,
 		const char *secname, struct string_table *tbl);
-	struct string_table *(*load_symbols)(struct module *module);
-	struct string_table *(*load_dep_syms)(struct module *module,
-		struct string_table **types);
-	void (*fetch_tables)(struct module *module,
+	struct string_table *(*load_symbols)(struct elf_file *module);
+	struct string_table *(*load_dep_syms)(const char *pathname,
+		struct elf_file *module, struct string_table **types);
+	void (*fetch_tables)(struct elf_file *module,
 		struct module_tables *tables);
-	char *(*get_aliases)(struct module *module, unsigned long *size);
-	char *(*get_modinfo)(struct module *module, unsigned long *size);
+	char *(*get_aliases)(struct elf_file *module, unsigned long *size);
+	char *(*get_modinfo)(struct elf_file *module, unsigned long *size);
 };
 
 extern struct module_ops mod_ops32, mod_ops64;

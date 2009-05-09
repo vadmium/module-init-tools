@@ -264,6 +264,7 @@ static int ends_in(const char *name, const char *ext)
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;
+	struct elf_file *file;
 
 	new = NOFAIL(malloc(sizeof(*new)
 			    + strlen(dirname?:"") + 1 + strlen(filename) + 1));
@@ -276,19 +277,21 @@ static struct module *grab_module(const char *dirname, const char *filename)
 	INIT_LIST_HEAD(&new->dep_list);
 	new->order = INDEX_PRIORITY_MIN;
 
-	new->data = grab_file(new->pathname, &new->len);
-	if (!new->data) {
+	file = &new->file;
+
+	file->data = grab_file(new->pathname, &file->len);
+	if (!file->data) {
 		warn("Can't read module %s: %s\n",
 		     new->pathname, strerror(errno));
 		goto fail_data;
 	}
 
-	switch (elf_ident(new->data, new->len, &new->conv)) {
+	switch (elf_ident(file->data, file->len, &file->conv)) {
 	case ELFCLASS32:
-		new->ops = &mod_ops32;
+		file->ops = &mod_ops32;
 		break;
 	case ELFCLASS64:
-		new->ops = &mod_ops64;
+		file->ops = &mod_ops64;
 		break;
 	case -ENOEXEC:
 		warn("Module %s is not an elf object\n", new->pathname);
@@ -303,7 +306,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 	return new;
 
 fail:
-	release_file(new->data, new->len);
+	release_file(file->data, new->file.len);
 fail_data:
 	free(new);
 	return NULL;
@@ -673,11 +676,13 @@ static void calculate_deps(struct module *module)
 	unsigned int i;
 	struct string_table *symnames;
 	struct string_table *symtypes;
+	struct elf_file *file;
 
 	module->num_deps = 0;
 	module->deps = NULL;
+	file = &module->file;
 
-	symnames = module->ops->load_dep_syms(module, &symtypes);
+	symnames = file->ops->load_dep_syms(module->pathname, file, &symtypes);
 	if (!symnames || !symtypes)
 		return;
 
@@ -704,17 +709,19 @@ static void calculate_deps(struct module *module)
 static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
+	struct elf_file *file;
 	struct string_table *syms;
 	int j;
 
 	for (i = list; i; i = i->next) {
-		syms = i->ops->load_symbols(i);
+		file = &i->file;
+		syms = file->ops->load_symbols(file);
 		if (syms) {
 			for (j = 0; j < syms->cnt; j++)
 				add_symbol(syms->str[j], i);
 			free(syms);
 		}
-		i->ops->fetch_tables(i, &i->tables);
+		file->ops->fetch_tables(file, &i->tables);
 	}
 	
 	for (i = list; i; i = i->next)
@@ -788,6 +795,7 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 static void output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
+	struct elf_file *file;
 	const char *p;
 	unsigned long size;
 
@@ -795,16 +803,17 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		char modname[strlen(i->pathname)+1];
 
+		file = &i->file;
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		for (p = i->ops->get_aliases(i, &size);
+		for (p = file->ops->get_aliases(file, &size);
 		     p;
 		     p = next_string(p, &size))
 			fprintf(out, "alias %s %s\n", p, modname);
 
 		/* Grab form new-style .modinfo section. */
-		for (p = i->ops->get_modinfo(i, &size);
+		for (p = file->ops->get_modinfo(file, &size);
 		     p;
 		     p = next_string(p, &size)) {
 			if (strstarts(p, "alias="))
@@ -817,6 +826,7 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
+	struct elf_file *file;
 	const char *p;
 	char *alias;
 	unsigned long size;
@@ -828,10 +838,11 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		char modname[strlen(i->pathname)+1];
 
+		file = &i->file;
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		for (p = i->ops->get_aliases(i, &size);
+		for (p = file->ops->get_aliases(file, &size);
 		     p;
 		     p = next_string(p, &size)) {
 			alias = NOFAIL(strdup(p));
@@ -844,7 +855,7 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		}
 
 		/* Grab from new-style .modinfo section. */
-		for (p = i->ops->get_modinfo(i, &size);
+		for (p = file->ops->get_modinfo(file, &size);
 		     p;
 		     p = next_string(p, &size)) {
 			if (strstarts(p, "alias=")) {

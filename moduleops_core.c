@@ -1,12 +1,12 @@
 /* Load the given section: NULL on error. */
-static void *PERBIT(load_section)(struct module *module,
+static void *PERBIT(load_section)(struct elf_file *module,
 				  const char *secname,
 				  unsigned long *secsize)
 {
 	return PERBIT(get_section)(module->data, 0, secname, secsize, module->conv);
 }
 
-static struct string_table *PERBIT(load_strings)(struct module *module,
+static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 						 const char *secname,
 						 struct string_table *tbl)
 {
@@ -27,7 +27,7 @@ static struct string_table *PERBIT(load_strings)(struct module *module,
 	return tbl;
 }
 
-static struct string_table *PERBIT(load_symbols)(struct module *module)
+static struct string_table *PERBIT(load_symbols)(struct elf_file *module)
 {
 	struct PERBIT(kernel_symbol) *ksyms;
 	struct string_table *symtbl;
@@ -54,12 +54,12 @@ static struct string_table *PERBIT(load_symbols)(struct module *module)
 	return symtbl;
 }
 
-static char *PERBIT(get_aliases)(struct module *module, unsigned long *size)
+static char *PERBIT(get_aliases)(struct elf_file *module, unsigned long *size)
 {
 	return PERBIT(load_section)(module, ".modalias", size);
 }
 
-static char *PERBIT(get_modinfo)(struct module *module, unsigned long *size)
+static char *PERBIT(get_modinfo)(struct elf_file *module, unsigned long *size)
 {
 	return PERBIT(load_section)(module, ".modinfo", size);
 }
@@ -68,7 +68,8 @@ static char *PERBIT(get_modinfo)(struct module *module, unsigned long *size)
 #define STT_REGISTER    13              /* Global register reserved to app. */
 #endif
 
-static struct string_table *PERBIT(load_dep_syms)(struct module *module,
+static struct string_table *PERBIT(load_dep_syms)(const char *pathname,
+						  struct elf_file *module,
 						  struct string_table **types)
 {
 	unsigned int i;
@@ -88,7 +89,7 @@ static struct string_table *PERBIT(load_dep_syms)(struct module *module,
 
 	if (!strings || !syms) {
 		warn("Couldn't find symtab and strtab in module %s\n",
-		     module->pathname);
+		     pathname);
 		return NULL;
 	}
 
@@ -144,7 +145,7 @@ static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr,
 }
 
 /* FIXME: Check size, unless we end up using aliases anyway --RR */
-static void PERBIT(fetch_tables)(struct module *module,
+static void PERBIT(fetch_tables)(struct elf_file *module,
 				 struct module_tables *tables)
 {
 	unsigned int i;
