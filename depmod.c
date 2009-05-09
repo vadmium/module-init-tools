@@ -670,9 +670,16 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
+	struct string_table *syms;
+	int j;
 
 	for (i = list; i; i = i->next) {
-		i->ops->load_symbols(i);
+		syms = i->ops->load_symbols(i);
+		if (syms) {
+			for (j = 0; j < syms->cnt; j++)
+				add_symbol(syms->str[j], i);
+			free(syms);
+		}
 		i->ops->fetch_tables(i);
 	}
 	

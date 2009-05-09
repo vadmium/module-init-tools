@@ -5,7 +5,6 @@
 struct module;
 
 /* Functions provided by depmod.c */
-void add_symbol(const char *name, struct module *owner);
 struct module *find_symbol(const char *name, const char *modname, int weak);
 void add_dep(struct module *mod, struct module *depends_on);
 

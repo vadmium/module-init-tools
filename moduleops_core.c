@@ -7,11 +7,14 @@ static void *PERBIT(load_section)(ElfPERBIT(Ehdr) *hdr,
 	return PERBIT(get_section)(hdr, 0, secname, secsize, conv);
 }
 
-static void PERBIT(load_symbols)(struct module *module)
+static struct string_table *PERBIT(load_symbols)(struct module *module)
 {
 	struct PERBIT(kernel_symbol) *ksyms;
+	struct string_table *symtbl;
 	char *ksymstrings;
 	unsigned long i, size;
+
+	symtbl = NULL;
 
 	/* New-style: strings are in this section. */
 	ksymstrings = PERBIT(load_section)(module->data, "__ksymtab_strings",
@@ -22,8 +25,8 @@ static void PERBIT(load_symbols)(struct module *module)
 			/* Skip any zero padding. */
 			while (!ksymstrings[i])
 				if (++i >= size)
-					return;
-			add_symbol(ksymstrings+i, module);
+					return symtbl;
+			symtbl = NOFAIL(strtbl_add(ksymstrings + i, symtbl));
 			i += strlen(ksymstrings+i);
 		}
 		/* GPL symbols too */
@@ -34,22 +37,24 @@ static void PERBIT(load_symbols)(struct module *module)
 			/* Skip any zero padding. */
 			while (!ksymstrings[i])
 				if (++i >= size)
-					return;
-			add_symbol(ksymstrings+i, module);
+					return symtbl;
+			symtbl = NOFAIL(strtbl_add(ksymstrings + i, symtbl));
 			i += strlen(ksymstrings+i);
 		}
-		return;
+		return symtbl;
 	}
 
 	/* Old-style. */
 	ksyms = PERBIT(load_section)(module->data, "__ksymtab", &size,
 				     module->conv);
 	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
-		add_symbol(ksyms[i].name, module);
+		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
 	ksyms = PERBIT(load_section)(module->data, "__gpl_ksymtab", &size,
 				     module->conv);
 	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
-		add_symbol(ksyms[i].name, module);
+		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
+
+	return symtbl;
 }
 
 static char *PERBIT(get_aliases)(struct module *module, unsigned long *size)

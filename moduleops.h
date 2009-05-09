@@ -16,7 +16,7 @@ struct kernel_symbol64 {
 
 struct module_ops
 {
-	void (*load_symbols)(struct module *module);
+	struct string_table *(*load_symbols)(struct module *module);
 	void (*calculate_deps)(struct module *module);
 	void (*fetch_tables)(struct module *module);
 	char *(*get_aliases)(struct module *module, unsigned long *size);
