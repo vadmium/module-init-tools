@@ -16,6 +16,8 @@ struct kernel_symbol64 {
 
 struct module_ops
 {
+	struct string_table *(*load_strings)(struct module *module,
+		const char *secname, struct string_table *tbl);
 	struct string_table *(*load_symbols)(struct module *module);
 	struct string_table *(*load_dep_syms)(struct module *module,
 		struct string_table **types);

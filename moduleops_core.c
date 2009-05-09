@@ -7,41 +7,41 @@ static void *PERBIT(load_section)(ElfPERBIT(Ehdr) *hdr,
 	return PERBIT(get_section)(hdr, 0, secname, secsize, conv);
 }
 
+static struct string_table *PERBIT(load_strings)(struct module *module,
+						 const char *secname,
+						 struct string_table *tbl)
+{
+	unsigned long size;
+	const char *strings;
+
+	strings = PERBIT(load_section)(module->data, secname, &size, module->conv);
+	if (strings) {
+		/* Skip any zero padding. */
+		while (!strings[0]) {
+			strings++;
+			if (size-- <= 1)
+				return tbl;
+		}
+		for (; strings; strings = next_string(strings, &size))
+			tbl = NOFAIL(strtbl_add(strings, tbl));
+	}
+	return tbl;
+}
+
 static struct string_table *PERBIT(load_symbols)(struct module *module)
 {
 	struct PERBIT(kernel_symbol) *ksyms;
 	struct string_table *symtbl;
-	char *ksymstrings;
 	unsigned long i, size;
 
 	symtbl = NULL;
 
 	/* New-style: strings are in this section. */
-	ksymstrings = PERBIT(load_section)(module->data, "__ksymtab_strings",
-					   &size, module->conv);
-	if (ksymstrings) {
-		unsigned int i = 0;
-		for (;;) {
-			/* Skip any zero padding. */
-			while (!ksymstrings[i])
-				if (++i >= size)
-					return symtbl;
-			symtbl = NOFAIL(strtbl_add(ksymstrings + i, symtbl));
-			i += strlen(ksymstrings+i);
-		}
+	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl);
+	if (symtbl) {
 		/* GPL symbols too */
-		ksymstrings = PERBIT(load_section)(module->data,
-						   "__ksymtab_strings_gpl",
-						   &size, module->conv);
-		for (;;) {
-			/* Skip any zero padding. */
-			while (!ksymstrings[i])
-				if (++i >= size)
-					return symtbl;
-			symtbl = NOFAIL(strtbl_add(ksymstrings + i, symtbl));
-			i += strlen(ksymstrings+i);
-		}
-		return symtbl;
+		return PERBIT(load_strings)(module, "__ksymtab_strings_gpl",
+			symtbl);
 	}
 
 	/* Old-style. */
@@ -234,6 +234,7 @@ static void PERBIT(fetch_tables)(struct module *module)
 }
 
 struct module_ops PERBIT(mod_ops) = {
+	.load_strings	= PERBIT(load_strings),
 	.load_symbols	= PERBIT(load_symbols),
 	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),
