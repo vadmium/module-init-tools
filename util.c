@@ -114,6 +114,39 @@ char *underscores(char *string)
 }
 
 /*
+ * strtbl_add - add a string to a string table.
+ *
+ * @str: string to add
+ * @tbl: current string table. NULL = allocate new table
+ *
+ * Allocates an array of pointers to strings.
+ * The strings themselves are not actually kept in the table.
+ *
+ * Returns reallocated and updated string table. NULL = out of memory.
+ */
+struct string_table *strtbl_add(const char *str, struct string_table *tbl)
+{
+	if (tbl == NULL) {
+		const char max = 100;
+		tbl = malloc(sizeof(*tbl) + sizeof(char *) * max);
+		if (!tbl)
+			return NULL;
+		tbl->max = max;
+		tbl->cnt = 0;
+	}
+	if (tbl->cnt >= tbl->max) {
+		tbl->max *= 2;
+		tbl = realloc(tbl, sizeof(*tbl) + sizeof(char *) * tbl->max);
+		if (!tbl)
+			return NULL;
+	}
+	tbl->str[tbl->cnt] = str;
+	tbl->cnt += 1;
+
+	return tbl;
+}
+
+/*
  * Get the basename in a pathname.
  * Unlike the standard implementation, this does not copy the string.
  */
