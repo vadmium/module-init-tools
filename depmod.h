@@ -4,10 +4,6 @@
 
 struct module;
 
-/* Functions provided by depmod.c */
-struct module *find_symbol(const char *name, const char *modname, int weak);
-void add_dep(struct module *mod, struct module *depends_on);
-
 struct module
 {
 	/* Next module in list of all modules */

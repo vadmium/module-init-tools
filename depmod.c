@@ -667,6 +667,40 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 	return tlist;
 }
 
+/* Calculate the dependencies for this module */
+static void calculate_deps(struct module *module)
+{
+	unsigned int i;
+	struct string_table *symnames;
+	struct string_table *symtypes;
+
+	module->num_deps = 0;
+	module->deps = NULL;
+
+	symnames = module->ops->load_dep_syms(module, &symtypes);
+	if (!symnames || !symtypes)
+		return;
+
+	for (i = 0; i < symnames->cnt; i++) {
+		const char *name;
+		struct module *owner;
+		int weak;
+
+		name = symnames->str[i];
+		weak = (*(symtypes->str[i]) == 'W');
+		owner = find_symbol(name, module->pathname, weak);
+		if (owner) {
+			info("%s needs \"%s\": %s\n",
+			       module->pathname, name,
+			       owner->pathname);
+			add_dep(module, owner);
+		}
+	}
+
+	free(symnames);
+	free(symtypes);
+}
+
 static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
@@ -684,7 +718,7 @@ static struct module *parse_modules(struct module *list)
 	}
 	
 	for (i = list; i; i = i->next)
-		i->ops->calculate_deps(i);
+		calculate_deps(i);
 	
 	/* Strip out modules with dependency loops. */
  again:

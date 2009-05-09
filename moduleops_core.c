@@ -73,8 +73,8 @@ static char *PERBIT(get_modinfo)(struct module *module, unsigned long *size)
 #define STT_REGISTER    13              /* Global register reserved to app. */
 #endif
 
-/* Calculate the dependencies for this module */
-static void PERBIT(calculate_deps)(struct module *module)
+static struct string_table *PERBIT(load_dep_syms)(struct module *module,
+						  struct string_table **types)
 {
 	unsigned int i;
 	unsigned long size;
@@ -82,19 +82,20 @@ static void PERBIT(calculate_deps)(struct module *module)
 	ElfPERBIT(Sym) *syms;
 	ElfPERBIT(Ehdr) *hdr;
 	int handle_register_symbols;
+	struct string_table *names;
+
+	names = NULL;
+	*types = NULL;
 
 	strings = PERBIT(load_section)(module->data, ".strtab", &size,
 				       module->conv);
 	syms = PERBIT(load_section)(module->data, ".symtab", &size,
 				    module->conv);
 
-	module->num_deps = 0;
-	module->deps = NULL;
-
 	if (!strings || !syms) {
 		warn("Couldn't find symtab and strtab in module %s\n",
 		     module->pathname);
-		return;
+		return NULL;
 	}
 
 	hdr = module->data;
@@ -107,7 +108,6 @@ static void PERBIT(calculate_deps)(struct module *module)
 		if (END(syms[i].st_shndx, module->conv) == SHN_UNDEF) {
 			/* Look for symbol */
 			const char *name;
-			struct module *owner;
 			int weak;
 
 			name = strings + END(syms[i].st_name, module->conv);
@@ -125,15 +125,11 @@ static void PERBIT(calculate_deps)(struct module *module)
 			weak = (ELFPERBIT(ST_BIND)(END(syms[i].st_info,
 						       module->conv))
 				== STB_WEAK);
-			owner = find_symbol(name, module->pathname, weak);
-			if (owner) {
-				info("%s needs \"%s\": %s\n",
-				       module->pathname, name,
-				       owner->pathname);
-				add_dep(module, owner);
-			}
+			names = strtbl_add(name, names);
+			*types = strtbl_add(weak ? "W" : "U", *types);
 		}
 	}
+	return names;
 }
 
 static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr,
@@ -239,7 +235,7 @@ static void PERBIT(fetch_tables)(struct module *module)
 
 struct module_ops PERBIT(mod_ops) = {
 	.load_symbols	= PERBIT(load_symbols),
-	.calculate_deps	= PERBIT(calculate_deps),
+	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),
 	.get_aliases	= PERBIT(get_aliases),
 	.get_modinfo	= PERBIT(get_modinfo),
