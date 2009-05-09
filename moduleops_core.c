@@ -1,10 +1,9 @@
 /* Load the given section: NULL on error. */
-static void *PERBIT(load_section)(ElfPERBIT(Ehdr) *hdr,
-			    const char *secname,
-			    unsigned long *secsize,
-			    int conv)
+static void *PERBIT(load_section)(struct module *module,
+				  const char *secname,
+				  unsigned long *secsize)
 {
-	return PERBIT(get_section)(hdr, 0, secname, secsize, conv);
+	return PERBIT(get_section)(module->data, 0, secname, secsize, module->conv);
 }
 
 static struct string_table *PERBIT(load_strings)(struct module *module,
@@ -14,7 +13,7 @@ static struct string_table *PERBIT(load_strings)(struct module *module,
 	unsigned long size;
 	const char *strings;
 
-	strings = PERBIT(load_section)(module->data, secname, &size, module->conv);
+	strings = PERBIT(load_section)(module, secname, &size);
 	if (strings) {
 		/* Skip any zero padding. */
 		while (!strings[0]) {
@@ -45,12 +44,10 @@ static struct string_table *PERBIT(load_symbols)(struct module *module)
 	}
 
 	/* Old-style. */
-	ksyms = PERBIT(load_section)(module->data, "__ksymtab", &size,
-				     module->conv);
+	ksyms = PERBIT(load_section)(module, "__ksymtab", &size);
 	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
 		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
-	ksyms = PERBIT(load_section)(module->data, "__gpl_ksymtab", &size,
-				     module->conv);
+	ksyms = PERBIT(load_section)(module, "__gpl_ksymtab", &size);
 	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
 		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
 
@@ -59,14 +56,12 @@ static struct string_table *PERBIT(load_symbols)(struct module *module)
 
 static char *PERBIT(get_aliases)(struct module *module, unsigned long *size)
 {
-	return PERBIT(load_section)(module->data, ".modalias", size,
-				    module->conv);
+	return PERBIT(load_section)(module, ".modalias", size);
 }
 
 static char *PERBIT(get_modinfo)(struct module *module, unsigned long *size)
 {
-	return PERBIT(load_section)(module->data, ".modinfo", size,
-				    module->conv);
+	return PERBIT(load_section)(module, ".modinfo", size);
 }
 
 #ifndef STT_REGISTER
@@ -83,14 +78,13 @@ static struct string_table *PERBIT(load_dep_syms)(struct module *module,
 	ElfPERBIT(Ehdr) *hdr;
 	int handle_register_symbols;
 	struct string_table *names;
+	int conv;
 
 	names = NULL;
 	*types = NULL;
 
-	strings = PERBIT(load_section)(module->data, ".strtab", &size,
-				       module->conv);
-	syms = PERBIT(load_section)(module->data, ".symtab", &size,
-				    module->conv);
+	strings = PERBIT(load_section)(module, ".strtab", &size);
+	syms = PERBIT(load_section)(module, ".symtab", &size);
 
 	if (!strings || !syms) {
 		warn("Couldn't find symtab and strtab in module %s\n",
@@ -99,31 +93,30 @@ static struct string_table *PERBIT(load_dep_syms)(struct module *module,
 	}
 
 	hdr = module->data;
-	handle_register_symbols = 0;
-	if (END(hdr->e_machine, module->conv) == EM_SPARC ||
-	    END(hdr->e_machine, module->conv) == EM_SPARCV9)
-		handle_register_symbols = 1;
+	conv = module->conv;
+
+	handle_register_symbols =
+		(END(hdr->e_machine, conv) == EM_SPARC ||
+		 END(hdr->e_machine, conv) == EM_SPARCV9);
 
 	for (i = 1; i < size / sizeof(syms[0]); i++) {
-		if (END(syms[i].st_shndx, module->conv) == SHN_UNDEF) {
+		if (END(syms[i].st_shndx, conv) == SHN_UNDEF) {
 			/* Look for symbol */
 			const char *name;
 			int weak;
 
-			name = strings + END(syms[i].st_name, module->conv);
+			name = strings + END(syms[i].st_name, conv);
 
 			/* Not really undefined: sparc gcc 3.3 creates
                            U references when you have global asm
                            variables, to avoid anyone else misusing
                            them. */
 			if (handle_register_symbols
-			    && (ELFPERBIT(ST_TYPE)(END(syms[i].st_info,
-						       module->conv))
+			    && (ELFPERBIT(ST_TYPE)(END(syms[i].st_info, conv))
 				== STT_REGISTER))
 				continue;
 
-			weak = (ELFPERBIT(ST_BIND)(END(syms[i].st_info,
-						       module->conv))
+			weak = (ELFPERBIT(ST_BIND)(END(syms[i].st_info, conv))
 				== STB_WEAK);
 			names = strtbl_add(name, names);
 			*types = strtbl_add(weak ? "W" : "U", *types);
@@ -160,12 +153,14 @@ static void PERBIT(fetch_tables)(struct module *module,
 	ElfPERBIT(Ehdr) *hdr;
 	ElfPERBIT(Sym) *syms;
 	ElfPERBIT(Shdr) *sechdrs;
+	int conv;
 	
 	hdr = module->data;
+	conv = module->conv;
 
-	sechdrs = (void *)hdr + END(hdr->e_shoff, module->conv);
-	strings = PERBIT(load_section)(hdr, ".strtab", &size, module->conv);
-	syms = PERBIT(load_section)(hdr, ".symtab", &size, module->conv);
+	sechdrs = (void *)hdr + END(hdr->e_shoff, conv);
+	strings = PERBIT(load_section)(module, ".strtab", &size);
+	syms = PERBIT(load_section)(module, ".symtab", &size);
 
 	/* Don't warn again: we already have above */
 	if (!strings || !syms)
@@ -182,54 +177,54 @@ static void PERBIT(fetch_tables)(struct module *module,
 	tables->of_table = NULL;
 
 	for (i = 0; i < size / sizeof(syms[0]); i++) {
-		char *name = strings + END(syms[i].st_name, module->conv);
+		char *name = strings + END(syms[i].st_name, conv);
 		
 		if (!tables->pci_table && streq(name, "__mod_pci_device_table")) {
 			tables->pci_size = PERBIT(PCI_DEVICE_SIZE);
 			tables->pci_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							      NULL, module->conv);
+							      NULL, conv);
 		}
 		else if (!tables->usb_table && streq(name, "__mod_usb_device_table")) {
 			tables->usb_size = PERBIT(USB_DEVICE_SIZE);
 			tables->usb_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							      NULL, module->conv);
+							      NULL, conv);
 		}
 		else if (!tables->ccw_table && streq(name, "__mod_ccw_device_table")) {
 			tables->ccw_size = PERBIT(CCW_DEVICE_SIZE);
 			tables->ccw_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							      NULL, module->conv);
+							      NULL, conv);
 		}
 		else if (!tables->ieee1394_table && streq(name, "__mod_ieee1394_device_table")) {
 			tables->ieee1394_size = PERBIT(IEEE1394_DEVICE_SIZE);
 			tables->ieee1394_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-								   NULL, module->conv);
+								   NULL, conv);
 		}
 		else if (!tables->pnp_table && streq(name, "__mod_pnp_device_table")) {
 			tables->pnp_size = PERBIT(PNP_DEVICE_SIZE);
 			tables->pnp_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							      NULL, module->conv);
+							      NULL, conv);
 		}
 		else if (!tables->pnp_card_table && streq(name, "__mod_pnp_card_device_table")) {
 			tables->pnp_card_size = PERBIT(PNP_CARD_DEVICE_SIZE);
 			tables->pnp_card_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-								   NULL, module->conv);
+								   NULL, conv);
 			tables->pnp_card_offset = PERBIT(PNP_CARD_DEVICE_OFFSET);
 		}
 		else if (!tables->input_table && streq(name, "__mod_input_device_table")) {
 			tables->input_size = PERBIT(INPUT_DEVICE_SIZE);
 			tables->input_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							        &tables->input_table_size,
-							        module->conv);
+							        conv);
 		}
 		else if (!tables->serio_table && streq(name, "__mod_serio_device_table")) {
 			tables->serio_size = PERBIT(SERIO_DEVICE_SIZE);
 			tables->serio_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-								NULL, module->conv);
+								NULL, conv);
 		}
 		else if (!tables->of_table && streq(name, "__mod_of_device_table")) {
 			tables->of_size = PERBIT(OF_DEVICE_SIZE);
 			tables->of_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							     NULL, module->conv);
+							     NULL, conv);
 		}
 	}
 }
