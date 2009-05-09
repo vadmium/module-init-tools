@@ -714,7 +714,7 @@ static struct module *parse_modules(struct module *list)
 				add_symbol(syms->str[j], i);
 			free(syms);
 		}
-		i->ops->fetch_tables(i);
+		i->ops->fetch_tables(i, &i->tables);
 	}
 	
 	for (i = list; i; i = i->next)

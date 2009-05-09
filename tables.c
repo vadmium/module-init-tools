@@ -44,12 +44,13 @@ void output_pci_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct pci_device_id *e;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->pci_table)
+		if (!t->pci_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (e = i->pci_table; e->vendor; e = (void *)e + i->pci_size)
+		for (e = t->pci_table; e->vendor; e = (void *)e + t->pci_size)
 			output_pci_entry(e, shortname, out, i->conv);
 	}
 }
@@ -92,14 +93,15 @@ void output_usb_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct usb_device_id *e;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->usb_table)
+		if (!t->usb_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (e = i->usb_table; 
+		for (e = t->usb_table;
 		     e->idVendor || e->bDeviceClass || e->bInterfaceClass;
-		     e = (void *)e + i->usb_size)
+		     e = (void *)e + t->usb_size)
 			output_usb_entry(e, shortname, out, i->conv);
 	}
 }
@@ -126,13 +128,14 @@ void output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct ieee1394_device_id *fw;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->ieee1394_table)
+		if (!t->ieee1394_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (fw = i->ieee1394_table; fw->match_flags;
-		     fw = (void *) fw + i->ieee1394_size)
+		for (fw = t->ieee1394_table; fw->match_flags;
+		     fw = (void *) fw + t->ieee1394_size)
 			output_ieee1394_entry(fw, shortname, out, i->conv);
 	}
 }
@@ -158,14 +161,15 @@ void output_ccw_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct ccw_device_id *e;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->ccw_table)
+		if (!t->ccw_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (e = i->ccw_table;
+		for (e = t->ccw_table;
 		     e->cu_type || e->cu_model || e->dev_type || e->dev_model;
-		     e = (void *) e + i->ccw_size)
+		     e = (void *) e + t->ccw_size)
 			output_ccw_entry(e, shortname, out, i->conv);
 	}
 }
@@ -197,13 +201,14 @@ void output_isapnp_table(struct module *modules, FILE *out, char *dirname)
 
 	for (i = modules; i; i = i->next) {
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (i->pnp_table) {
+		if (t->pnp_table) {
 			struct pnp_device_id *id;
 			make_shortname(shortname, i->pathname);
-			for (id = i->pnp_table;
+			for (id = t->pnp_table;
 			     id->id[0];
-			     id = (void *)id + i->pnp_size) {
+			     id = (void *)id + t->pnp_size) {
 				fprintf(out, "%-20s", shortname);
 				fprintf(out, " 0xffff     0xffff    ");
 				fprintf(out, " 0x00000000 "); /* driver_data */
@@ -211,15 +216,15 @@ void output_isapnp_table(struct module *modules, FILE *out, char *dirname)
 				fprintf(out, "\n");
 			}
 		}
-		if (i->pnp_card_table) {
+		if (t->pnp_card_table) {
 			void *id;
 			make_shortname(shortname, i->pathname);
-			for (id = i->pnp_card_table;
+			for (id = t->pnp_card_table;
 			     ((char *)id)[0];
-			     id += i->pnp_card_size) {
+			     id += t->pnp_card_size) {
 				int idx;
 				struct pnp_card_devid *devid
-					= id + i->pnp_card_offset;
+					= id + t->pnp_card_offset;
 
 				fprintf(out, "%-20s", shortname);
 				put_isapnp_id(out, id);
@@ -419,27 +424,28 @@ void output_input_table(struct module *modules, FILE *out, char *dirname)
 		void *p;
 		char shortname[strlen(i->pathname) + 1];
 		int done = 0;
+		struct module_tables *t = &i->tables;
 
-		if (!i->input_table)
+		if (!t->input_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
 		/* Guess what size it really is, based on size of
 		 * whole table.  Table changed in 2.6.14.  This is a hack. */
-		if (i->input_size == sizeof(struct input_device_id_old_64)) {
-			if ((i->input_table_size % i->input_size) != 0) {
-				i->input_size
+		if (t->input_size == sizeof(struct input_device_id_old_64)) {
+			if ((t->input_table_size % t->input_size) != 0) {
+				t->input_size
 					= sizeof(struct input_device_id_64);
 			}
 		} else {
-			if ((i->input_table_size % i->input_size) != 0) {
-				i->input_size
+			if ((t->input_table_size % t->input_size) != 0) {
+				t->input_size
 					= sizeof(struct input_device_id_32);
 			}
 		}
 
-		for (p = i->input_table; !done; p += i->input_size) {
-			switch (i->input_size) {
+		for (p = t->input_table; !done; p += t->input_size) {
+			switch (t->input_size) {
 			case sizeof(struct input_device_id_old_64):
 				done = output_input_entry_64_old(p,
 								 shortname,
@@ -486,12 +492,13 @@ void output_serio_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct serio_device_id *e;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->serio_table)
+		if (!t->serio_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (e = i->serio_table; e->type || e->proto; e = (void *)e + i->serio_size)
+		for (e = t->serio_table; e->type || e->proto; e = (void *)e + t->serio_size)
 			output_serio_entry(e, shortname, out);
 	}
 }
@@ -544,13 +551,14 @@ void output_of_table(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		struct of_device_id *e;
 		char shortname[strlen(i->pathname) + 1];
+		struct module_tables *t = &i->tables;
 
-		if (!i->of_table)
+		if (!t->of_table)
 			continue;
 
 		make_shortname(shortname, i->pathname);
-		for (e = i->of_table; e->name[0]|e->type[0]|e->compatible[0];
-                     e = (void *)e + i->of_size)
+		for (e = t->of_table; e->name[0]|e->type[0]|e->compatible[0];
+                     e = (void *)e + t->of_size)
 			output_of_entry(e, shortname, out);
 	}
 }

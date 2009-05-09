@@ -21,7 +21,8 @@ struct module_ops
 	struct string_table *(*load_symbols)(struct module *module);
 	struct string_table *(*load_dep_syms)(struct module *module,
 		struct string_table **types);
-	void (*fetch_tables)(struct module *module);
+	void (*fetch_tables)(struct module *module,
+		struct module_tables *tables);
 	char *(*get_aliases)(struct module *module, unsigned long *size);
 	char *(*get_modinfo)(struct module *module, unsigned long *size);
 };

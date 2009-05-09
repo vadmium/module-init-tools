@@ -151,7 +151,8 @@ static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr,
 }
 
 /* FIXME: Check size, unless we end up using aliases anyway --RR */
-static void PERBIT(fetch_tables)(struct module *module)
+static void PERBIT(fetch_tables)(struct module *module,
+				 struct module_tables *tables)
 {
 	unsigned int i;
 	unsigned long size;
@@ -170,64 +171,64 @@ static void PERBIT(fetch_tables)(struct module *module)
 	if (!strings || !syms)
 		return;
 		
-	module->pci_table = NULL;
-	module->usb_table = NULL;
-	module->ccw_table = NULL;
-	module->ieee1394_table = NULL;
-	module->pnp_table = NULL;
-	module->pnp_card_table = NULL;
-	module->input_table = NULL;
-	module->serio_table = NULL;
-	module->of_table = NULL;
+	tables->pci_table = NULL;
+	tables->usb_table = NULL;
+	tables->ccw_table = NULL;
+	tables->ieee1394_table = NULL;
+	tables->pnp_table = NULL;
+	tables->pnp_card_table = NULL;
+	tables->input_table = NULL;
+	tables->serio_table = NULL;
+	tables->of_table = NULL;
 
 	for (i = 0; i < size / sizeof(syms[0]); i++) {
 		char *name = strings + END(syms[i].st_name, module->conv);
 		
-		if (!module->pci_table && streq(name, "__mod_pci_device_table")) {
-			module->pci_size = PERBIT(PCI_DEVICE_SIZE);
-			module->pci_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		if (!tables->pci_table && streq(name, "__mod_pci_device_table")) {
+			tables->pci_size = PERBIT(PCI_DEVICE_SIZE);
+			tables->pci_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							      NULL, module->conv);
 		}
-		else if (!module->usb_table && streq(name, "__mod_usb_device_table")) {
-			module->usb_size = PERBIT(USB_DEVICE_SIZE);
-			module->usb_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->usb_table && streq(name, "__mod_usb_device_table")) {
+			tables->usb_size = PERBIT(USB_DEVICE_SIZE);
+			tables->usb_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							      NULL, module->conv);
 		}
-		else if (!module->ccw_table && streq(name, "__mod_ccw_device_table")) {
-			module->ccw_size = PERBIT(CCW_DEVICE_SIZE);
-			module->ccw_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->ccw_table && streq(name, "__mod_ccw_device_table")) {
+			tables->ccw_size = PERBIT(CCW_DEVICE_SIZE);
+			tables->ccw_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							      NULL, module->conv);
 		}
-		else if (!module->ieee1394_table && streq(name, "__mod_ieee1394_device_table")) {
-			module->ieee1394_size = PERBIT(IEEE1394_DEVICE_SIZE);
-			module->ieee1394_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->ieee1394_table && streq(name, "__mod_ieee1394_device_table")) {
+			tables->ieee1394_size = PERBIT(IEEE1394_DEVICE_SIZE);
+			tables->ieee1394_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 								   NULL, module->conv);
 		}
-		else if (!module->pnp_table && streq(name, "__mod_pnp_device_table")) {
-			module->pnp_size = PERBIT(PNP_DEVICE_SIZE);
-			module->pnp_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->pnp_table && streq(name, "__mod_pnp_device_table")) {
+			tables->pnp_size = PERBIT(PNP_DEVICE_SIZE);
+			tables->pnp_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							      NULL, module->conv);
 		}
-		else if (!module->pnp_card_table && streq(name, "__mod_pnp_card_device_table")) {
-			module->pnp_card_size = PERBIT(PNP_CARD_DEVICE_SIZE);
-			module->pnp_card_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->pnp_card_table && streq(name, "__mod_pnp_card_device_table")) {
+			tables->pnp_card_size = PERBIT(PNP_CARD_DEVICE_SIZE);
+			tables->pnp_card_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 								   NULL, module->conv);
-			module->pnp_card_offset = PERBIT(PNP_CARD_DEVICE_OFFSET);
+			tables->pnp_card_offset = PERBIT(PNP_CARD_DEVICE_OFFSET);
 		}
-		else if (!module->input_table && streq(name, "__mod_input_device_table")) {
-			module->input_size = PERBIT(INPUT_DEVICE_SIZE);
-			module->input_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
-							        &module->input_table_size,
+		else if (!tables->input_table && streq(name, "__mod_input_device_table")) {
+			tables->input_size = PERBIT(INPUT_DEVICE_SIZE);
+			tables->input_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+							        &tables->input_table_size,
 							        module->conv);
 		}
-		else if (!module->serio_table && streq(name, "__mod_serio_device_table")) {
-			module->serio_size = PERBIT(SERIO_DEVICE_SIZE);
-			module->serio_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->serio_table && streq(name, "__mod_serio_device_table")) {
+			tables->serio_size = PERBIT(SERIO_DEVICE_SIZE);
+			tables->serio_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 								NULL, module->conv);
 		}
-		else if (!module->of_table && streq(name, "__mod_of_device_table")) {
-			module->of_size = PERBIT(OF_DEVICE_SIZE);
-			module->of_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
+		else if (!tables->of_table && streq(name, "__mod_of_device_table")) {
+			tables->of_size = PERBIT(OF_DEVICE_SIZE);
+			tables->of_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
 							     NULL, module->conv);
 		}
 	}
