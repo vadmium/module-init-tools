@@ -4,8 +4,8 @@ insmod_SOURCES = insmod.c testing.h
 lsmod_SOURCES = lsmod.c testing.h
 modprobe_SOURCES = modprobe.c zlibsupport.c zlibsupport.h testing.h
 rmmod_SOURCES = rmmod.c testing.h
-depmod_SOURCES = depmod.c zlibsupport.c moduleops.c tables.c \
-	zlibsupport.h moduleops.h tables.h testing.h
+depmod_SOURCES = depmod.c zlibsupport.c tables.c \
+	zlibsupport.h tables.h testing.h
 modinfo_SOURCES = modinfo.c zlibsupport.c zlibsupport.h testing.h
 modindex_SOURCES = modindex.c zlibsupport.c zlibsupport.h testing.h
 
@@ -19,14 +19,14 @@ EXTRA_lsmod_SOURCES =
 EXTRA_modprobe_SOURCES = 
 EXTRA_rmmod_SOURCES =
 EXTRA_insmod_static_SOURCES =
-EXTRA_depmod_SOURCES = moduleops_core.c
+EXTRA_depmod_SOURCES =
 EXTRA_modinfo_SOURCES =
 
-libmodtools_a_SOURCES = util.c logging.c index.c config_filter.c \
-	util.h depmod.h logging.h index.h list.h config_filter.h
+libmodtools_a_SOURCES = util.c logging.c index.c config_filter.c elfops.c \
+	util.h depmod.h logging.h index.h list.h config_filter.h elfops.h
 libmodtools_a_CFLAGS = -ffunction-sections
 
-EXTRA_libmodtools_a_SOURCES = elf_core.c
+EXTRA_libmodtools_a_SOURCES = elf_core.c elfops_core.c
 
 insmod_LDADD = $(LDADD) libmodtools.a
 lsmod_LDADD = $(LDADD) libmodtools.a

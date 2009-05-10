@@ -26,7 +26,7 @@
 #include "depmod.h"
 #include "logging.h"
 #include "index.h"
-#include "moduleops.h"
+#include "elfops.h"
 #include "tables.h"
 #include "config_filter.h"
 

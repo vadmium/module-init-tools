@@ -8,13 +8,13 @@
 #include "depmod.h"
 #include "util.h"
 #include "logging.h"
-#include "moduleops.h"
+#include "elfops.h"
 #include "tables.h"
 
 #define PERBIT(x) x##32
 #define ElfPERBIT(x) Elf32_##x
 #define ELFPERBIT(x) ELF32_##x
-#include "moduleops_core.c"
+#include "elfops_core.c"
 
 #undef PERBIT
 #undef ElfPERBIT
@@ -22,4 +22,4 @@
 #define PERBIT(x) x##64
 #define ElfPERBIT(x) Elf64_##x
 #define ELFPERBIT(x) ELF64_##x
-#include "moduleops_core.c"
+#include "elfops_core.c"

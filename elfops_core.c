@@ -136,7 +136,7 @@ static void *PERBIT(deref_sym)(ElfPERBIT(Ehdr) *hdr,
 	 * recent GCC versions. */
 	if (END(sechdrs[END(sym->st_shndx, conv)].sh_type,conv) == SHT_NOBITS)
 		return NULL;
-	
+
 	if (secsize)
 		*secsize = END(sym->st_size, conv);
 	return (void *)hdr
@@ -155,7 +155,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	ElfPERBIT(Sym) *syms;
 	ElfPERBIT(Shdr) *sechdrs;
 	int conv;
-	
+
 	hdr = module->data;
 	conv = module->conv;
 
@@ -166,7 +166,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	/* Don't warn again: we already have above */
 	if (!strings || !syms)
 		return;
-		
+
 	tables->pci_table = NULL;
 	tables->usb_table = NULL;
 	tables->ccw_table = NULL;
@@ -179,7 +179,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 
 	for (i = 0; i < size / sizeof(syms[0]); i++) {
 		char *name = strings + END(syms[i].st_name, conv);
-		
+
 		if (!tables->pci_table && streq(name, "__mod_pci_device_table")) {
 			tables->pci_size = PERBIT(PCI_DEVICE_SIZE);
 			tables->pci_table = PERBIT(deref_sym)(hdr, sechdrs, &syms[i],
