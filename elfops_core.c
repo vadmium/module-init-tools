@@ -1,3 +1,62 @@
+#if defined(ELF32BIT)
+
+#define PERBIT(x) x##32
+#define ElfPERBIT(x) Elf32_##x
+#define ELFPERBIT(x) ELF32_##x
+
+#elif defined(ELF64BIT)
+
+#define PERBIT(x) x##64
+#define ElfPERBIT(x) Elf64_##x
+#define ELFPERBIT(x) ELF64_##x
+
+#else
+#  error "Undefined ELF word length"
+#endif
+
+void *PERBIT(get_section)(void *file,
+			  unsigned long fsize,
+			  const char *secname,
+			  unsigned long *secsize,
+			  int conv)
+{
+	ElfPERBIT(Ehdr) *hdr;
+	ElfPERBIT(Shdr) *sechdrs;
+	ElfPERBIT(Off) e_shoff;
+	ElfPERBIT(Half) e_shnum, e_shstrndx;
+
+	const char *secnames;
+	unsigned int i;
+
+	if (fsize > 0 && fsize < sizeof(*hdr))
+		return NULL;
+
+	hdr = file;
+	e_shoff = END(hdr->e_shoff, conv);
+	e_shnum = END(hdr->e_shnum, conv);
+	e_shstrndx = END(hdr->e_shstrndx, conv);
+
+	if (fsize > 0 && fsize < e_shoff + e_shnum * sizeof(sechdrs[0]))
+		return NULL;
+
+	sechdrs = file + e_shoff;
+
+	if (fsize > 0 && fsize < END(sechdrs[e_shstrndx].sh_offset, conv))
+		return NULL;
+
+	/* Find section by name, return pointer and size. */
+
+	secnames = file + END(sechdrs[e_shstrndx].sh_offset, conv);
+	for (i = 1; i < e_shnum; i++) {
+		if (streq(secnames + END(sechdrs[i].sh_name, conv), secname)) {
+			*secsize = END(sechdrs[i].sh_size, conv);
+			return file + END(sechdrs[i].sh_offset, conv);
+		}
+	}
+	*secsize = 0;
+	return NULL;
+}
+
 /* Load the given section: NULL on error. */
 static void *PERBIT(load_section)(struct elf_file *module,
 				  const char *secname,
@@ -238,3 +297,7 @@ struct module_ops PERBIT(mod_ops) = {
 	.get_aliases	= PERBIT(get_aliases),
 	.get_modinfo	= PERBIT(get_modinfo),
 };
+
+#undef PERBIT
+#undef ElfPERBIT
+#undef ELFPERBIT

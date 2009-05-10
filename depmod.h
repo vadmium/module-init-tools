@@ -1,44 +1,7 @@
 #ifndef MODINITTOOLS_DEPMOD_H
 #define MODINITTOOLS_DEPMOD_H
 #include "list.h"
-
-/* Tables extracted from module by ops->fetch_tables(). */
-struct module_tables {
-	unsigned int pci_size;
-	void *pci_table;
-	unsigned int usb_size;
-	void *usb_table;
-	unsigned int ieee1394_size;
-	void *ieee1394_table;
-	unsigned int ccw_size;
-	void *ccw_table;
-	unsigned int pnp_size;
-	void *pnp_table;
-	unsigned int pnp_card_size;
-	unsigned int pnp_card_offset;
-	void *pnp_card_table;
-	unsigned int input_size;
-	void *input_table;
-	unsigned int input_table_size;
-	unsigned int serio_size;
-	void *serio_table;
-	unsigned int of_size;
-	void *of_table;
-};
-
-struct elf_file
-{
-	/* File operations */
-	struct module_ops *ops;
-
-	/* Convert endian? */
-	int conv;
-
-	/* File contents and length. */
-	void *data;
-	unsigned long len;
-};
-
+#include "elfops.h"
 
 struct module;
 

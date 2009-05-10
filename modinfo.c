@@ -14,6 +14,7 @@
 #include <sys/mman.h>
 
 #include "util.h"
+#include "elfops.h"
 #include "zlibsupport.h"
 #include "testing.h"
 

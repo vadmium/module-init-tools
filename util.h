@@ -40,14 +40,6 @@ static inline void __swap_bytes(const void *src, void *dest, unsigned int size)
 
 int native_endianness(void);
 
-int elf_ident(void *file, unsigned long fsize, int *conv);
-void *get_section(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize);
-void *get_section32(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
-void *get_section64(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
-
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
 

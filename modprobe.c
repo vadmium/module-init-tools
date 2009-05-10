@@ -40,6 +40,7 @@
 #include <syslog.h>
 
 #include "util.h"
+#include "elfops.h"
 #include "zlibsupport.h"
 #include "logging.h"
 #include "index.h"
