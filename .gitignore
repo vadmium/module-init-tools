@@ -27,6 +27,9 @@ modindex
 modprobe
 rmmod
 
+# But don't ignore the symlinks with the same names in this directory
+!tests/valgrind/*
+
 # Generated documentation
 *.8
 *.5

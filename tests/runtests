@@ -3,11 +3,41 @@
 
 set -e
 
-if [ x"$1" = x"-v" ]; then VERBOSE=1; shift; fi
-if [ x"$1" = x"-v" -o x"$1" = x"-vv" ]; then VERBOSE=1; EXTRA_ARGS=-x; shift; fi
+usage()
+{
+    echo "Usage: tests/runtests [-v] [-v] [--valgrind] [test]"
+    echo " -v (or --verbose) prints each test as it is run"
+    echo " -vv (very verbose) traces test execution"
+    echo " --valgrind runs the test programs using the valgrind memory checker"
+    exit
+}
 
-# Run by "make check" from build directory
-if [ -n "$srcdir" ]; then cd "$srcdir"; fi
+while [ $# != 0 ]; do
+    case "$1" in
+    -v)
+        if [ -z "$VERBOSE" ]; then
+          VERBOSE=1
+        else
+          EXTRA_ARGS=-x
+        fi
+        ;;
+    -vv)
+        VERBOSE=1
+        EXTRA_ARGS=-x
+        ;;
+    --valgrind)
+        VALGRIND=1
+        ;;
+    -h|--help|-*)
+        usage
+        ;;
+    *)
+        [ -n "$TEST" ] && usage
+        TEST="$1"
+        ;;
+    esac
+    shift
+done
 
 # Creates a temporary file and exports the name of the file to
 # the provided argument.  Exits on error.
@@ -81,7 +111,12 @@ for config in --enable-zlib --disable-zlib; do
     ln -sfn 64-$ENDIAN tests/data/64
     ln -sfn 32-$ENDIAN tests/data/32
 
-    PATH=`pwd`/tests/build:$PATH
+    # Make them run the valgrind wrappers if requested.
+    if [ -n "$VALGRIND" ]; then
+	PATH=`pwd`/tests/valgrind:$PATH
+    else
+	PATH=`pwd`/tests/build:$PATH
+    fi
 
     # By default, we want to look like a new kernel.
     MODTEST_UNAME=2.6.27
@@ -90,16 +125,10 @@ for config in --enable-zlib --disable-zlib; do
     MODTEST_OVERRIDE_ROOT=tests/tmp
     export MODTEST_OVERRIDE_ROOT
 
-    if [ $# -eq 1 ]; then DOING=0; else DOING=1; fi
+    if [ -n "$TEST" ]; then DOING=0; else DOING=1; fi
 
-    for dir in `find tests/* -type d | sort`
+    for dir in `find tests/test-* -type d | sort`
       do
-    # data, build and tmp dirs don't contain tests.
-      case "$dir" in
-	tests/data*) continue;;
-	tests/build*) continue;;
-	tests/tmp*) continue;;
-      esac
 
       if [ -z "$VERBOSE" ]; then
 	  echo -n Running tests for $dir.
@@ -107,12 +136,9 @@ for config in --enable-zlib --disable-zlib; do
 	  echo Running tests for $dir.
       fi
       shopt -s nullglob
-      for f in $dir/[0-9]*; do
-	# Ignore backups dir.
-	  case "$f" in *~) continue;; esac
-
+      for f in $dir/[0-9]*.sh; do
 	  if [ $DOING -eq 0 ]; then
-	      case "$f" in *$1*) DOING=1;; *) continue;; esac
+	      case "$f" in *$TEST*) DOING=1;; *) continue;; esac
 	  fi
 
 	  rm -rf tests/tmp/*

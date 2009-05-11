@@ -11,6 +11,10 @@ substantial over time. Development is preferably done via git merges.
       automake --add-missing --copy
       autoconf
 
+* Regression tests can be run as follows (try --help for more details):
+
+      tests/runtests
+
 * Documentation is in SGML source in doc/ so don't edit *.8, *.5 directly.
 
 Prior to a new release:
