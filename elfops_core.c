@@ -179,7 +179,7 @@ static struct string_table *PERBIT(load_dep_syms)(const char *pathname,
 			weak = (ELFPERBIT(ST_BIND)(END(syms[i].st_info, conv))
 				== STB_WEAK);
 			names = strtbl_add(name, names);
-			*types = strtbl_add(weak ? "W" : "U", *types);
+			*types = strtbl_add(weak ? weak_sym : undef_sym, *types);
 		}
 	}
 	return names;

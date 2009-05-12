@@ -11,6 +11,10 @@
 #include "elfops.h"
 #include "tables.h"
 
+/* Symbol types, returned by load_dep_syms */
+static const char *weak_sym = "W";
+static const char *undef_sym = "U";
+
 #define ELF32BIT
 #include "elfops_core.c"
 #undef ELF32BIT
