@@ -123,6 +123,11 @@ char *underscores(char *string)
  * The strings themselves are not actually kept in the table.
  *
  * Returns reallocated and updated string table. NULL = out of memory.
+ *
+ * Implementation note: The string table is designed to be lighter-weight
+ * and faster than a more conventional linked list that stores the strings
+ * in the list elements, as it does far fewer malloc/realloc calls
+ * and avoids copying entirely.
  */
 struct string_table *strtbl_add(const char *str, struct string_table *tbl)
 {
@@ -144,6 +149,14 @@ struct string_table *strtbl_add(const char *str, struct string_table *tbl)
 	tbl->cnt += 1;
 
 	return tbl;
+}
+
+/*
+ * strtbl_destroy - string table destructor
+ */
+void strtbl_free(struct string_table *tbl)
+{
+	free(tbl);
 }
 
 /*
