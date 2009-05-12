@@ -85,7 +85,7 @@ static int add_value(struct index_value **values,
 		     const char *value, unsigned int priority)
 {
 	struct index_value *v;
-	int duplicate;
+	int duplicate = 0;
 	int len;
 
 	/* report the presence of duplicate values */
