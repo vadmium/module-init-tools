@@ -45,20 +45,20 @@
     </para>
     <para>
       For example, if
-      <filename>/lib/modules/2.5.53/kernel/a.ko</filename> depended on
+      <filename>/lib/modules/2.6.29/kernel/a.ko</filename> depended on
       <filename>b.ko</filename> and <filename>c.ko</filename> in the
       same directory, and <filename>c.ko</filename> depended on
       <filename>b.ko</filename> as well, the file might look like:
     </para>
     <screen>
 # This is a comment.
-/lib/modules/2.5.53/kernel/a.ko: /lib/modules/2.5.53/kernel/c.ko /lib/modules/2.5.53/kernel/b.ko
-/lib/modules/2.5.53/kernel/b.ko:
-/lib/modules/2.5.53/kernel/c.ko: /lib/modules/2.5.53/kernel/b.ko
+/lib/modules/2.6.29/kernel/a.ko: /lib/modules/2.6.29/kernel/c.ko /lib/modules/2.6.29/kernel/b.ko
+/lib/modules/2.6.29/kernel/b.ko:
+/lib/modules/2.6.29/kernel/c.ko: /lib/modules/2.6.29/kernel/b.ko
     </screen>
     <para>
       This file is used by <command>modprobe</command> to know the
-      order to load modules (they are loaded right to left, and
+      order in which to load modules (they are loaded right to left, and
       removed left to right).
     </para>
   </refsect1>

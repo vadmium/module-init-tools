@@ -135,20 +135,6 @@
     </variablelist>
   </refsect1>
   <refsect1>
-    <title>BACKWARDS COMPATIBILITY</title>
-
-    <para>This version of <command>modinfo</command> is for kernel
-	modules <literal>2.5.48</literal> and above.  There is no
-	support for old-style modules.
-    </para>
-
-    <para>Note that the output of this version of
-	<command>modinfo</command> is simpler and more regular than
-	the older version: scripts attempting to use the default
-	output may get confused with complex fields.
-    </para>
-  </refsect1>
-  <refsect1>
     <title>COPYRIGHT</title>
     <para>
       This manual page Copyright 2003, Rusty Russell, IBM Corporation.

@@ -58,24 +58,24 @@
       complex.
     </para>
     <para>
-      <command>depmod</command> creates a list of module dependencies,
+      <command>depmod</command> creates a list of module dependencies
       by reading each module under
       <filename>/lib/modules/</filename><replaceable>version</replaceable> 
-      and determining what symbols it exports, and what symbols it
-      needs.  By default this list is written to
+      and determining what symbols it exports and what symbols it
+      needs.  By default, this list is written to
       <filename>modules.dep</filename> in the same directory.  If
       filenames are given on the command line, only those modules are
-      examined (which is rarely useful, unless all modules are
+      examined (which is rarely useful unless all modules are
       listed).
     </para>
     <para>
       If a <replaceable>version</replaceable> is provided, then that
-      kernel version's module directory is used, rather than the
-      current kernel version (as returned by "uname -r").
+      kernel version's module directory is used rather than the
+      current kernel version (as returned by <command>uname -r</command>).
     </para>
     <para>
       <command>depmod</command> will also generate various map files
-      in this directory, for use by the hotplug infrastructure.
+      in this directory for use by the hotplug infrastructure.
     </para>
   </refsect1>
   <refsect1>
@@ -124,8 +124,9 @@
         </term>
         <listitem>
           <para>
-            This option overrides the default configuration file
-            (/etc/depmod.conf or /etc/depmod.d/ if that is not found).
+            This option overrides the default configuration file at
+            <filename>/etc/depmod.conf</filename> (or the 
+            <filename>/etc/depmod.d/</filename> directory if that is not found).
           </para>
         </listitem>
       </varlistentry>
@@ -159,7 +160,7 @@
         </term>
         <listitem>
           <para>
-            Print the help message, and exit.
+            Print the help message and exit.
           </para>
         </listitem>
       </varlistentry>
@@ -168,8 +169,8 @@
         </term>
         <listitem>
           <para>
-	    This sends the resulting modules.dep, then the various
-	    map files, to standard output, rather than writing them into
+	    This sends the resulting modules.dep and the various
+	    map files to standard output rather than writing them into
 	    the module directory.
 	  </para>
         </listitem>
@@ -179,7 +180,7 @@
         </term>
         <listitem>
           <para>
-	    In verbose mode <command>depmod</command> will print (to stdout)
+	    In verbose mode, <command>depmod</command> will print (to stdout)
             all the symbols each module depends on and the module's file name
             which provides that symbol.
 	  </para>
@@ -190,21 +191,12 @@
         </term>
         <listitem>
           <para>
-            Show version of program, and exit. See below for caveats when
+            Show version of program and exit. See below for caveats when
             run on older kernels.
           </para>
         </listitem>
       </varlistentry>
     </variablelist>
-  </refsect1>
-  <refsect1>
-    <title>BACKWARDS COMPATIBILITY</title>
-
-    <para>
-      This version of <command>depmod</command> is for kernels
-      <literal>2.5.48</literal> and above.  There is no support
-      for old-style modules.
-    </para>
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>

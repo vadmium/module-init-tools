@@ -27,20 +27,23 @@
     <manvolnum>5</manvolnum>
   </refmeta>
   <refnamediv>
-    <refname>modprobe.conf</refname><refname>modprobe.d</refname> <refpurpose>Configuration file/directory for modprobe</refpurpose>
+    <refname>modprobe.d</refname><refname>modprobe.conf</refname> <refpurpose>Configuration directory/file for modprobe</refpurpose>
   </refnamediv>
   <refsect1>
     <title>DESCRIPTION</title>
 
     <para>Because the <command>modprobe</command> command can add or
-      remove extra more than one module, due to module dependencies,
+      remove more than one module, due to module dependencies,
       we need a method of specifying what options are to be used with
-      those modules.  <filename>/etc/modprobe.conf</filename> (or, if that does not exist, all files under the <filename>/etc/modprobe.d</filename> directory) specifies
-      those options, as required.  It can also be used to create
-      convenient aliases: alternate names for a module.  Finally, it
-      can override the normal <command>modprobe</command> behavior
-      altogether, for those with very special requirements (such as
-      inserting more than one module).
+      those modules.  All files underneath the 
+      <filename>/etc/modprobe.d</filename> directory which end with the
+      <filename>.conf</filename> extension specify those options as
+      required. (the <filename>/etc/modprobe.conf</filename> file can
+      also be used if it exists, but that will be removed in a future 
+      version).  They can also be used to create convenient aliases: 
+      alternate names for a module, or they can override the normal 
+      <command>modprobe</command> behavior altogether for those with 
+      special requirements (such as inserting more than one module).
     </para>
     <para>
       Note that module and alias names (like other module names) can
@@ -48,14 +51,12 @@
       module commands.
     </para>
     <para>
-      The format of <filename>modprobe.conf</filename> and files under <filename>modprobe.d</filename> is simple: one
-      command per line, with blank lines and lines starting with #
-      ignored (useful for adding comments).  A \ at the end of a line
+      The format of and files under <filename>modprobe.d</filename> and
+      <filename>/etc/modprobe.conf</filename> is simple: one
+      command per line, with blank lines and lines starting with '#'
+      ignored (useful for adding comments).  A '\' at the end of a line
       causes it to continue on the next line, which makes the file a
       bit neater.
-    </para>
-    <para>
-      The syntax is a simplification of <filename>modules.conf</filename>, used in 2.4 kernels and earlier.
     </para>
   </refsect1>
   <refsect1>
@@ -95,7 +96,7 @@
 	    <replaceable>modulename</replaceable> (which might be an
 	    alias) every time it is inserted into the kernel: whether
 	    directly (using <command>modprobe</command> 
-	    <replaceable>modulename</replaceable>, or because the
+	    <replaceable>modulename</replaceable> or because the
 	    module being inserted depends on this module.
 	  </para>
 	  <para>
@@ -110,28 +111,27 @@
         </term>
 	<listitem>
 	  <para>
-	    This is the most powerful primitive in
-	    <filename>modprobe.conf</filename>: it tells
+	    This is the most powerful primitive: it tells
 	    <command>modprobe</command> to run your command instead of
 	    inserting the module in the kernel as normal.  The command
 	    can be any shell command: this allows you to do any kind
 	    of complex processing you might wish.  For example, if the
-	    module "fred" worked better with the module "barney"
-	    already installed (but it didn't depend on it, so
+	    module "fred" works better with the module "barney"
+	    already installed (but it doesn't depend on it, so
 	    <command>modprobe</command> won't automatically load it),
 	    you could say "install fred /sbin/modprobe barney;
 	    /sbin/modprobe --ignore-install fred", which would do what
 	    you wanted.  Note the <option>--ignore-install</option>,
 	    which stops the second <command>modprobe</command> from
-	    re-running the same <command>install</command> command.
+	    running the same <command>install</command> command again.
 	    See also <command>remove</command> below.
 	  </para>
 	  <para>
 	    You can also use <command>install</command> to make up
 	    modules which don't otherwise exist.  For example:
 	    "install probe-ethernet /sbin/modprobe e100 ||
-	    /sbin/modprobe eepro100", which will try first the e100
-	    driver, then the eepro100 driver, when you do "modprobe
+	    /sbin/modprobe eepro100", which will first try to load the e100
+	    driver, and if it fails, then the eepro100 driver when you do "modprobe
 	    probe-ethernet".
 	  </para>
 	  <para>
@@ -161,18 +161,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>include <replaceable>filename</replaceable>
-        </term>
-	<listitem>
-	  <para>
-	    Using this command, you can include other configuration
-	    files, or whole directories, which is occasionally useful.  Note that aliases in
-	    the included file will override aliases previously
-	    declared in the current file.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term>blacklist <replaceable>modulename</replaceable>
         </term>
 	<listitem>
@@ -189,31 +177,6 @@
         </listitem>
       </varlistentry>
     </variablelist>
-  </refsect1>
-  <refsect1>
-    <title>Backwards Compatibility</title>
-
-    <para>
-      There is a <command>generate_modprobe.conf</command> program
-      which should do a reasonable job of generating
-      <filename>modprobe.conf</filename> from old (2.4 or 2.2)
-      module setups.
-    </para>
-    <para>
-      Although the syntax is similar to the older
-      <filename>/etc/modules.conf</filename>, there are many features
-      missing.  There are two reasons for this: firstly, install and
-      remove commands can do just about anything, and secondly, the
-      module-init-tools modprobe is designed to be simple enough that
-      it can be easily replaced.
-    </para>
-    <para>
-      With the complexity of actual module insertion reduced to three
-      system calls (open, read, init_module), and the
-      <filename>modules.dep</filename> file being simple and open,
-      producing a more powerful modprobe variant can be done
-      independently if there is a need.
-    </para>
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>

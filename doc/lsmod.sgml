@@ -42,15 +42,6 @@
 
   </refsect1>
   <refsect1>
-    <title>BACKWARDS COMPATIBILITY</title>
-
-    <para>This version of <command>lsmod</command> is for kernels
-	<literal>2.5.48</literal> and above.  There is no support for
-	old-style modules (for which much of the work was done in
-	userspace).
-    </para>
-  </refsect1>
-  <refsect1>
     <title>COPYRIGHT</title>
     <para>
       This manual page Copyright 2002, Rusty Russell, IBM Corporation.

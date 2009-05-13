@@ -44,7 +44,7 @@
       module from the kernel.  Most users will want to use
       <citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry> instead, with the <option>-r</option> option.
+      </citerefentry> with the <option>-r</option> option instead.
     </para>
   </refsect1>
   <refsect1>
@@ -56,8 +56,8 @@
         <listitem>
           <para>
 	    Print messages about what the program is doing.
-	    Usually <command>rmmod</command> only prints messages
-	    if something goes wrong.
+	    Usually <command>rmmod</command> prints messages
+	    only if something goes wrong.
 	  </para>
         </listitem>
       </varlistentry>
@@ -84,7 +84,7 @@
 	    Normally, <command>rmmod</command> will refuse to
 	    unload modules which are in use.  With this option,
 	    <command>rmmod</command> will isolate the module, and
-	    wait until the module is no longer used.  Noone new
+	    wait until the module is no longer used.  Nothing new
 	    will be able to use the module, but it's up to you to
 	    make sure the current users eventually finish with it.
 	    See <citerefentry>
@@ -98,7 +98,7 @@
         </term>
         <listitem>
           <para>
-	    Send errors to the syslog, instead of standard error.
+	    Send errors to syslog instead of standard error.
 	  </para>
         </listitem>
       </varlistentry>
@@ -107,22 +107,11 @@
         </term>
         <listitem>
           <para>
-	    Show version of program, and exit.  See below for caveats
-	    when run on older kernels.
+	    Show version of program and exit.
 	  </para>
         </listitem>
       </varlistentry>
     </variablelist>
-  </refsect1>
-  <refsect1>
-    <title>BACKWARDS COMPATIBILITY</title>
-
-    <para>
-      This version of <command>rmmod</command> is for kernels
-      <literal>2.5.48</literal> and above.  There is no support for
-      old-style modules (for which much of the work was done in
-      userspace).
-    </para>
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>

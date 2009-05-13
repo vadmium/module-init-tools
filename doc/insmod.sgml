@@ -43,20 +43,12 @@
 	taken from standard input. Most users will want to use
 	<citerefentry><refentrytitle>modprobe</refentrytitle>
 	<manvolnum>8</manvolnum> </citerefentry> instead, which is
-	cleverer.</para>
+	more clever.</para>
 
     <para>Only the most general of error messages are reported: as the
 	work of trying to link the module is now done inside the kernel,
 	the <command>dmesg</command> usually gives more information
 	about errors.</para>
-  </refsect1>
-  <refsect1>
-    <title>BACKWARDS COMPATIBILITY</title>
-
-    <para>This version of <command>insmod</command> is for kernels
-	<literal>2.5.48</literal> and above.  There is no support for
-	old-style modules (for which much of the work was done in
-	userspace).</para>
   </refsect1>
   <refsect1>
     <title>COPYRIGHT</title>

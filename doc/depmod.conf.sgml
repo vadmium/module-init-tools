@@ -41,8 +41,8 @@
     </para>
     <para>
       The format of <filename>depmod.conf</filename> and files under <filename>depmod.d</filename> is simple: one
-      command per line, with blank lines and lines starting with #
-      ignored (useful for adding comments).  A \ at the end of a line
+      command per line, with blank lines and lines starting with '#'
+      ignored (useful for adding comments).  A '\' at the end of a line
       causes it to continue on the next line, which makes the file a
       bit neater.
     </para>
@@ -59,9 +59,9 @@
 	    (or other configured module location) subdirectories will
 	    be processed by <command>depmod</command>. Directories are
 	    listed in order, with the highest priority given to the
-	    first listed directory and the lowest to the last. The
-	    special keyword <command>built-in</command> refers to
-	    the standard module directories installed by the kernel.
+	    first listed directory and the lowest priority given to the last
+	    directory listed. The special keyword <command>built-in</command> 
+	    refers to the standard module directories installed by the kernel.
 	  </para>
 	  <para>
 	    By default, depmod will give a higher priority to 
@@ -94,16 +94,6 @@
 	    under the <command>extra</command> subdirectory within
 	    /lib/modules (or other module location) will take priority
 	    over any likenamed module already provided by the kernel.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>include <replaceable>filename</replaceable>
-        </term>
-	<listitem>
-	  <para>
-	    Using this command, you can include other configuration
-	    files, or whole directories, which is occasionally useful.
 	  </para>
         </listitem>
       </varlistentry>
