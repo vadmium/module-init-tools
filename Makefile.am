@@ -45,11 +45,10 @@ mandir =$(shell if [ @mandir@ = $(prefix)/man ]; then if [ $(prefix) = / ]; then
 
 TESTSUITE := $(shell test -e @srcdir@/tests && find @srcdir@/tests -type f ! -name '*~')
 
-EXTRA_DIST = generate-modprobe.conf modprobe.devfs FAQ CODING stress_modules.sh install-with-care $(SGML) $(man_MANS) $(TESTSUITE)
+EXTRA_DIST = generate-modprobe.conf FAQ CODING stress_modules.sh install-with-care $(SGML) $(man_MANS) $(TESTSUITE)
 
 sbin_PROGRAMS = insmod modprobe rmmod depmod modinfo insmod.static
 bin_PROGRAMS = lsmod
-sbin_SCRIPTS = generate-modprobe.conf
 noinst_PROGRAMS=modindex
 noinst_LIBRARIES = libmodtools.a
 INSTALL = $(SHELL) $(top_srcdir)/install-with-care
