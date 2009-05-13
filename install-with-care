@@ -5,7 +5,7 @@ echo install-with-care "$@"
 # Final arg is dest.
 eval DEST=\$$#
 
-case `echo $DEST | tr -s / /` in
+case $(echo $DEST | tr -s / /) in
     /sbin/insmod.static) ;;# This didn't exist before, OK.
     /sbin/insmod|/sbin/lsmod|/sbin/modprobe|/sbin/rmmod|/sbin/depmod)
 	if [ -f $DEST ] && [ -f $DEST.old ]; then
