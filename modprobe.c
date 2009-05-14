@@ -860,43 +860,43 @@ const char *skip_dot(const char *str)
 
 void dump_modversions(const char *filename, errfn_t error)
 {
-       unsigned long size, secsize;
-       void *file = grab_file(filename, &size);
-       struct modver32_info *info32;
-       struct modver64_info *info64;
-       int n;
-       int conv;
+	unsigned long size, secsize;
+	void *file = grab_file(filename, &size);
+	struct modver32_info *info32;
+	struct modver64_info *info64;
+	int n;
+	int conv;
 
-       if (!file) {
-               error("%s: %s\n", filename, strerror(errno));
-               return;
-       }
-       switch (elf_ident(file, size, &conv)) {
-       case ELFCLASS32:
-               info32 = get_section32(file, size, "__versions", &secsize, conv);
-               if (!info32)
-                       return;  /* Does not seem to be a kernel module */
-               if (secsize % sizeof(struct modver32_info))
-                       error("Wrong section size in %s\n", filename);
-               for (n = 0; n < secsize / sizeof(struct modver32_info); n++)
-                       printf("0x%08lx\t%s\n", (unsigned long)
-                              info32[n].crc, skip_dot(info32[n].name));
-               break;
+	if (!file) {
+		error("%s: %s\n", filename, strerror(errno));
+		return;
+	}
+	switch (elf_ident(file, size, &conv)) {
+	case ELFCLASS32:
+		info32 = get_section32(file, size, "__versions", &secsize, conv);
+		if (!info32)
+			return;  /* Does not seem to be a kernel module */
+		if (secsize % sizeof(struct modver32_info))
+			error("Wrong section size in %s\n", filename);
+		for (n = 0; n < secsize / sizeof(struct modver32_info); n++)
+			printf("0x%08lx\t%s\n", (unsigned long)
+				info32[n].crc, skip_dot(info32[n].name));
+		break;
 
-       case ELFCLASS64:
-               info64 = get_section64(file, size, "__versions", &secsize, conv);
-               if (!info64)
-                       return;  /* Does not seem to be a kernel module */
-               if (secsize % sizeof(struct modver64_info))
-                       error("Wrong section size in %s\n", filename);
-               for (n = 0; n < secsize / sizeof(struct modver64_info); n++)
-                       printf("0x%08llx\t%s\n", (unsigned long long)
-                              info64[n].crc, skip_dot(info64[n].name));
-               break;
+	case ELFCLASS64:
+		info64 = get_section64(file, size, "__versions", &secsize, conv);
+		if (!info64)
+			return;  /* Does not seem to be a kernel module */
+		if (secsize % sizeof(struct modver64_info))
+			error("Wrong section size in %s\n", filename);
+		for (n = 0; n < secsize / sizeof(struct modver64_info); n++)
+			printf("0x%08llx\t%s\n", (unsigned long long)
+				info64[n].crc, skip_dot(info64[n].name));
+		break;
 
-       default:
-               error("%s: ELF class not recognized\n", filename);
-       }
+	default:
+		error("%s: ELF class not recognized\n", filename);
+	}
 }
 
 
