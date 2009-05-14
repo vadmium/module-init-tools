@@ -24,11 +24,12 @@ void *PERBIT(get_section)(void *file,
 	ElfPERBIT(Shdr) *sechdrs;
 	ElfPERBIT(Off) e_shoff;
 	ElfPERBIT(Half) e_shnum, e_shstrndx;
+	ElfPERBIT(Off) secoffset;
 
 	const char *secnames;
 	unsigned int i;
 
-	if (fsize > 0 && fsize < sizeof(*hdr))
+	if (fsize <= 0 || fsize < sizeof(*hdr))
 		return NULL;
 
 	hdr = file;
@@ -36,12 +37,12 @@ void *PERBIT(get_section)(void *file,
 	e_shnum = END(hdr->e_shnum, conv);
 	e_shstrndx = END(hdr->e_shstrndx, conv);
 
-	if (fsize > 0 && fsize < e_shoff + e_shnum * sizeof(sechdrs[0]))
+	if (fsize < e_shoff + e_shnum * sizeof(sechdrs[0]))
 		return NULL;
 
 	sechdrs = file + e_shoff;
 
-	if (fsize > 0 && fsize < END(sechdrs[e_shstrndx].sh_offset, conv))
+	if (fsize < END(sechdrs[e_shstrndx].sh_offset, conv))
 		return NULL;
 
 	/* Find section by name, return pointer and size. */
@@ -50,7 +51,10 @@ void *PERBIT(get_section)(void *file,
 	for (i = 1; i < e_shnum; i++) {
 		if (streq(secnames + END(sechdrs[i].sh_name, conv), secname)) {
 			*secsize = END(sechdrs[i].sh_size, conv);
-			return file + END(sechdrs[i].sh_offset, conv);
+			secoffset = END(sechdrs[i].sh_offset, conv);
+			if (fsize < secoffset + *secsize)
+				return NULL;
+			return file + secoffset;
 		}
 	}
 	*secsize = 0;
@@ -62,7 +66,8 @@ static void *PERBIT(load_section)(struct elf_file *module,
 				  const char *secname,
 				  unsigned long *secsize)
 {
-	return PERBIT(get_section)(module->data, 0, secname, secsize, module->conv);
+	return PERBIT(get_section)(module->data, module->len,
+		secname, secsize, module->conv);
 }
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
