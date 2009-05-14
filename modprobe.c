@@ -324,55 +324,13 @@ static void rename_module(struct elf_file *module,
 		replace_modname(module, modstruct, len, oldname, newname);
 }
 
-/* Kernel told to ignore these sections if SHF_ALLOC not set. */
-static void invalidate_section32(struct elf_file *module, const char *secname)
-{
-	void *mod = module->data;
-	Elf32_Ehdr *hdr = mod;
-	Elf32_Shdr *sechdrs = mod + hdr->e_shoff;
-	const char *secnames = mod + sechdrs[hdr->e_shstrndx].sh_offset;
-	unsigned int i;
-
-	for (i = 1; i < hdr->e_shnum; i++)
-		if (streq(secnames+sechdrs[i].sh_name, secname))
-			sechdrs[i].sh_flags &= ~SHF_ALLOC;
-}
-
-static void invalidate_section64(struct elf_file *module, const char *secname)
-{
-	void *mod = module->data;
-	Elf64_Ehdr *hdr = mod;
-	Elf64_Shdr *sechdrs = mod + hdr->e_shoff;
-	const char *secnames = mod + sechdrs[hdr->e_shstrndx].sh_offset;
-	unsigned int i;
-
-	for (i = 1; i < hdr->e_shnum; i++)
-		if (streq(secnames+sechdrs[i].sh_name, secname))
-			sechdrs[i].sh_flags &= ~(unsigned long long)SHF_ALLOC;
-}
-
-static void strip_section(struct elf_file *module, const char *secname)
-{
-	switch (elf_ident(module->data, module->len, NULL)) {
-	case ELFCLASS32:
-		invalidate_section32(module, secname);
-		break;
-	case ELFCLASS64:
-		invalidate_section64(module, secname);
-		break;
-	default:
-		warn("Unknown module format in %s: not forcing version\n",
-		     module->pathname);
-	}
-}
-
 static void clear_magic(struct elf_file *module)
 {
 	const char *p;
 	unsigned long len;
 
 	/* Old-style: __vermagic section */
-	strip_section(module, "__vermagic");
+	module->ops->strip_section(module, "__vermagic");
 
 	/* New-style: in .modinfo section */
 	p = module->ops->get_modinfo(module, &len);
@@ -731,7 +689,7 @@ static int insmod(struct list_head *list,
 	if (newname)
 		rename_module(module, mod->modname, newname);
 	if (strip_modversion)
-		strip_section(module, "__versions");
+		module->ops->strip_section(module, "__versions");
 	if (strip_vermagic)
 		clear_magic(module);
 

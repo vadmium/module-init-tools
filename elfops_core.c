@@ -3,12 +3,16 @@
 #define PERBIT(x) x##32
 #define ElfPERBIT(x) Elf32_##x
 #define ELFPERBIT(x) ELF32_##x
+/* 32-bit unsigned integer */
+#define Elf32_Uint Elf32_Word
 
 #elif defined(ELF64BIT)
 
 #define PERBIT(x) x##64
 #define ElfPERBIT(x) Elf64_##x
 #define ELFPERBIT(x) ELF64_##x
+/* 64-bit unsigned integer */
+#define Elf64_Uint Elf64_Xword
 
 #else
 #  error "Undefined ELF word length"
@@ -297,6 +301,23 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	}
 }
 
+/*
+ * strip_section - tell the kernel to ignore the named section
+ */
+static void PERBIT(strip_section)(struct elf_file *module, const char *secname)
+{
+	void *p;
+	ElfPERBIT(Shdr) *sechdr;
+	unsigned long secsize;
+
+	p = PERBIT(get_section)(module, secname, &sechdr, &secsize);
+	if (p) {
+		ElfPERBIT(Uint) mask;
+		mask = ~((ElfPERBIT(Uint))SHF_ALLOC);
+		sechdr->sh_flags &= END(mask, module->conv);
+	}
+}
+
 struct module_ops PERBIT(mod_ops) = {
 	.load_section	= PERBIT(load_section),
 	.load_symbols	= PERBIT(load_symbols),
@@ -304,6 +325,7 @@ struct module_ops PERBIT(mod_ops) = {
 	.fetch_tables	= PERBIT(fetch_tables),
 	.get_aliases	= PERBIT(get_aliases),
 	.get_modinfo	= PERBIT(get_modinfo),
+	.strip_section	= PERBIT(strip_section),
 };
 
 #undef PERBIT

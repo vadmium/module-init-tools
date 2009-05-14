@@ -65,6 +65,7 @@ struct module_ops
 		struct module_tables *tables);
 	char *(*get_aliases)(struct elf_file *module, unsigned long *size);
 	char *(*get_modinfo)(struct elf_file *module, unsigned long *size);
+	void (*strip_section)(struct elf_file *module, const char *secname);
 };
 
 extern struct module_ops mod_ops32, mod_ops64;
