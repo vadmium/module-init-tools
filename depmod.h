@@ -23,7 +23,7 @@ struct module
 	/* Tables extracted from module by ops->fetch_tables(). */
 	struct module_tables tables;
 
-	struct elf_file file;
+	struct elf_file *file;
 
 	char *basename; /* points into pathname */
 	char pathname[0];

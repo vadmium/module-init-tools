@@ -51,7 +51,7 @@ void output_pci_table(struct module *modules, FILE *out, char *dirname)
 
 		make_shortname(shortname, i->pathname);
 		for (e = t->pci_table; e->vendor; e = (void *)e + t->pci_size)
-			output_pci_entry(e, shortname, out, i->file.conv);
+			output_pci_entry(e, shortname, out, i->file->conv);
 	}
 }
 
@@ -102,7 +102,7 @@ void output_usb_table(struct module *modules, FILE *out, char *dirname)
 		for (e = t->usb_table;
 		     e->idVendor || e->bDeviceClass || e->bInterfaceClass;
 		     e = (void *)e + t->usb_size)
-			output_usb_entry(e, shortname, out, i->file.conv);
+			output_usb_entry(e, shortname, out, i->file->conv);
 	}
 }
 
@@ -136,7 +136,7 @@ void output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
 		make_shortname(shortname, i->pathname);
 		for (fw = t->ieee1394_table; fw->match_flags;
 		     fw = (void *) fw + t->ieee1394_size)
-			output_ieee1394_entry(fw, shortname, out, i->file.conv);
+			output_ieee1394_entry(fw, shortname, out, i->file->conv);
 	}
 }
 
@@ -170,7 +170,7 @@ void output_ccw_table(struct module *modules, FILE *out, char *dirname)
 		for (e = t->ccw_table;
 		     e->cu_type || e->cu_model || e->dev_type || e->dev_model;
 		     e = (void *) e + t->ccw_size)
-			output_ccw_entry(e, shortname, out, i->file.conv);
+			output_ccw_entry(e, shortname, out, i->file->conv);
 	}
 }
 
@@ -425,6 +425,7 @@ void output_input_table(struct module *modules, FILE *out, char *dirname)
 		char shortname[strlen(i->pathname) + 1];
 		int done = 0;
 		struct module_tables *t = &i->tables;
+		int conv = i->file->conv;
 
 		if (!t->input_table)
 			continue;
@@ -449,22 +450,20 @@ void output_input_table(struct module *modules, FILE *out, char *dirname)
 			case sizeof(struct input_device_id_old_64):
 				done = output_input_entry_64_old(p,
 								 shortname,
-								 out,
-								 i->file.conv);
+								 out, conv);
 				break;
 			case sizeof(struct input_device_id_64):
 				done = output_input_entry_64(p, shortname,
-							     out, i->file.conv);
+							     out, conv);
 				break;
 			case sizeof(struct input_device_id_old_32):
 				done = output_input_entry_32_old(p,
 								 shortname,
-								 out,
-								 i->file.conv);
+								 out, conv);
 				break;
 			case sizeof(struct input_device_id_32):
 				done = output_input_entry_32(p, shortname,
-							     out, i->file.conv);
+							     out, conv);
 				break;
 			}
 		}				

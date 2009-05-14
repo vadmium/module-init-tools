@@ -264,7 +264,6 @@ static int ends_in(const char *name, const char *ext)
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;
-	struct elf_file *file;
 
 	new = NOFAIL(malloc(sizeof(*new)
 			    + strlen(dirname?:"") + 1 + strlen(filename) + 1));
@@ -277,39 +276,14 @@ static struct module *grab_module(const char *dirname, const char *filename)
 	INIT_LIST_HEAD(&new->dep_list);
 	new->order = INDEX_PRIORITY_MIN;
 
-	file = &new->file;
-
-	file->data = grab_file(new->pathname, &file->len);
-	if (!file->data) {
+	new->file = grab_elf_file(new->pathname);
+	if (!new->file) {
 		warn("Can't read module %s: %s\n",
 		     new->pathname, strerror(errno));
-		goto fail_data;
+		free(new);
+		return NULL;
 	}
-
-	switch (elf_ident(file->data, file->len, &file->conv)) {
-	case ELFCLASS32:
-		file->ops = &mod_ops32;
-		break;
-	case ELFCLASS64:
-		file->ops = &mod_ops64;
-		break;
-	case -ENOEXEC:
-		warn("Module %s is not an elf object\n", new->pathname);
-		goto fail;
-	case -EINVAL:
-		warn("Module %s has unknown endianness\n", new->pathname);
-		goto fail;
- 	default:
-		warn("Module %s has unknown word size\n", new->pathname);
- 		goto fail;
- 	}
 	return new;
-
-fail:
-	release_file(file->data, new->file.len);
-fail_data:
-	free(new);
-	return NULL;
 }
 
 struct module_traverse
@@ -680,7 +654,7 @@ static void calculate_deps(struct module *module)
 
 	module->num_deps = 0;
 	module->deps = NULL;
-	file = &module->file;
+	file = module->file;
 
 	symnames = file->ops->load_dep_syms(module->pathname, file, &symtypes);
 	if (!symnames || !symtypes)
@@ -714,7 +688,7 @@ static struct module *parse_modules(struct module *list)
 	int j;
 
 	for (i = list; i; i = i->next) {
-		file = &i->file;
+		file = i->file;
 		syms = file->ops->load_symbols(file);
 		if (syms) {
 			for (j = 0; j < syms->cnt; j++)
@@ -803,7 +777,7 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		char modname[strlen(i->pathname)+1];
 
-		file = &i->file;
+		file = i->file;
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
@@ -838,7 +812,7 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 	for (i = modules; i; i = i->next) {
 		char modname[strlen(i->pathname)+1];
 
-		file = &i->file;
+		file = i->file;
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */

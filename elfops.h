@@ -16,6 +16,8 @@ struct kernel_symbol64 {
 
 struct elf_file
 {
+	char *pathname;
+
 	/* File operations */
 	struct module_ops *ops;
 
@@ -74,5 +76,9 @@ void *get_section32(void *file, unsigned long filesize,
 	const char *secname, unsigned long *secsize, int conv);
 void *get_section64(void *file, unsigned long filesize,
 	const char *secname, unsigned long *secsize, int conv);
+
+struct elf_file *grab_elf_file(const char *pathname);
+struct elf_file *grab_elf_file_fd(const char *pathname, int fd);
+void release_elf_file(struct elf_file *file);
 
 #endif /* MODINITTOOLS_MODULEOPS_H */
