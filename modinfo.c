@@ -179,23 +179,22 @@ static char *next_line(char *p, const char *end)
 	return (char *)end + 1;
 }
 
-static void *grab_module(const char *name, unsigned long *size, char**filename,
-	const char *kernel, const char *basedir)
+static struct elf_file *grab_module(const char *name,
+				    const char *kernel,
+				    const char *basedir)
 {
 	char *data;
+	unsigned long size;
 	struct utsname buf;
 	char *depname, *p, *moddir;
+	struct elf_file *module;
 
 	if (strchr(name, '.') || strchr(name, '/')) {
-		data = grab_file(name, size);
-		if (data) {
-			*filename = NOFAIL(strdup(name));
-			return data;
-		} else {
+		module = grab_elf_file(name);
+		if (!module)
 			error("modinfo: could not open %s: %s\n",
 				name, strerror(errno));
-			return NULL;
-		}
+		return module;
 	}
 
 	if (!kernel) {
@@ -207,10 +206,9 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	else
 		nofail_asprintf(&moddir, "%s/%s", MODULE_DIR, kernel);
 
-	nofail_asprintf(&depname, "%s/%s", moddir, "modules.dep");
-
 	/* Search for it in modules.dep. */
-	data = grab_file(depname, size);
+	nofail_asprintf(&depname, "%s/%s", moddir, "modules.dep");
+	data = grab_file(depname, &size);
 	if (!data) {
 		error("modinfo: could not open %s\n", depname);
 		free(depname);
@@ -218,10 +216,11 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	}
 	free(depname);
 
-	for (p = data; p < data + *size; p = next_line(p, data + *size)) {
-		if (name_matches(p, data + *size, name)) {
+	for (p = data; p < data + size; p = next_line(p, data + size)) {
+		if (name_matches(p, data + size, name)) {
 			int namelen = strcspn(p, ":");
 			const char *dir;
+			char *filename;
 
 			if ('/' == p[0])
 				dir = basedir; /* old style deps - abs. path */
@@ -229,20 +228,21 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 				dir = moddir; /* new style - relative path */
 
 			if (strlen(dir)) {
-				nofail_asprintf(filename, "%s/%s", dir, p);
-				(*filename)[namelen + strlen(dir) + 1] = '\0';
+				nofail_asprintf(&filename, "%s/%s", dir, p);
+				filename[namelen + strlen(dir) + 1] = '\0';
 			} else {
-				*filename = strndup(p, namelen);
+				filename = strndup(p, namelen);
 			}
-			release_file(data, *size);
-			data = grab_file(*filename, size);
-			if (!data)
+			release_file(data, size);
+			module = grab_elf_file(filename);
+			if (!module)
 				error("modinfo: could not open %s: %s\n",
 					*filename, strerror(errno));
-			return data;
+			free(filename);
+			return module;
 		}
 	}
-	release_file(data, *size);
+	release_file(data, size);
 	error("modinfo: could not find module %s\n", name);
 	return NULL;
 }
@@ -263,7 +263,6 @@ int main(int argc, char *argv[])
 	const char *field = NULL;
 	const char *kernel = NULL;
 	char sep = '\n';
-	unsigned long infosize = 0;
 	int opt, ret = 0;
 	char *basedir = "";
 
@@ -295,29 +294,25 @@ int main(int argc, char *argv[])
 	}
 
 	for (opt = optind; opt < argc; opt++) {
-		void *info, *mod;
-		unsigned long modulesize;
-		char *filename;
+		void *info;
+		unsigned long infosize = 0;
+		struct elf_file *mod;
 
-		mod = grab_module(argv[opt], &modulesize, &filename,
-				  kernel, basedir);
+		mod = grab_module(argv[opt], kernel, basedir);
 		if (!mod) {
 			ret = 1;
 			continue;
 		}
-
-		info = get_section(mod, modulesize, ".modinfo", &infosize);
+		info = mod->ops->get_modinfo(mod, &infosize);
 		if (!info) {
-			release_file(mod, modulesize);
-			free(filename);
+			release_elf_file(mod);
 			continue;
 		}
 		if (field)
-			print_tag(field, info, infosize, filename, sep);
+			print_tag(field, info, infosize, mod->pathname, sep);
 		else
-			print_all(info, infosize, filename, sep);
-		release_file(mod, modulesize);
-		free(filename);
+			print_all(info, infosize, mod->pathname, sep);
+		release_elf_file(mod);
 	}
 	return ret;
 }
