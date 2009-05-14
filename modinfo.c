@@ -197,22 +197,15 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 		}
 	}
 
-	if (kernel) {
-		if (strlen(basedir))
-			asprintf(&moddir, "%s/%s/%s",
-				basedir, MODULE_DIR, kernel);
-		else
-			asprintf(&moddir, "%s/%s",
-				MODULE_DIR, kernel);
-	} else {
+	if (!kernel) {
 		uname(&buf);
-		if (strlen(basedir))
-			asprintf(&moddir, "%s/%s/%s",
-			 	basedir, MODULE_DIR, buf.release);
-		else
-			asprintf(&moddir, "%s/%s",
-				MODULE_DIR, buf.release);
+		kernel = buf.release;
 	}
+	if (strlen(basedir))
+		asprintf(&moddir, "%s/%s/%s", basedir, MODULE_DIR, kernel);
+	else
+		asprintf(&moddir, "%s/%s", MODULE_DIR, kernel);
+
 	asprintf(&depname, "%s/%s", moddir, "modules.dep");
 
 	/* Search for it in modules.dep. */
@@ -227,24 +220,18 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	for (p = data; p < data + *size; p = next_line(p, data + *size)) {
 		if (name_matches(p, data + *size, name)) {
 			int namelen = strcspn(p, ":");
+			const char *dir;
 
-			if ('/' == p[0]) { /* old style deps - absolute path */
-				*filename = malloc(namelen + strlen(basedir)+2);
-				if (strlen(basedir)) {
-					sprintf(*filename, "%s/", basedir);
-					memcpy(*filename+strlen(basedir)+1,p,
-						namelen);
-					(*filename)[namelen
-						+strlen(basedir)+1] = '\0';
-				} else {
-					memcpy(*filename,p,namelen);
-					(*filename)[namelen] = '\0';
-				}
+			if ('/' == p[0])
+				dir = basedir; /* old style deps - abs. path */
+			else
+				dir = moddir; /* new style - relative path */
+
+			if (strlen(dir)) {
+				asprintf(filename, "%s/%s", dir, p);
+				(*filename)[namelen + strlen(dir) + 1] = '\0';
 			} else {
-				*filename = malloc(namelen + strlen(moddir)+2);
-				sprintf(*filename, "%s/", moddir);
-				memcpy(*filename+strlen(moddir)+1, p,namelen);
-				(*filename)[namelen+strlen(moddir)+1] ='\0';
+				*filename = strndup(p, namelen);
 			}
 			release_file(data, *size);
 			data = grab_file(*filename, size);
