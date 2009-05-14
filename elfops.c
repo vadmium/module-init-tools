@@ -39,7 +39,7 @@ static const char *skip_dot(const char *str)
 /*
  * Check ELF file header.
  */
-int elf_ident(void *file, unsigned long fsize, int *conv)
+static int elf_ident(void *file, unsigned long fsize, int *conv)
 {
 	/* "\177ELF" <byte> where byte = 001 for 32-bit, 002 for 64 */
 	unsigned char *ident = file;
