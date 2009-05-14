@@ -14,6 +14,7 @@
 #include <sys/mman.h>
 
 #include "util.h"
+#include "logging.h"
 #include "elfops.h"
 #include "zlibsupport.h"
 #include "testing.h"
@@ -38,7 +39,7 @@ static struct param *add_param(const char *name, struct param **list)
 	for (i = *list; i; i = i->next)
 		if (strncmp(i->name, name, namelen) == 0)
 			return i;
-	i = malloc(sizeof(*i) + namelen+1);
+	i = NOFAIL(malloc(sizeof(*i) + namelen+1));
 	strncpy((char *)(i + 1), name, namelen);
 	((char *)(i + 1))[namelen] = '\0';
 	i->name = (char *)(i + 1);
@@ -188,10 +189,10 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 	if (strchr(name, '.') || strchr(name, '/')) {
 		data = grab_file(name, size);
 		if (data) {
-			*filename = strdup(name);
+			*filename = NOFAIL(strdup(name));
 			return data;
 		} else {
-			fprintf(stderr, "modinfo: could not open %s: %s\n",
+			error("modinfo: could not open %s: %s\n",
 				name, strerror(errno));
 			return NULL;
 		}
@@ -202,16 +203,16 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 		kernel = buf.release;
 	}
 	if (strlen(basedir))
-		asprintf(&moddir, "%s/%s/%s", basedir, MODULE_DIR, kernel);
+		nofail_asprintf(&moddir, "%s/%s/%s", basedir, MODULE_DIR, kernel);
 	else
-		asprintf(&moddir, "%s/%s", MODULE_DIR, kernel);
+		nofail_asprintf(&moddir, "%s/%s", MODULE_DIR, kernel);
 
-	asprintf(&depname, "%s/%s", moddir, "modules.dep");
+	nofail_asprintf(&depname, "%s/%s", moddir, "modules.dep");
 
 	/* Search for it in modules.dep. */
 	data = grab_file(depname, size);
 	if (!data) {
-		fprintf(stderr, "modinfo: could not open %s\n", depname);
+		error("modinfo: could not open %s\n", depname);
 		free(depname);
 		return NULL;
 	}
@@ -228,7 +229,7 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 				dir = moddir; /* new style - relative path */
 
 			if (strlen(dir)) {
-				asprintf(filename, "%s/%s", dir, p);
+				nofail_asprintf(filename, "%s/%s", dir, p);
 				(*filename)[namelen + strlen(dir) + 1] = '\0';
 			} else {
 				*filename = strndup(p, namelen);
@@ -236,14 +237,13 @@ static void *grab_module(const char *name, unsigned long *size, char**filename,
 			release_file(data, *size);
 			data = grab_file(*filename, size);
 			if (!data)
-				fprintf(stderr,
-					"modinfo: could not open %s: %s\n",
+				error("modinfo: could not open %s: %s\n",
 					*filename, strerror(errno));
 			return data;
 		}
 	}
 	release_file(data, *size);
-	fprintf(stderr, "modinfo: could not find module %s\n", name);
+	error("modinfo: could not find module %s\n", name);
 	return NULL;
 }
 
@@ -266,6 +266,8 @@ int main(int argc, char *argv[])
 	unsigned long infosize = 0;
 	int opt, ret = 0;
 	char *basedir = "";
+
+	logging = 0; /* send messages to stderr */
 
 	if (native_endianness() == 0)
 		abort();
