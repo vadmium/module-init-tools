@@ -667,8 +667,7 @@ static int insmod(struct list_head *list,
 		   const char *cmdline_opts)
 {
 	int ret, fd;
-	unsigned long len;
-	void *map;
+	struct elf_file *module;
 	const char *command;
 	struct module *mod = list_entry(list->next, struct module, list);
 	int rc = 0;
@@ -712,21 +711,33 @@ static int insmod(struct list_head *list,
 		goto out_optstring;
 	}
 
-	map = grab_fd(fd, &len);
-	if (!map) {
+	module = grab_elf_file_fd(mod->filename, fd);
+	if (!module) {
+		/* This is an ugly hack that maintains the logic where
+		 * init_module() sets errno = ENOEXEC if the file is
+		 * not an ELF object.
+		 */
+		if (errno == ENOEXEC) {
+			struct stat st;
+			optstring = add_extra_options(mod->modname,
+				optstring, options);
+			if (dry_run)
+				goto out;
+			fstat(fd, &st);
+			ret = init_module(NULL, st.st_size, optstring);
+			goto out_hack;
+		}
+
 		error("Could not read '%s': %s\n",
 		      mod->filename, strerror(errno));
 		goto out_unlock;
 	}
-
-	/* Rename it? */
 	if (newname)
-		rename_module(mod, map, len, newname);
-
+		rename_module(mod, module->data, module->len, newname);
 	if (strip_modversion)
-		strip_section(mod, map, len, "__versions");
+		strip_section(mod, module->data, module->len, "__versions");
 	if (strip_vermagic)
-		clear_magic(mod, map, len);
+		clear_magic(mod, module->data, module->len);
 
 	/* Config file might have given more options */
 	optstring = add_extra_options(mod->modname, optstring, options);
@@ -736,7 +747,8 @@ static int insmod(struct list_head *list,
 	if (dry_run)
 		goto out;
 
-	ret = init_module(map, len, optstring);
+	ret = init_module(module->data, module->len, optstring);
+out_hack:
 	if (ret != 0) {
 		if (errno == EEXIST) {
 			if (first_time)
@@ -753,7 +765,7 @@ static int insmod(struct list_head *list,
 			rc = 1;
 	}
  out:
-	release_file(map, len);
+	release_elf_file(module);
  out_unlock:
 	close_file(fd);
  out_optstring:
