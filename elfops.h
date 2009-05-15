@@ -1,6 +1,7 @@
 #ifndef MODINITTOOLS_MODULEOPS_H
 #define MODINITTOOLS_MODULEOPS_H
 #include <stdio.h>
+#include <stdint.h>
 
 /* All the icky stuff to do with manipulating 64 and 32-bit modules
    belongs here. */
@@ -12,6 +13,18 @@ struct kernel_symbol32 {
 struct kernel_symbol64 {
 	char value[8];
 	char name[64 - 8];
+};
+
+struct modver_info32
+{
+	uint32_t crc;
+	char name[64 - sizeof(uint32_t)];
+};
+
+struct modver_info64
+{
+	uint64_t crc;
+	char name[64 - sizeof(uint64_t)];
 };
 
 struct elf_file
@@ -66,6 +79,7 @@ struct module_ops
 	char *(*get_aliases)(struct elf_file *module, unsigned long *size);
 	char *(*get_modinfo)(struct elf_file *module, unsigned long *size);
 	void (*strip_section)(struct elf_file *module, const char *secname);
+	int (*dump_modvers)(struct elf_file *module);
 };
 
 extern struct module_ops mod_ops32, mod_ops64;

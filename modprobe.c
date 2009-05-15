@@ -792,70 +792,19 @@ nonexistent_module:
 	goto remove_rest;
 }
 
-struct modver32_info
-{
-       uint32_t crc;
-       char name[64 - sizeof(uint32_t)];
-};
-
-struct modver64_info
-{
-       uint64_t crc;
-       char name[64 - sizeof(uint64_t)];
-};
-
-const char *skip_dot(const char *str)
-{
-       /* For our purposes, .foo matches foo.  PPC64 needs this. */
-       if (str && str[0] == '.')
-               return str + 1;
-       return str;
-}
-
 void dump_modversions(const char *filename, errfn_t error)
 {
 	struct elf_file *module;
-	unsigned long secsize;
-	void *info;
-	struct modver32_info *info32;
-	struct modver64_info *info64;
-	int n;
 
 	module = grab_elf_file(filename);
 	if (!module) {
 		error("%s: %s\n", filename, strerror(errno));
 		return;
 	}
-	info = module->ops->load_section(module, "__versions", &secsize);
-	if (!info)
-		goto done;  /* Does not seem to be a kernel module */
-
-	switch (elf_ident(module->data, module->len, NULL)) {
-	case ELFCLASS32:
-		info32 = info;
-		if (secsize % sizeof(struct modver32_info))
-			error("Wrong section size in %s\n", filename);
-		for (n = 0; n < secsize / sizeof(struct modver32_info); n++)
-			printf("0x%08lx\t%s\n", (unsigned long)
-				info32[n].crc, skip_dot(info32[n].name));
-		break;
-
-	case ELFCLASS64:
-		info64 = info;
-		if (secsize % sizeof(struct modver64_info))
-			error("Wrong section size in %s\n", filename);
-		for (n = 0; n < secsize / sizeof(struct modver64_info); n++)
-			printf("0x%08llx\t%s\n", (unsigned long long)
-				info64[n].crc, skip_dot(info64[n].name));
-		break;
-
-	default:
-		error("%s: ELF class not recognized\n", filename);
-	}
-done:
+	if (module->ops->dump_modvers(module) < 0)
+		error("Wrong section size in '%s'\n", filename);
 	release_elf_file(module);
 }
-
 
 /* Does path contain directory(s) subpath? */
 static int type_matches(const char *path, const char *subpath)

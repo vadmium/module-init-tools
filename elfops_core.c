@@ -318,6 +318,30 @@ static void PERBIT(strip_section)(struct elf_file *module, const char *secname)
 	}
 }
 
+static int PERBIT(dump_modversions)(struct elf_file *module)
+{
+	unsigned long secsize;
+	struct PERBIT(modver_info) *info;
+	int n = 0;
+
+	info = module->ops->load_section(module, "__versions", &secsize);
+	if (!info)
+		return 0; /* not a kernel module */
+	if (secsize % sizeof(*info) != 0)
+		return -1; /* invalid section size */
+
+	for (n = 0; n < secsize / sizeof(*info); n++) {
+#if defined(ELF32BIT)
+		printf("0x%08lx\t%s\n", (unsigned long)
+#else /* defined(ELF64BIT) */
+		printf("0x%08llx\t%s\n", (unsigned long long)
+#endif
+			END(info[n].crc, module->conv),
+			skip_dot(info[n].name));
+	}
+	return n;
+}
+
 struct module_ops PERBIT(mod_ops) = {
 	.load_section	= PERBIT(load_section),
 	.load_symbols	= PERBIT(load_symbols),
@@ -326,6 +350,7 @@ struct module_ops PERBIT(mod_ops) = {
 	.get_aliases	= PERBIT(get_aliases),
 	.get_modinfo	= PERBIT(get_modinfo),
 	.strip_section	= PERBIT(strip_section),
+	.dump_modvers	= PERBIT(dump_modversions),
 };
 
 #undef PERBIT

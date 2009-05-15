@@ -19,6 +19,15 @@
 static const char *weak_sym = "W";
 static const char *undef_sym = "U";
 
+/* dump_modversions helper */
+static const char *skip_dot(const char *str)
+{
+       /* For our purposes, .foo matches foo.  PPC64 needs this. */
+       if (str && str[0] == '.')
+               return str + 1;
+       return str;
+}
+
 #define ELF32BIT
 #include "elfops_core.c"
 #undef ELF32BIT
