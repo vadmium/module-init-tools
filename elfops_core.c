@@ -14,12 +14,15 @@
 #  error "Undefined ELF word length"
 #endif
 
-static void *PERBIT(get_section)(void *data,
-				 unsigned long len,
+static void *PERBIT(get_section)(struct elf_file *module,
 				 const char *secname,
-				 unsigned long *secsize,
-				 int conv)
+				 ElfPERBIT(Shdr) **sechdr,
+				 unsigned long *secsize)
 {
+	void *data = module->data;
+	unsigned long len = module->len;
+	int conv = module->conv;
+
 	ElfPERBIT(Ehdr) *hdr;
 	ElfPERBIT(Shdr) *sechdrs;
 	ElfPERBIT(Off) e_shoff;
@@ -45,13 +48,14 @@ static void *PERBIT(get_section)(void *data,
 	if (len < END(sechdrs[e_shstrndx].sh_offset, conv))
 		return NULL;
 
-	/* Find section by name, return pointer and size. */
-
+	/* Find section by name; return header, pointer and size. */
 	secnames = data + END(sechdrs[e_shstrndx].sh_offset, conv);
 	for (i = 1; i < e_shnum; i++) {
 		if (streq(secnames + END(sechdrs[i].sh_name, conv), secname)) {
 			*secsize = END(sechdrs[i].sh_size, conv);
 			secoffset = END(sechdrs[i].sh_offset, conv);
+			if (sechdr)
+				*sechdr = sechdrs + i;
 			if (len < secoffset + *secsize)
 				return NULL;
 			return data + secoffset;
@@ -66,8 +70,7 @@ static void *PERBIT(load_section)(struct elf_file *module,
 				  const char *secname,
 				  unsigned long *secsize)
 {
-	return PERBIT(get_section)(module->data, module->len,
-		secname, secsize, module->conv);
+	return PERBIT(get_section)(module, secname, NULL, secsize);
 }
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
