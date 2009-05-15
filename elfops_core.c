@@ -290,7 +290,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 }
 
 struct module_ops PERBIT(mod_ops) = {
-	.load_strings	= PERBIT(load_strings),
+	.load_section	= PERBIT(load_section),
 	.load_symbols	= PERBIT(load_symbols),
 	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),

@@ -54,8 +54,8 @@ struct module_tables
 
 struct module_ops
 {
-	struct string_table *(*load_strings)(struct elf_file *module,
-		const char *secname, struct string_table *tbl);
+	void *(*load_section)(struct elf_file *module,
+		const char *secname, unsigned long *secsize);
 	struct string_table *(*load_symbols)(struct elf_file *module);
 	struct string_table *(*load_dep_syms)(const char *pathname,
 		struct elf_file *module, struct string_table **types);
