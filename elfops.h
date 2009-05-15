@@ -70,12 +70,6 @@ struct module_ops
 extern struct module_ops mod_ops32, mod_ops64;
 
 int elf_ident(void *file, unsigned long fsize, int *conv);
-void *get_section(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize);
-void *get_section32(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
-void *get_section64(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
 
 struct elf_file *grab_elf_file(const char *pathname);
 struct elf_file *grab_elf_file_fd(const char *pathname, int fd);

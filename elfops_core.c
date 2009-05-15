@@ -14,11 +14,11 @@
 #  error "Undefined ELF word length"
 #endif
 
-void *PERBIT(get_section)(void *file,
-			  unsigned long fsize,
-			  const char *secname,
-			  unsigned long *secsize,
-			  int conv)
+static void *PERBIT(get_section)(void *data,
+				 unsigned long len,
+				 const char *secname,
+				 unsigned long *secsize,
+				 int conv)
 {
 	ElfPERBIT(Ehdr) *hdr;
 	ElfPERBIT(Shdr) *sechdrs;
@@ -29,32 +29,32 @@ void *PERBIT(get_section)(void *file,
 	const char *secnames;
 	unsigned int i;
 
-	if (fsize <= 0 || fsize < sizeof(*hdr))
+	if (len <= 0 || len < sizeof(*hdr))
 		return NULL;
 
-	hdr = file;
+	hdr = data;
 	e_shoff = END(hdr->e_shoff, conv);
 	e_shnum = END(hdr->e_shnum, conv);
 	e_shstrndx = END(hdr->e_shstrndx, conv);
 
-	if (fsize < e_shoff + e_shnum * sizeof(sechdrs[0]))
+	if (len < e_shoff + e_shnum * sizeof(sechdrs[0]))
 		return NULL;
 
-	sechdrs = file + e_shoff;
+	sechdrs = data + e_shoff;
 
-	if (fsize < END(sechdrs[e_shstrndx].sh_offset, conv))
+	if (len < END(sechdrs[e_shstrndx].sh_offset, conv))
 		return NULL;
 
 	/* Find section by name, return pointer and size. */
 
-	secnames = file + END(sechdrs[e_shstrndx].sh_offset, conv);
+	secnames = data + END(sechdrs[e_shstrndx].sh_offset, conv);
 	for (i = 1; i < e_shnum; i++) {
 		if (streq(secnames + END(sechdrs[i].sh_name, conv), secname)) {
 			*secsize = END(sechdrs[i].sh_size, conv);
 			secoffset = END(sechdrs[i].sh_offset, conv);
-			if (fsize < secoffset + *secsize)
+			if (len < secoffset + *secsize)
 				return NULL;
-			return file + secoffset;
+			return data + secoffset;
 		}
 	}
 	*secsize = 0;

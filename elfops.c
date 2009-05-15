@@ -45,21 +45,6 @@ int elf_ident(void *file, unsigned long fsize, int *conv)
 	return ident[EI_CLASS];
 }
 
-void *get_section(void *file, unsigned long filesize,
-		  const char *secname, unsigned long *secsize)
-{
-	int conv;
-
-	switch (elf_ident(file, filesize, &conv)) {
-	case ELFCLASS32:
-		return get_section32(file, filesize, secname, secsize, conv);
-	case ELFCLASS64:
-		return get_section64(file, filesize, secname, secsize, conv);
-	default:
-		return NULL;
-	}
-}
-
 /*
  * grab_elf_file - read ELF file into memory
  * @pathame: file to load
@@ -141,4 +126,3 @@ void release_elf_file(struct elf_file *file)
 
 	errno = err;
 }
-
