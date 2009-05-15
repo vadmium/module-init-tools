@@ -283,7 +283,7 @@ static const char *remove_moderror(int err)
 	}
 }
 
-static void replace_modname(struct module *module,
+static void replace_modname(struct elf_file *module,
 			    void *mem, unsigned long len,
 			    const char *oldname, const char *newname)
 {
@@ -301,34 +301,33 @@ static void replace_modname(struct module *module,
 		}
 	}
 
-	warn("Could not find old name in %s to replace!\n", module->filename);
+	warn("Could not find old name in %s to replace!\n", module->pathname);
 }
 
-static void rename_module(struct module *module,
-			  void *mod,
-			  unsigned long len,
+static void rename_module(struct elf_file *module,
+			  const char *oldname,
 			  const char *newname)
 {
 	void *modstruct;
-	unsigned long modstruct_len;
+	unsigned long len;
 
 	/* Old-style */
-	modstruct = get_section(mod, len, ".gnu.linkonce.this_module",
-				&modstruct_len);
+	modstruct = module->ops->load_section(module,
+		".gnu.linkonce.this_module", &len);
 	/* New-style */
 	if (!modstruct)
-		modstruct = get_section(mod, len, "__module", &modstruct_len);
+		modstruct = module->ops->load_section(module, "__module", &len);
 	if (!modstruct)
 		warn("Could not find module name to change in %s\n",
-		     module->filename);
+		     module->pathname);
 	else
-		replace_modname(module, modstruct, modstruct_len,
-				module->modname, newname);
+		replace_modname(module, modstruct, len, oldname, newname);
 }
 
 /* Kernel told to ignore these sections if SHF_ALLOC not set. */
-static void invalidate_section32(void *mod, const char *secname)
+static void invalidate_section32(struct elf_file *module, const char *secname)
 {
+	void *mod = module->data;
 	Elf32_Ehdr *hdr = mod;
 	Elf32_Shdr *sechdrs = mod + hdr->e_shoff;
 	const char *secnames = mod + sechdrs[hdr->e_shstrndx].sh_offset;
@@ -339,8 +338,9 @@ static void invalidate_section32(void *mod, const char *secname)
 			sechdrs[i].sh_flags &= ~SHF_ALLOC;
 }
 
-static void invalidate_section64(void *mod, const char *secname)
+static void invalidate_section64(struct elf_file *module, const char *secname)
 {
+	void *mod = module->data;
 	Elf64_Ehdr *hdr = mod;
 	Elf64_Shdr *sechdrs = mod + hdr->e_shoff;
 	const char *secnames = mod + sechdrs[hdr->e_shstrndx].sh_offset;
@@ -351,36 +351,32 @@ static void invalidate_section64(void *mod, const char *secname)
 			sechdrs[i].sh_flags &= ~(unsigned long long)SHF_ALLOC;
 }
 
-static void strip_section(struct module *module,
-			  void *mod,
-			  unsigned long len,
-			  const char *secname)
+static void strip_section(struct elf_file *module, const char *secname)
 {
-	switch (elf_ident(mod, len, NULL)) {
+	switch (elf_ident(module->data, module->len, NULL)) {
 	case ELFCLASS32:
-		invalidate_section32(mod, secname);
+		invalidate_section32(module, secname);
 		break;
 	case ELFCLASS64:
-		invalidate_section64(mod, secname);
+		invalidate_section64(module, secname);
 		break;
 	default:
 		warn("Unknown module format in %s: not forcing version\n",
-		     module->filename);
+		     module->pathname);
 	}
 }
 
-static void clear_magic(struct module *module, void *mod, unsigned long len)
+static void clear_magic(struct elf_file *module)
 {
 	const char *p;
-	unsigned long modlen;
+	unsigned long len;
 
 	/* Old-style: __vermagic section */
-	strip_section(module, mod, len, "__vermagic");
+	strip_section(module, "__vermagic");
 
 	/* New-style: in .modinfo section */
-	for (p = get_section(mod, len, ".modinfo", &modlen);
-	     p;
-	     p = next_string(p, &modlen)) {
+	p = module->ops->get_modinfo(module, &len);
+	for (; p; p = next_string(p, &len)) {
 		if (strstarts(p, "vermagic=")) {
 			memset((char *)p, 0, strlen(p));
 			return;
@@ -733,11 +729,11 @@ static int insmod(struct list_head *list,
 		goto out_unlock;
 	}
 	if (newname)
-		rename_module(mod, module->data, module->len, newname);
+		rename_module(module, mod->modname, newname);
 	if (strip_modversion)
-		strip_section(mod, module->data, module->len, "__versions");
+		strip_section(module, "__versions");
 	if (strip_vermagic)
-		clear_magic(mod, module->data, module->len);
+		clear_magic(module);
 
 	/* Config file might have given more options */
 	optstring = add_extra_options(mod->modname, optstring, options);
@@ -860,22 +856,25 @@ const char *skip_dot(const char *str)
 
 void dump_modversions(const char *filename, errfn_t error)
 {
-	unsigned long size, secsize;
-	void *file = grab_file(filename, &size);
+	struct elf_file *module;
+	unsigned long secsize;
+	void *info;
 	struct modver32_info *info32;
 	struct modver64_info *info64;
 	int n;
-	int conv;
 
-	if (!file) {
+	module = grab_elf_file(filename);
+	if (!module) {
 		error("%s: %s\n", filename, strerror(errno));
 		return;
 	}
-	switch (elf_ident(file, size, &conv)) {
+	info = module->ops->load_section(module, "__versions", &secsize);
+	if (!info)
+		goto done;  /* Does not seem to be a kernel module */
+
+	switch (elf_ident(module->data, module->len, NULL)) {
 	case ELFCLASS32:
-		info32 = get_section32(file, size, "__versions", &secsize, conv);
-		if (!info32)
-			return;  /* Does not seem to be a kernel module */
+		info32 = info;
 		if (secsize % sizeof(struct modver32_info))
 			error("Wrong section size in %s\n", filename);
 		for (n = 0; n < secsize / sizeof(struct modver32_info); n++)
@@ -884,9 +883,7 @@ void dump_modversions(const char *filename, errfn_t error)
 		break;
 
 	case ELFCLASS64:
-		info64 = get_section64(file, size, "__versions", &secsize, conv);
-		if (!info64)
-			return;  /* Does not seem to be a kernel module */
+		info64 = info;
 		if (secsize % sizeof(struct modver64_info))
 			error("Wrong section size in %s\n", filename);
 		for (n = 0; n < secsize / sizeof(struct modver64_info); n++)
@@ -897,6 +894,8 @@ void dump_modversions(const char *filename, errfn_t error)
 	default:
 		error("%s: ELF class not recognized\n", filename);
 	}
+done:
+	release_elf_file(module);
 }
 
 
