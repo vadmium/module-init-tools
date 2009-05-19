@@ -1,6 +1,7 @@
 #ifndef MODINITTOOLS_MODULEOPS_H
 #define MODINITTOOLS_MODULEOPS_H
 #include <stdio.h>
+#include <stdint.h>
 
 /* All the icky stuff to do with manipulating 64 and 32-bit modules
    belongs here. */
@@ -14,8 +15,22 @@ struct kernel_symbol64 {
 	char name[64 - 8];
 };
 
+struct modver_info32
+{
+	uint32_t crc;
+	char name[64 - sizeof(uint32_t)];
+};
+
+struct modver_info64
+{
+	uint64_t crc;
+	char name[64 - sizeof(uint64_t)];
+};
+
 struct elf_file
 {
+	char *pathname;
+
 	/* File operations */
 	struct module_ops *ops;
 
@@ -54,8 +69,8 @@ struct module_tables
 
 struct module_ops
 {
-	struct string_table *(*load_strings)(struct elf_file *module,
-		const char *secname, struct string_table *tbl);
+	void *(*load_section)(struct elf_file *module,
+		const char *secname, unsigned long *secsize);
 	struct string_table *(*load_symbols)(struct elf_file *module);
 	struct string_table *(*load_dep_syms)(const char *pathname,
 		struct elf_file *module, struct string_table **types);
@@ -63,16 +78,14 @@ struct module_ops
 		struct module_tables *tables);
 	char *(*get_aliases)(struct elf_file *module, unsigned long *size);
 	char *(*get_modinfo)(struct elf_file *module, unsigned long *size);
+	void (*strip_section)(struct elf_file *module, const char *secname);
+	int (*dump_modvers)(struct elf_file *module);
 };
 
 extern struct module_ops mod_ops32, mod_ops64;
 
-int elf_ident(void *file, unsigned long fsize, int *conv);
-void *get_section(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize);
-void *get_section32(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
-void *get_section64(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
+struct elf_file *grab_elf_file(const char *pathname);
+struct elf_file *grab_elf_file_fd(const char *pathname, int fd);
+void release_elf_file(struct elf_file *file);
 
 #endif /* MODINITTOOLS_MODULEOPS_H */

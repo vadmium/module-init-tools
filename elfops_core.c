@@ -3,54 +3,66 @@
 #define PERBIT(x) x##32
 #define ElfPERBIT(x) Elf32_##x
 #define ELFPERBIT(x) ELF32_##x
+/* 32-bit unsigned integer */
+#define Elf32_Uint Elf32_Word
 
 #elif defined(ELF64BIT)
 
 #define PERBIT(x) x##64
 #define ElfPERBIT(x) Elf64_##x
 #define ELFPERBIT(x) ELF64_##x
+/* 64-bit unsigned integer */
+#define Elf64_Uint Elf64_Xword
 
 #else
 #  error "Undefined ELF word length"
 #endif
 
-void *PERBIT(get_section)(void *file,
-			  unsigned long fsize,
-			  const char *secname,
-			  unsigned long *secsize,
-			  int conv)
+static void *PERBIT(get_section)(struct elf_file *module,
+				 const char *secname,
+				 ElfPERBIT(Shdr) **sechdr,
+				 unsigned long *secsize)
 {
+	void *data = module->data;
+	unsigned long len = module->len;
+	int conv = module->conv;
+
 	ElfPERBIT(Ehdr) *hdr;
 	ElfPERBIT(Shdr) *sechdrs;
 	ElfPERBIT(Off) e_shoff;
 	ElfPERBIT(Half) e_shnum, e_shstrndx;
+	ElfPERBIT(Off) secoffset;
 
 	const char *secnames;
 	unsigned int i;
 
-	if (fsize > 0 && fsize < sizeof(*hdr))
+	if (len <= 0 || len < sizeof(*hdr))
 		return NULL;
 
-	hdr = file;
+	hdr = data;
 	e_shoff = END(hdr->e_shoff, conv);
 	e_shnum = END(hdr->e_shnum, conv);
 	e_shstrndx = END(hdr->e_shstrndx, conv);
 
-	if (fsize > 0 && fsize < e_shoff + e_shnum * sizeof(sechdrs[0]))
+	if (len < e_shoff + e_shnum * sizeof(sechdrs[0]))
 		return NULL;
 
-	sechdrs = file + e_shoff;
+	sechdrs = data + e_shoff;
 
-	if (fsize > 0 && fsize < END(sechdrs[e_shstrndx].sh_offset, conv))
+	if (len < END(sechdrs[e_shstrndx].sh_offset, conv))
 		return NULL;
 
-	/* Find section by name, return pointer and size. */
-
-	secnames = file + END(sechdrs[e_shstrndx].sh_offset, conv);
+	/* Find section by name; return header, pointer and size. */
+	secnames = data + END(sechdrs[e_shstrndx].sh_offset, conv);
 	for (i = 1; i < e_shnum; i++) {
 		if (streq(secnames + END(sechdrs[i].sh_name, conv), secname)) {
 			*secsize = END(sechdrs[i].sh_size, conv);
-			return file + END(sechdrs[i].sh_offset, conv);
+			secoffset = END(sechdrs[i].sh_offset, conv);
+			if (sechdr)
+				*sechdr = sechdrs + i;
+			if (len < secoffset + *secsize)
+				return NULL;
+			return data + secoffset;
 		}
 	}
 	*secsize = 0;
@@ -62,7 +74,7 @@ static void *PERBIT(load_section)(struct elf_file *module,
 				  const char *secname,
 				  unsigned long *secsize)
 {
-	return PERBIT(get_section)(module->data, 0, secname, secsize, module->conv);
+	return PERBIT(get_section)(module, secname, NULL, secsize);
 }
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
@@ -289,13 +301,56 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	}
 }
 
+/*
+ * strip_section - tell the kernel to ignore the named section
+ */
+static void PERBIT(strip_section)(struct elf_file *module, const char *secname)
+{
+	void *p;
+	ElfPERBIT(Shdr) *sechdr;
+	unsigned long secsize;
+
+	p = PERBIT(get_section)(module, secname, &sechdr, &secsize);
+	if (p) {
+		ElfPERBIT(Uint) mask;
+		mask = ~((ElfPERBIT(Uint))SHF_ALLOC);
+		sechdr->sh_flags &= END(mask, module->conv);
+	}
+}
+
+static int PERBIT(dump_modversions)(struct elf_file *module)
+{
+	unsigned long secsize;
+	struct PERBIT(modver_info) *info;
+	int n = 0;
+
+	info = module->ops->load_section(module, "__versions", &secsize);
+	if (!info)
+		return 0; /* not a kernel module */
+	if (secsize % sizeof(*info) != 0)
+		return -1; /* invalid section size */
+
+	for (n = 0; n < secsize / sizeof(*info); n++) {
+#if defined(ELF32BIT)
+		printf("0x%08lx\t%s\n", (unsigned long)
+#else /* defined(ELF64BIT) */
+		printf("0x%08llx\t%s\n", (unsigned long long)
+#endif
+			END(info[n].crc, module->conv),
+			skip_dot(info[n].name));
+	}
+	return n;
+}
+
 struct module_ops PERBIT(mod_ops) = {
-	.load_strings	= PERBIT(load_strings),
+	.load_section	= PERBIT(load_section),
 	.load_symbols	= PERBIT(load_symbols),
 	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),
 	.get_aliases	= PERBIT(get_aliases),
 	.get_modinfo	= PERBIT(get_modinfo),
+	.strip_section	= PERBIT(strip_section),
+	.dump_modvers	= PERBIT(dump_modversions),
 };
 
 #undef PERBIT
