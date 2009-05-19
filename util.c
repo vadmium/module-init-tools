@@ -152,7 +152,7 @@ struct string_table *strtbl_add(const char *str, struct string_table *tbl)
 }
 
 /*
- * strtbl_destroy - string table destructor
+ * strtbl_free - string table destructor
  */
 void strtbl_free(struct string_table *tbl)
 {

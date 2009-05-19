@@ -17,6 +17,7 @@ char *underscores(char *string);
 char *my_basename(const char *path);
 
 struct string_table *strtbl_add(const char *str, struct string_table *tbl);
+void strtbl_free(struct string_table *tbl);
 
 const char *next_string(const char *string, unsigned long *secsize);
 

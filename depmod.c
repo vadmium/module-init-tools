@@ -693,7 +693,7 @@ static struct module *parse_modules(struct module *list)
 		if (syms) {
 			for (j = 0; j < syms->cnt; j++)
 				add_symbol(syms->str[j], i);
-			free(syms);
+			strtbl_free(syms);
 		}
 		file->ops->fetch_tables(file, &i->tables);
 	}
