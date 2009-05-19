@@ -3,11 +3,20 @@
 
 #include <stdio.h>
 
+struct string_table
+{
+	unsigned int cnt;
+	unsigned int max;
+	const char *str[0];
+};
+
 char *getline_wrapped(FILE *file, unsigned int *linenum);
 
 void filename2modname(char *modname, const char *filename);
 char *underscores(char *string);
 char *my_basename(const char *path);
+
+struct string_table *strtbl_add(const char *str, struct string_table *tbl);
 
 const char *next_string(const char *string, unsigned long *secsize);
 
@@ -30,14 +39,6 @@ static inline void __swap_bytes(const void *src, void *dest, unsigned int size)
 }
 
 int native_endianness(void);
-
-int elf_ident(void *file, unsigned long fsize, int *conv);
-void *get_section(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize);
-void *get_section32(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
-void *get_section64(void *file, unsigned long filesize,
-	const char *secname, unsigned long *secsize, int conv);
 
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)

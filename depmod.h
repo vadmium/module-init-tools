@@ -1,24 +1,14 @@
 #ifndef MODINITTOOLS_DEPMOD_H
 #define MODINITTOOLS_DEPMOD_H
 #include "list.h"
+#include "elfops.h"
 
 struct module;
-
-/* Functions provided by depmod.c */
-void add_symbol(const char *name, struct module *owner);
-struct module *find_symbol(const char *name, const char *modname, int weak);
-void add_dep(struct module *mod, struct module *depends_on);
 
 struct module
 {
 	/* Next module in list of all modules */
 	struct module *next;
-
-	/* 64 or 32 bit? */
-	struct module_ops *ops;
-
-	/* Convert endian? */
-	int conv;
 
 	/* Dependencies: filled in by ops->calculate_deps() */
 	unsigned int num_deps;
@@ -31,30 +21,9 @@ struct module
 	unsigned int order;
 
 	/* Tables extracted from module by ops->fetch_tables(). */
-	unsigned int pci_size;
-	void *pci_table;
-	unsigned int usb_size;
-	void *usb_table;
-	unsigned int ieee1394_size;
-	void *ieee1394_table;
-	unsigned int ccw_size;
-	void *ccw_table;
-	unsigned int pnp_size;
-	void *pnp_table;
-	unsigned int pnp_card_size;
-	unsigned int pnp_card_offset;
-	void *pnp_card_table;
-	unsigned int input_size;
-	void *input_table;
-	unsigned int input_table_size;
-	unsigned int serio_size;
-	void *serio_table;
-	unsigned int of_size;
-	void *of_table;
+	struct module_tables tables;
 
-	/* File contents and length. */
-	void *data;
-	unsigned long len;
+	struct elf_file file;
 
 	char *basename; /* points into pathname */
 	char pathname[0];
