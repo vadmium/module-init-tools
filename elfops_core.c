@@ -36,6 +36,8 @@ static void *PERBIT(get_section)(struct elf_file *module,
 	const char *secnames;
 	unsigned int i;
 
+	*secsize = 0;
+
 	if (len <= 0 || len < sizeof(*hdr))
 		return NULL;
 
@@ -65,7 +67,6 @@ static void *PERBIT(get_section)(struct elf_file *module,
 			return data + secoffset;
 		}
 	}
-	*secsize = 0;
 	return NULL;
 }
 
