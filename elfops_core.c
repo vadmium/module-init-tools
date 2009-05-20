@@ -240,15 +240,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	if (!strings || !syms)
 		return;
 
-	tables->pci_table = NULL;
-	tables->usb_table = NULL;
-	tables->ccw_table = NULL;
-	tables->ieee1394_table = NULL;
-	tables->pnp_table = NULL;
-	tables->pnp_card_table = NULL;
-	tables->input_table = NULL;
-	tables->serio_table = NULL;
-	tables->of_table = NULL;
+	memset(tables, 0x00, sizeof(struct module_tables));
 
 	for (i = 0; i < size / sizeof(syms[0]); i++) {
 		char *name = strings + END(syms[i].st_name, conv);
