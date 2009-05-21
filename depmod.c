@@ -770,8 +770,8 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	struct elf_file *file;
-	const char *p;
-	unsigned long size;
+	struct string_table *tbl;
+	int j;
 
 	fprintf(out, "# Aliases extracted from modules themselves.\n");
 	for (i = modules; i; i = i->next) {
@@ -781,19 +781,20 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		for (p = file->ops->get_aliases(file, &size);
-		     p;
-		     p = next_string(p, &size))
-			fprintf(out, "alias %s %s\n", p, modname);
+		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		for (j = 0; tbl && j < tbl->cnt; j++)
+			fprintf(out, "alias %s %s\n", tbl->str[j], modname);
+		strtbl_free(tbl);
 
-		/* Grab form new-style .modinfo section. */
-		for (p = file->ops->get_modinfo(file, &size);
-		     p;
-		     p = next_string(p, &size)) {
+		/* Grab from new-style .modinfo section. */
+		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		for (j = 0; tbl && j < tbl->cnt; j++) {
+			const char *p = tbl->str[j];
 			if (strstarts(p, "alias="))
 				fprintf(out, "alias %s %s\n",
 					p + strlen("alias="), modname);
 		}
+		strtbl_free(tbl);
 	}
 }
 
@@ -801,9 +802,9 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	struct elf_file *file;
-	const char *p;
+	struct string_table *tbl;
+	int j;
 	char *alias;
-	unsigned long size;
 	struct index_node *index;
 	int duplicate;
 
@@ -816,10 +817,9 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		for (p = file->ops->get_aliases(file, &size);
-		     p;
-		     p = next_string(p, &size)) {
-			alias = NOFAIL(strdup(p));
+		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		for (j = 0; tbl && j < tbl->cnt; j++) {
+			alias = NOFAIL(strdup(tbl->str[j]));
 			underscores(alias);
 			duplicate = index_insert(index, alias, modname, i->order);
 			if (duplicate && warn_dups)
@@ -827,11 +827,12 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 					alias, modname);
 			free(alias);
 		}
+		strtbl_free(tbl);
 
 		/* Grab from new-style .modinfo section. */
-		for (p = file->ops->get_modinfo(file, &size);
-		     p;
-		     p = next_string(p, &size)) {
+		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		for (j = 0; tbl && j < tbl->cnt; j++) {
+			const char *p = tbl->str[j];
 			if (strstarts(p, "alias=")) {
 				alias = NOFAIL(strdup(p + strlen("alias=")));
 				underscores(alias);
@@ -842,6 +843,7 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 				free(alias);
 			}
 		}
+		strtbl_free(tbl);
 	}
 	
 	index_write(index, out);

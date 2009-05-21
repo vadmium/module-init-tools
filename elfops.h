@@ -2,6 +2,7 @@
 #define MODINITTOOLS_MODULEOPS_H
 #include <stdio.h>
 #include <stdint.h>
+#include "logging.h"
 
 /* All the icky stuff to do with manipulating 64 and 32-bit modules
    belongs here. */
@@ -71,6 +72,8 @@ struct module_ops
 {
 	void *(*load_section)(struct elf_file *module,
 		const char *secname, unsigned long *secsize);
+	struct string_table *(*load_strings)(struct elf_file *module,
+		const char *secname, struct string_table *tbl, errfn_t error);
 	struct string_table *(*load_symbols)(struct elf_file *module);
 	struct string_table *(*load_dep_syms)(const char *pathname,
 		struct elf_file *module, struct string_table **types);

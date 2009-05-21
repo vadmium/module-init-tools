@@ -80,7 +80,8 @@ static void *PERBIT(load_section)(struct elf_file *module,
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 						 const char *secname,
-						 struct string_table *tbl)
+						 struct string_table *tbl,
+						 errfn_t error)
 {
 	unsigned long size;
 	const char *strings;
@@ -108,11 +109,11 @@ static struct string_table *PERBIT(load_symbols)(struct elf_file *module)
 	symtbl = NULL;
 
 	/* New-style: strings are in this section. */
-	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl);
+	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl, fatal);
 	if (symtbl) {
 		/* GPL symbols too */
 		return PERBIT(load_strings)(module, "__ksymtab_strings_gpl",
-			symtbl);
+			symtbl, fatal);
 	}
 
 	/* Old-style. */
@@ -338,6 +339,7 @@ static int PERBIT(dump_modversions)(struct elf_file *module)
 
 struct module_ops PERBIT(mod_ops) = {
 	.load_section	= PERBIT(load_section),
+	.load_strings	= PERBIT(load_strings),
 	.load_symbols	= PERBIT(load_symbols),
 	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),

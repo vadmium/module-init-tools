@@ -324,15 +324,16 @@ static void rename_module(struct elf_file *module,
 
 static void clear_magic(struct elf_file *module)
 {
-	const char *p;
-	unsigned long len;
+	struct string_table *tbl;
+	int j;
 
 	/* Old-style: __vermagic section */
 	module->ops->strip_section(module, "__vermagic");
 
 	/* New-style: in .modinfo section */
-	p = module->ops->get_modinfo(module, &len);
-	for (; p; p = next_string(p, &len)) {
+	tbl = module->ops->load_strings(module, ".modinfo", NULL, fatal);
+	for (j = 0; tbl && j < tbl->cnt; j++) {
+		const char *p = tbl->str[j];
 		if (strstarts(p, "vermagic=")) {
 			memset((char *)p, 0, strlen(p));
 			return;
