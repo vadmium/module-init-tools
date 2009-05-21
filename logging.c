@@ -13,9 +13,6 @@ int logging = 0;
 /* Do we want to silently drop all warnings? */
 int quiet = 0;
 
-/* Number of times warn() has been called */
-int warned = 0;
-
 /* Do we want informative messages as well as errors? */
 int verbose = 0;
 
@@ -46,7 +43,6 @@ void message(const char *prefix, const char *fmt, va_list *arglist)
 void warn(const char *fmt, ...)
 {
 	va_list arglist;
-	warned++;
 	va_start(arglist, fmt);
 	if (!quiet)
 		message("WARNING: ", fmt, &arglist);

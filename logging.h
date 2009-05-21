@@ -7,9 +7,6 @@ extern int logging;
 /* Do we want to silently drop all warnings? */
 extern int quiet;
 
-/* Number of times warn() has been called */
-extern int warned;
-
 /* Do we want informative messages as well as errors? */
 extern int verbose;
 
