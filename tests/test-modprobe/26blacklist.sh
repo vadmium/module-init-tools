@@ -15,7 +15,8 @@ SIZE=`wc -c < tests/data/$BITNESS/alias/alias-$BITNESS.ko`
 
 echo "/lib/modules/$MODTEST_UNAME/kernel/alias-$BITNESS.ko:" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/kernel/foo.ko:" >> $MODULE_DIR/modules.dep
-echo Test > $MODULE_DIR/kernel/foo.ko
+cp tests/data/$BITNESS/complex/complex_a-$BITNESS.ko $MODULE_DIR/kernel/foo.ko
+SIZE2=`wc -c < $MODULE_DIR/kernel/foo.ko`
 
 # First, alias found in modules.alias works.
 echo "alias bar alias-$BITNESS" > $MODULE_DIR/modules.alias
@@ -28,7 +29,7 @@ echo "blacklist alias-$BITNESS" > tests/tmp/etc/modprobe.d/modprobe.conf
 
 # Blacklist doesn't effect other aliases.
 echo "alias bar foo" >> $MODULE_DIR/modules.alias
-[ "`modprobe bar 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`modprobe bar 2>&1`" = "INIT_MODULE: $SIZE2 " ]
 
 # Blacklist both.
 echo "blacklist foo" >> tests/tmp/etc/modprobe.d/modprobe.conf
@@ -38,5 +39,5 @@ echo "blacklist foo" >> tests/tmp/etc/modprobe.d/modprobe.conf
 rm -f tests/tmp/etc/modprobe.d/modprobe.conf
 RESULT="`modprobe bar 2>&1`"
 [ "$RESULT" = "INIT_MODULE: $SIZE 
-INIT_MODULE: 5 " ] || [ "$RESULT" = "INIT_MODULE: 5 
+INIT_MODULE: $SIZE2 " ] || [ "$RESULT" = "INIT_MODULE: $SIZE2
 INIT_MODULE: $SIZE " ]

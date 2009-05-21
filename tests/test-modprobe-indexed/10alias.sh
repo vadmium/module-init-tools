@@ -21,7 +21,8 @@ rm -f $MODULE_DIR/modules.alias
 rm -f $MODULE_DIR/modules.alias.bin
 rm -f tests/tmp/etc/modprobe.d/modprobe.conf
 
-echo Test > $MODULE_DIR/kernel/foo.ko
+cp tests/data/$BITNESS/complex/complex_a-$BITNESS.ko $MODULE_DIR/kernel/foo.ko
+SIZE2=`wc -c < $MODULE_DIR/kernel/foo.ko`
 
 # Shouldn't complain if can't open modules.alias
 [ "`modprobe bar 2>&1`" = "FATAL: Module bar not found." ]
@@ -34,12 +35,12 @@ modindex -o $MODULE_DIR/modules.alias.bin < $MODULE_DIR/modules.alias.bin.temp
 # Normal alias should override it.
 mkdir -p tests/tmp/etc/modprobe.d
 echo 'alias bar foo' > tests/tmp/etc/modprobe.d/modprobe.conf
-[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`modprobe foo 2>&1`" = "INIT_MODULE: $SIZE2 " ]
 
 # If there's a real module, alias from modules.alias must NOT override.
 echo "foo alias_$BITNESS" > $MODULE_DIR/modules.alias.bin.temp
 modindex -o $MODULE_DIR/modules.alias.bin < $MODULE_DIR/modules.alias.bin.temp
-[ "`modprobe foo 2>&1`" = "INIT_MODULE: 5 " ]
+[ "`modprobe foo 2>&1`" = "INIT_MODULE: $SIZE2 " ]
 
 # If there's an install command, modules.alias must not override.
 echo 'install bar echo foo' > tests/tmp/etc/modprobe.d/modprobe.conf
@@ -60,5 +61,5 @@ modindex -o $MODULE_DIR/modules.alias.bin < $MODULE_DIR/modules.alias.bin.temp
 OUT="`modprobe bar 2>&1`"
 
 [ "$OUT" = "INIT_MODULE: $SIZE option2 option1
-INIT_MODULE: 5 option1" ] || [ "$OUT" = "INIT_MODULE: 5 option1
+INIT_MODULE: $SIZE2 option1" ] || [ "$OUT" = "INIT_MODULE: $SIZE2 option1
 INIT_MODULE: $SIZE option2 option1" ]

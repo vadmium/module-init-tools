@@ -666,23 +666,9 @@ static int insmod(struct list_head *list,
 
 	module = grab_elf_file_fd(mod->filename, fd);
 	if (!module) {
-		/* This is an ugly hack that maintains the logic where
-		 * init_module() sets errno = ENOEXEC if the file is
-		 * not an ELF object.
-		 */
-		if (errno == ENOEXEC) {
-			struct stat st;
-			optstring = add_extra_options(mod->modname,
-				optstring, options);
-			if (dry_run)
-				goto out;
-			fstat(fd, &st);
-			ret = init_module(NULL, st.st_size, optstring);
-			goto out_hack;
-		}
-
-		error("Could not read '%s': %s\n",
-		      mod->filename, strerror(errno));
+		error("Could not read '%s': %s\n", mod->filename,
+			(errno == ENOEXEC) ? "Invalid module format" :
+				strerror(errno));
 		goto out_unlock;
 	}
 	if (newname)
@@ -701,7 +687,6 @@ static int insmod(struct list_head *list,
 		goto out;
 
 	ret = init_module(module->data, module->len, optstring);
-out_hack:
 	if (ret != 0) {
 		if (errno == EEXIST) {
 			if (first_time)
