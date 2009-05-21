@@ -716,7 +716,7 @@ out_hack:
 			error("Error inserting %s (%s): %s\n",
 			      mod->modname, mod->filename,
 			      insert_moderror(errno));
-			rc = 1;
+		rc = 1;
 	}
  out:
 	release_elf_file(module);
