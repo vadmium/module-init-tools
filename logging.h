@@ -18,6 +18,8 @@ extern void error(const char *fmt, ...);
 extern void warn(const char *fmt, ...);
 extern void info(const char *fmt, ...);
 
+typedef void (*errfn_t)(const char *fmt, ...);
+
 static inline void grammar(const char *cmd,
 			   const char *filename, unsigned int line)
 {

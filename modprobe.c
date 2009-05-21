@@ -64,8 +64,6 @@ struct module {
 #define MODULE_DIR "/lib/modules"
 #endif
 
-typedef void (*errfn_t)(const char *fmt, ...);
-
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
