@@ -47,7 +47,10 @@ TESTSUITE := $(shell test -e @srcdir@/tests && find @srcdir@/tests -type f ! -na
 
 EXTRA_DIST = generate-modprobe.conf FAQ CODING stress_modules.sh install-with-care $(SGML) $(man_MANS) $(TESTSUITE)
 
-sbin_PROGRAMS = insmod modprobe rmmod depmod modinfo insmod.static
+sbin_PROGRAMS = insmod modprobe rmmod depmod modinfo
+if BUILD_STATIC_UTILS
+sbin_PROGRAMS += insmod.static
+endif
 bin_PROGRAMS = lsmod
 noinst_PROGRAMS=modindex
 noinst_LIBRARIES = libmodtools.a

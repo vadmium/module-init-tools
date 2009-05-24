@@ -54,6 +54,11 @@ then
     AC_MSG_NOTICE([Adding gcc options: $CFLAGS])
 fi
 
+AC_ARG_ENABLE(static-utils,
+AS_HELP_STRING([--disable-static-utils], [Do not build static utils]),
+[],[enable_static_utils=yes])
+AM_CONDITIONAL(BUILD_STATIC_UTILS, test "$enable_static_utils" = "yes")
+
 AC_ARG_WITH(moddir,
 [  --with-moddir=path      Give the path for system modules directory.]
 [                         [ Defaults to /lib/modules ]],
