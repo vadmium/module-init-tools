@@ -113,7 +113,7 @@ static struct option options[] = {
 
 int main(int argc, char *argv[])
 {
-	char opt;
+	int opt;
 	char mode = 0;
 	char *filename = NULL;
 	char *key = NULL;
