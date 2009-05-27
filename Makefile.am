@@ -26,7 +26,7 @@ libmodtools_a_SOURCES = util.c logging.c index.c config_filter.c elfops.c \
 	util.h depmod.h logging.h index.h list.h config_filter.h elfops.h
 libmodtools_a_CFLAGS = -ffunction-sections
 
-EXTRA_libmodtools_a_SOURCES = elf_core.c elfops_core.c
+EXTRA_libmodtools_a_SOURCES = elfops_core.c
 
 insmod_LDADD = $(LDADD) libmodtools.a
 lsmod_LDADD = $(LDADD) libmodtools.a
