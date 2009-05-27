@@ -50,9 +50,10 @@ static struct param *add_param(const char *name, struct param **list)
 	return i;
 }
 
-static void print_tag(const char *tag, const char *info, unsigned long size,
+static void print_tag(const char *tag, struct string_table *tags,
 		      const char *filename, char sep)
 {
+	int j;
 	unsigned int taglen = strlen(tag);
 
 	if (streq(tag, "filename")) {
@@ -60,18 +61,22 @@ static void print_tag(const char *tag, const char *info, unsigned long size,
 		return;
 	}
 
-	for (; info; info = next_string(info, &size))
+	for (j = 0; j < tags->cnt; j++) {
+		const char *info = tags->str[j];
 		if (strncmp(info, tag, taglen) == 0 && info[taglen] == '=')
 			printf("%s%c", info + taglen + 1, sep);
+	}
 }
 
-static void print_all(const char *info, unsigned long size,
+static void print_all(struct string_table *tags,
 		      const char *filename, char sep)
 {
+	int j;
 	struct param *i, *params = NULL;
 
 	printf("%-16s%s%c", "filename:", filename, sep);
-	for (; info; info = next_string(info, &size)) {
+	for (j = 0; j < tags->cnt; j++) {
+		const char *info = tags->str[j];
 		char *eq, *colon;
 
 		/* We expect this in parm and parmtype. */
@@ -294,8 +299,7 @@ int main(int argc, char *argv[])
 	}
 
 	for (opt = optind; opt < argc; opt++) {
-		void *info;
-		unsigned long infosize = 0;
+		struct string_table *tags;
 		struct elf_file *mod;
 
 		mod = grab_module(argv[opt], kernel, basedir);
@@ -303,15 +307,16 @@ int main(int argc, char *argv[])
 			ret = 1;
 			continue;
 		}
-		info = mod->ops->get_modinfo(mod, &infosize);
-		if (!info) {
+		tags = mod->ops->load_strings(mod, ".modinfo", NULL, error);
+		if (!tags) {
 			release_elf_file(mod);
 			continue;
 		}
 		if (field)
-			print_tag(field, info, infosize, mod->pathname, sep);
+			print_tag(field, tags, mod->pathname, sep);
 		else
-			print_all(info, infosize, mod->pathname, sep);
+			print_all(tags, mod->pathname, sep);
+		strtbl_free(tags);
 		release_elf_file(mod);
 	}
 	return ret;

@@ -64,8 +64,6 @@ struct module {
 #define MODULE_DIR "/lib/modules"
 #endif
 
-typedef void (*errfn_t)(const char *fmt, ...);
-
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
@@ -326,15 +324,16 @@ static void rename_module(struct elf_file *module,
 
 static void clear_magic(struct elf_file *module)
 {
-	const char *p;
-	unsigned long len;
+	struct string_table *tbl;
+	int j;
 
 	/* Old-style: __vermagic section */
 	module->ops->strip_section(module, "__vermagic");
 
 	/* New-style: in .modinfo section */
-	p = module->ops->get_modinfo(module, &len);
-	for (; p; p = next_string(p, &len)) {
+	tbl = module->ops->load_strings(module, ".modinfo", NULL, fatal);
+	for (j = 0; tbl && j < tbl->cnt; j++) {
+		const char *p = tbl->str[j];
 		if (strstarts(p, "vermagic=")) {
 			memset((char *)p, 0, strlen(p));
 			return;
@@ -667,23 +666,9 @@ static int insmod(struct list_head *list,
 
 	module = grab_elf_file_fd(mod->filename, fd);
 	if (!module) {
-		/* This is an ugly hack that maintains the logic where
-		 * init_module() sets errno = ENOEXEC if the file is
-		 * not an ELF object.
-		 */
-		if (errno == ENOEXEC) {
-			struct stat st;
-			optstring = add_extra_options(mod->modname,
-				optstring, options);
-			if (dry_run)
-				goto out;
-			fstat(fd, &st);
-			ret = init_module(NULL, st.st_size, optstring);
-			goto out_hack;
-		}
-
-		error("Could not read '%s': %s\n",
-		      mod->filename, strerror(errno));
+		error("Could not read '%s': %s\n", mod->filename,
+			(errno == ENOEXEC) ? "Invalid module format" :
+				strerror(errno));
 		goto out_unlock;
 	}
 	if (newname)
@@ -702,7 +687,6 @@ static int insmod(struct list_head *list,
 		goto out;
 
 	ret = init_module(module->data, module->len, optstring);
-out_hack:
 	if (ret != 0) {
 		if (errno == EEXIST) {
 			if (first_time)

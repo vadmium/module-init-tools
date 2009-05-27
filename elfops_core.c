@@ -36,6 +36,8 @@ static void *PERBIT(get_section)(struct elf_file *module,
 	const char *secnames;
 	unsigned int i;
 
+	*secsize = 0;
+
 	if (len <= 0 || len < sizeof(*hdr))
 		return NULL;
 
@@ -65,7 +67,6 @@ static void *PERBIT(get_section)(struct elf_file *module,
 			return data + secoffset;
 		}
 	}
-	*secsize = 0;
 	return NULL;
 }
 
@@ -79,7 +80,8 @@ static void *PERBIT(load_section)(struct elf_file *module,
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 						 const char *secname,
-						 struct string_table *tbl)
+						 struct string_table *tbl,
+						 errfn_t error)
 {
 	unsigned long size;
 	const char *strings;
@@ -107,11 +109,11 @@ static struct string_table *PERBIT(load_symbols)(struct elf_file *module)
 	symtbl = NULL;
 
 	/* New-style: strings are in this section. */
-	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl);
+	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl, fatal);
 	if (symtbl) {
 		/* GPL symbols too */
 		return PERBIT(load_strings)(module, "__ksymtab_strings_gpl",
-			symtbl);
+			symtbl, fatal);
 	}
 
 	/* Old-style. */
@@ -190,8 +192,9 @@ static struct string_table *PERBIT(load_dep_syms)(const char *pathname,
 
 			weak = (ELFPERBIT(ST_BIND)(END(syms[i].st_info, conv))
 				== STB_WEAK);
-			names = strtbl_add(name, names);
-			*types = strtbl_add(weak ? weak_sym : undef_sym, *types);
+			names = NOFAIL(strtbl_add(name, names));
+			*types = NOFAIL(strtbl_add(weak ? weak_sym : undef_sym,
+				*types));
 		}
 	}
 	return names;
@@ -238,15 +241,7 @@ static void PERBIT(fetch_tables)(struct elf_file *module,
 	if (!strings || !syms)
 		return;
 
-	tables->pci_table = NULL;
-	tables->usb_table = NULL;
-	tables->ccw_table = NULL;
-	tables->ieee1394_table = NULL;
-	tables->pnp_table = NULL;
-	tables->pnp_card_table = NULL;
-	tables->input_table = NULL;
-	tables->serio_table = NULL;
-	tables->of_table = NULL;
+	memset(tables, 0x00, sizeof(struct module_tables));
 
 	for (i = 0; i < size / sizeof(syms[0]); i++) {
 		char *name = strings + END(syms[i].st_name, conv);
@@ -344,6 +339,7 @@ static int PERBIT(dump_modversions)(struct elf_file *module)
 
 struct module_ops PERBIT(mod_ops) = {
 	.load_section	= PERBIT(load_section),
+	.load_strings	= PERBIT(load_strings),
 	.load_symbols	= PERBIT(load_symbols),
 	.load_dep_syms	= PERBIT(load_dep_syms),
 	.fetch_tables	= PERBIT(fetch_tables),
