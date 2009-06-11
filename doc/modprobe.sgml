@@ -365,7 +365,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-D</option> <option>--show-depends</option>
+        <term><option>--show-depends</option>
         </term>
         <listitem>
           <para>

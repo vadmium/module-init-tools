@@ -1344,7 +1344,7 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rwclt:aQibf", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rwclt:aibf", options, NULL)) != -1){
 		switch (opt) {
 		case 'V':
 			puts(PACKAGE " version " VERSION);
@@ -1382,7 +1382,6 @@ int main(int argc, char *argv[])
 			dry_run = 1;
 			ignore_proc = 1;
 			verbose = 1;
-			add_to_env_var("-D");
 			break;
 		case 'o':
 			newname = optarg;

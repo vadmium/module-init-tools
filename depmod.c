@@ -1186,7 +1186,7 @@ int main(int argc, char *argv[])
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */
 	opterr = 0;
-	while ((opt = getopt_long(argc, argv, "aAb:C:F:euqrrvnhVwm", options, NULL))
+	while ((opt = getopt_long(argc, argv, "aAb:C:F:euqrvnhVwm", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
