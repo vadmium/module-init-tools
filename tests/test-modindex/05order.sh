@@ -30,7 +30,7 @@ b* 2
 * 3
 EOF
 
-[ "`modindex -w tests/tmp/index ba`" = "Found value(s):
+[ "`modindex -w ba tests/tmp/index`" = "Found value(s):
 1
 2
 3" ]
@@ -41,7 +41,7 @@ b* 2
 *a 3
 EOF
 
-[ "`modindex -w tests/tmp/index ba`" = "Found value(s):
+[ "`modindex -w ba tests/tmp/index`" = "Found value(s):
 1
 2
 3" ]

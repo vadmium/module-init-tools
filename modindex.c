@@ -98,8 +98,8 @@ static void print_usage(const char *progname)
 		"Usage: %s [MODE] [FILE] ...\n"
 		" -o, --output <outfile>\n"
 		" -d, --dump <infile>\n"
-		" -s, --search <infile> <key>\n"
-		" -w, --searchwild <infile> <key>\n"
+		" -s, --search <key> <infile>\n"
+		" -w, --searchwild <key> <infile>\n"
 		,progname);
 	exit(1);
 }
@@ -107,8 +107,8 @@ static void print_usage(const char *progname)
 static struct option options[] = {
 	{ "output", 0, NULL, 'o' },
 	{ "dump", 0, NULL, 'd' },
-	{ "search", 0, NULL, 's' },
-	{ "searchwild", 0, NULL, 'w' },
+	{ "search", 1, NULL, 's' },
+	{ "searchwild", 1, NULL, 'w' },
 };
 
 int main(int argc, char *argv[])
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	char *filename = NULL;
 	char *key = NULL;
 	
-	while ((opt = getopt_long(argc, argv, "odsw", options, NULL))
+	while ((opt = getopt_long(argc, argv, "ods:w:", options, NULL))
 		       != -1) {
 		switch (opt) {
 			case 'o':
@@ -129,9 +129,11 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				mode = 's';
+				key = optarg;
 				break;
 			case 'w':
 				mode = 'w';
+				key = optarg;
 				break;
 			default:
 				print_usage(argv[0]);
@@ -143,12 +145,6 @@ int main(int argc, char *argv[])
 	if (optind >= argc)
 		print_usage(argv[0]);
 	filename = argv[optind];
-	
-	if (mode == 's' || mode == 'w') {
-		if (optind+1 >= argc)
-			print_usage(argv[0]);
-		key = argv[optind+1];
-	}
 	
 	switch(mode) {
 		case 'o':
