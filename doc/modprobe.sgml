@@ -61,7 +61,7 @@
     </cmdsynopsis>
     <cmdsynopsis>
       <command>modprobe</command>
-      <arg>--dump-modversions</arg>
+      <arg>--dump-modversions</arg> <arg rep='repeat'><replaceable>filename</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
