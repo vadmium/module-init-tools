@@ -1332,10 +1332,10 @@ int main(int argc, char *argv[])
 	unsigned int i, num_modules;
 	char *type = NULL;
 	const char *config = NULL;
-	char *dirname = NULL;
+	char *basedir = "";
 	char *optstring = NULL;
 	char *newname = NULL;
-	char *aliasfilename, *symfilename;
+	char *dirname, *aliasfilename, *symfilename;
 	errfn_t error = fatal;
 	int flags = O_NONBLOCK|O_EXCL;
 	int was_error = 0;
@@ -1364,10 +1364,8 @@ int main(int argc, char *argv[])
 		case 'n':
 			dry_run = 1;
 			break;
-
 		case 'd':
-			nofail_asprintf(&dirname, "%s/%s/%s", optarg,
-					MODULE_DIR, buf.release);
+			basedir = optarg;
 			break;
 		case 'S':
 			strncpy(buf.release, optarg, sizeof(buf.release));
@@ -1441,8 +1439,7 @@ int main(int argc, char *argv[])
 	if (argc < optind + 1 && !dump_only && !list_only && !remove)
 		print_usage(argv[0]);
 
-	if (!dirname)
-		nofail_asprintf(&dirname, "%s/%s", MODULE_DIR, buf.release);
+	nofail_asprintf(&dirname, "%s%s/%s", basedir, MODULE_DIR, buf.release);
 	nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
 	nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 
