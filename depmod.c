@@ -183,7 +183,7 @@ static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "dry-run", 0, NULL, 'n' },
 				   { "help", 0, NULL, 'h' },
 				   { "version", 0, NULL, 'V' },
-				   { "warn", 1, NULL, 'w' },
+				   { "warn", 0, NULL, 'w' },
 				   { "map", 0, NULL, 'm' },
 				   { NULL, 0, NULL, 0 } };
 
