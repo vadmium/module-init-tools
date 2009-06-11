@@ -1436,7 +1436,7 @@ int main(int argc, char *argv[])
 		logging = 1;
 	}
 
-	if (argc < optind + 1 && !dump_only && !list_only && !remove)
+	if (argc < optind + 1 && !dump_only && !list_only)
 		print_usage(argv[0]);
 
 	nofail_asprintf(&dirname, "%s%s/%s", basedir, MODULE_DIR, buf.release);
