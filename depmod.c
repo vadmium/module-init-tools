@@ -172,17 +172,17 @@ static void load_system_map(const char *filename)
 static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "quick", 0, NULL, 'A' },
 				   { "basedir", 1, NULL, 'b' },
-				   { "errsyms", 0, NULL, 'e' },
+				   { "config", 1, NULL, 'C' },
 				   { "filesyms", 1, NULL, 'F' },
-				   { "help", 0, NULL, 'h' },
-				   { "show", 0, NULL, 'n' },
-				   { "dry-run", 0, NULL, 'n' },
+				   { "errsyms", 0, NULL, 'e' },
+				   { "unresolved-error", 0, NULL, 'u' },
 				   { "quiet", 0, NULL, 'q' },
 				   { "root", 0, NULL, 'r' },
-				   { "unresolved-error", 0, NULL, 'u' },
 				   { "verbose", 0, NULL, 'v' },
+				   { "show", 0, NULL, 'n' },
+				   { "dry-run", 0, NULL, 'n' },
+				   { "help", 0, NULL, 'h' },
 				   { "version", 0, NULL, 'V' },
-				   { "config", 1, NULL, 'C' },
 				   { "warn", 1, NULL, 'w' },
 				   { "map", 0, NULL, 'm' },
 				   { NULL, 0, NULL, 0 } };
@@ -1186,18 +1186,21 @@ int main(int argc, char *argv[])
 	/* Don't print out any errors just yet, we might want to exec
            backwards compat version. */
 	opterr = 0;
-	while ((opt = getopt_long(argc, argv, "ab:ArehnqruvVF:C:wm", options, NULL))
+	while ((opt = getopt_long(argc, argv, "aAb:C:F:euqrrvnhVwm", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
 			all = 1;
 			break;
+		case 'A':
+			maybe_all = 1;
+			break;
 		case 'b':
 			basedir = optarg;
 			skipchars = strlen(basedir);
 			break;
-		case 'A':
-			maybe_all = 1;
+		case 'C':
+			config = optarg;
 			break;
 		case 'F':
 			system_map = optarg;
@@ -1205,22 +1208,19 @@ int main(int argc, char *argv[])
 		case 'e':
 			print_unknown = 1;
 			break;
-		case 'v':
-			verbose = 1;
-			break;
 		case 'u':
 		case 'q':
 		case 'r':
 			break;
-		case 'C':
-			config = optarg;
+		case 'v':
+			verbose = 1;
+			break;
+		case 'n':
+			doing_stdout = 1;
 			break;
 		case 'h':
 			print_usage(argv[0]);
 			exit(0);
-			break;
-		case 'n':
-			doing_stdout = 1;
 			break;
 		case 'V':
 			printf("%s %s\n", PACKAGE, VERSION);

@@ -1285,31 +1285,31 @@ static int handle_module(const char *modname,
 	return 0;
 }
 
-static struct option options[] = { { "verbose", 0, NULL, 'v' },
-				   { "version", 0, NULL, 'V' },
+static struct option options[] = { { "version", 0, NULL, 'V' },
+				   { "verbose", 0, NULL, 'v' },
+				   { "quiet", 0, NULL, 'q' },
+				   { "syslog", 0, NULL, 's' },
+				   { "show", 0, NULL, 'n' },
+				   { "dry-run", 0, NULL, 'n' },
+				   { "show-depends", 0, NULL, 'D' },
+				   { "dirname", 1, NULL, 'd' },
+				   { "set-version", 1, NULL, 'S' },
 				   { "config", 1, NULL, 'C' },
 				   { "name", 1, NULL, 'o' },
 				   { "remove", 0, NULL, 'r' },
 				   { "wait", 0, NULL, 'w' },
 				   { "showconfig", 0, NULL, 'c' },
-				   { "quiet", 0, NULL, 'q' },
-				   { "show", 0, NULL, 'n' },
-				   { "dry-run", 0, NULL, 'n' },
-				   { "syslog", 0, NULL, 's' },
-				   { "type", 1, NULL, 't' },
 				   { "list", 0, NULL, 'l' },
+				   { "type", 1, NULL, 't' },
 				   { "all", 0, NULL, 'a' },
 				   { "ignore-install", 0, NULL, 'i' },
 				   { "ignore-remove", 0, NULL, 'i' },
+				   { "use-blacklist", 0, NULL, 'b' },
 				   { "force", 0, NULL, 'f' },
 				   { "force-vermagic", 0, NULL, 1 },
 				   { "force-modversion", 0, NULL, 2 },
-				   { "set-version", 1, NULL, 'S' },
-				   { "show-depends", 0, NULL, 'D' },
-				   { "dirname", 1, NULL, 'd' },
 				   { "first-time", 0, NULL, 3 },
 				   { "dump-modversions", 0, NULL, 4 },
-				   { "use-blacklist", 0, NULL, 'b' },
 				   { NULL, 0, NULL, 0 } };
 
 int main(int argc, char *argv[])
@@ -1344,15 +1344,31 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "vVC:o:rnqQsclt:aifbwd:", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rwclt:aQibf", options, NULL)) != -1){
 		switch (opt) {
+		case 'V':
+			puts(PACKAGE " version " VERSION);
+			exit(0);
 		case 'v':
 			add_to_env_var("-v");
 			verbose = 1;
 			break;
-		case 'V':
-			puts(PACKAGE " version " VERSION);
-			exit(0);
+		case 'q':
+			quiet = 1;
+			add_to_env_var("-q");
+			break;
+		case 's':
+			add_to_env_var("-s");
+			logging = 1;
+			break;
+		case 'n':
+			dry_run = 1;
+			break;
+
+		case 'd':
+			nofail_asprintf(&dirname, "%s/%s/%s", optarg,
+					MODULE_DIR, buf.release);
+			break;
 		case 'S':
 			strncpy(buf.release, optarg, sizeof(buf.release));
 			buf.release[sizeof(buf.release)-1] = '\0';
@@ -1361,10 +1377,6 @@ int main(int argc, char *argv[])
 			config = optarg;
 			add_to_env_var("-C");
 			add_to_env_var(config);
-			break;
-		case 'q':
-			quiet = 1;
-			add_to_env_var("-q");
 			break;
 		case 'D':
 			dry_run = 1;
@@ -1378,42 +1390,31 @@ int main(int argc, char *argv[])
 		case 'r':
 			remove = 1;
 			break;
+		case 'w':
+			flags &= ~O_NONBLOCK;
+			break;
 		case 'c':
 			dump_only = 1;
 			break;
-		case 't':
-			type = optarg;
-			break;
 		case 'l':
 			list_only = 1;
+			break;
+		case 't':
+			type = optarg;
 			break;
 		case 'a':
 			all = 1;
 			error = warn;
 			break;
-		case 'n':
-			dry_run = 1;
-			break;
-		case 's':
-			add_to_env_var("-s");
-			logging = 1;
-			break;
 		case 'i':
 			ignore_commands = 1;
-			break;
-		case 'f':
-			strip_vermagic = 1;
-			strip_modversion = 1;
 			break;
 		case 'b':
 			use_blacklist = 1;
 			break;
-		case 'w':
-			flags &= ~O_NONBLOCK;
-			break;
-		case 'd':
-			nofail_asprintf(&dirname, "%s/%s/%s", optarg,
-					MODULE_DIR, buf.release);
+		case 'f':
+			strip_vermagic = 1;
+			strip_modversion = 1;
 			break;
 		case 1:
 			strip_vermagic = 1;
