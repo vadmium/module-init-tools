@@ -1175,17 +1175,13 @@ struct module_overrides *overrides = NULL;
 int main(int argc, char *argv[])
 {
 	int opt, all = 0, maybe_all = 0, doing_stdout = 0;
-	char *basedir = "", *dirname, *version, *badopt = NULL,
-		*system_map = NULL;
+	char *basedir = "", *dirname, *version, *system_map = NULL;
 	int i;
 	const char *config = NULL;
 
 	if (native_endianness() == 0)
 		abort();
 
-	/* Don't print out any errors just yet, we might want to exec
-           backwards compat version. */
-	opterr = 0;
 	while ((opt = getopt_long(argc, argv, "aAb:C:F:euqrvnhVwm", options, NULL))
 	       != -1) {
 		switch (opt) {
@@ -1232,7 +1228,8 @@ int main(int argc, char *argv[])
 			force_map_files = 1;
 			break;
 		default:
-			badopt = argv[optind-1];
+			print_usage(argv[0]);
+			exit(1);
 		}
 	}
 
@@ -1257,13 +1254,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Kernel version %s requires old depmod\n",
 			version);
 		exit(2);
-	}
-
-	if (badopt) {
-		fprintf(stderr, "%s: malformed/unrecognized option '%s'\n",
-			argv[0], badopt);
-		print_usage(argv[0]);
-		exit(1);
 	}
 
 	/* Depmod -a by default if no names. */
