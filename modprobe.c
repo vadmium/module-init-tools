@@ -573,209 +573,6 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	return 1;
 }
 
-/* Do an install/remove command: replace $CMDLINE_OPTS if it's specified. */
-static void do_command(const char *modname,
-		       const char *command,
-		       int dry_run,
-		       errfn_t error,
-		       const char *type,
-		       const char *cmdline_opts)
-{
-	int ret;
-	char *p, *replaced_cmd = NOFAIL(strdup(command));
-
-	while ((p = strstr(replaced_cmd, "$CMDLINE_OPTS")) != NULL) {
-		char *new;
-		nofail_asprintf(&new, "%.*s%s%s",
-			 (int)(p - replaced_cmd), replaced_cmd, cmdline_opts,
-			 p + strlen("$CMDLINE_OPTS"));
-		free(replaced_cmd);
-		replaced_cmd = new;
-	}
-
-	info("%s %s\n", type, replaced_cmd);
-	if (dry_run)
-		return;
-
-	setenv("MODPROBE_MODULE", modname, 1);
-	ret = system(replaced_cmd);
-	if (ret == -1 || WEXITSTATUS(ret))
-		error("Error running %s command for %s\n", type, modname);
-	free(replaced_cmd);
-}
-
-/* Actually do the insert.  Frees second arg. */
-static int insmod(struct list_head *list,
-		   char *optstring,
-		   const char *newname,
-		   int first_time,
-		   errfn_t error,
-		   int dry_run,
-		   const struct module_options *options,
-		   const struct module_command *commands,
-		   int ignore_commands,
-		   int ignore_proc,
-		   int strip_vermagic,
-		   int strip_modversion,
-		   const char *cmdline_opts)
-{
-	int ret, fd;
-	struct elf_file *module;
-	const char *command;
-	struct module *mod = list_entry(list->next, struct module, list);
-	int rc = 0;
-
-	/* Take us off the list. */
-	list_del(&mod->list);
-
-	/* Do things we (or parent) depend on first. */
-	if (!list_empty(list)) {
-		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
-		       dry_run, options, commands, 0, ignore_proc,
-		       strip_vermagic, strip_modversion, "")) != 0) {
-			error("Error inserting %s (%s): %s\n",
-				mod->modname, mod->filename,
-				insert_moderror(errno));
-			goto out_optstring;
-		}
-	}
-
-	fd = open_file(mod->filename);
-	if (fd < 0) {
-		error("Could not open '%s': %s\n",
-		      mod->filename, strerror(errno));
-		goto out_optstring;
-	}
-
-	/* Don't do ANYTHING if already in kernel. */
-	if (!ignore_proc
-	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
-		if (first_time)
-			error("Module %s already in kernel.\n",
-			      newname ?: mod->modname);
-		goto out_unlock;
-	}
-
-	command = find_command(mod->modname, commands);
-	if (command && !ignore_commands) {
-		close_file(fd);
-		do_command(mod->modname, command, dry_run, error,
-			   "install", cmdline_opts);
-		goto out_optstring;
-	}
-
-	module = grab_elf_file_fd(mod->filename, fd);
-	if (!module) {
-		error("Could not read '%s': %s\n", mod->filename,
-			(errno == ENOEXEC) ? "Invalid module format" :
-				strerror(errno));
-		goto out_unlock;
-	}
-	if (newname)
-		rename_module(module, mod->modname, newname);
-	if (strip_modversion)
-		module->ops->strip_section(module, "__versions");
-	if (strip_vermagic)
-		clear_magic(module);
-
-	/* Config file might have given more options */
-	optstring = add_extra_options(mod->modname, optstring, options);
-
-	info("insmod %s %s\n", mod->filename, optstring);
-
-	if (dry_run)
-		goto out;
-
-	ret = init_module(module->data, module->len, optstring);
-	if (ret != 0) {
-		if (errno == EEXIST) {
-			if (first_time)
-				error("Module %s already in kernel.\n",
-				      newname ?: mod->modname);
-			goto out_unlock;
-		}
-		/* don't warn noisely if we're loading multiple aliases. */
-		/* one of the aliases may try to use hardware we don't have. */
-		if ((error != warn) || (verbose))
-			error("Error inserting %s (%s): %s\n",
-			      mod->modname, mod->filename,
-			      insert_moderror(errno));
-		rc = 1;
-	}
- out:
-	release_elf_file(module);
- out_unlock:
-	close_file(fd);
- out_optstring:
-	free(optstring);
-	return rc;
-}
-
-/* Do recursive removal. */
-static void rmmod(struct list_head *list,
-		  const char *name,
-		  int first_time,
-		  errfn_t error,
-		  int dry_run,
-		  struct module_command *commands,
-		  int ignore_commands,
-		  int ignore_inuse,
-		  const char *cmdline_opts,
-		  int flags)
-{
-	const char *command;
-	unsigned int usecount = 0;
-	struct module *mod = list_entry(list->next, struct module, list);
-
-	/* Take first one off the list. */
-	list_del(&mod->list);
-
-	if (!name)
-		name = mod->modname;
-
-	/* Even if renamed, find commands to orig. name. */
-	command = find_command(mod->modname, commands);
-	if (command && !ignore_commands) {
-		do_command(mod->modname, command, dry_run, error,
-			   "remove", cmdline_opts);
-		goto remove_rest;
-	}
-
-	if (module_in_kernel(name, &usecount) == 0)
-		goto nonexistent_module;
-
-	if (usecount != 0) {
-		if (!ignore_inuse)
-			error("Module %s is in use.\n", name);
-		goto remove_rest;
-	}
-
-	info("rmmod %s\n", mod->filename);
-
-	if (dry_run)
-		goto remove_rest;
-
-	if (delete_module(name, O_EXCL) != 0) {
-		if (errno == ENOENT)
-			goto nonexistent_module;
-		error("Error removing %s (%s): %s\n",
-		      name, mod->filename,
-		      remove_moderror(errno));
-	}
-
- remove_rest:
-	/* Now do things we depend. */
-	if (!list_empty(list))
-		rmmod(list, NULL, 0, warn, dry_run, commands,
-		      0, 1, "", flags);
-	return;
-
-nonexistent_module:
-	if (first_time)
-		fatal("Module %s is not in kernel.\n", mod->modname);
-	goto remove_rest;
-}
-
 void dump_modversions(const char *filename, errfn_t error)
 {
 	struct elf_file *module;
@@ -1237,6 +1034,209 @@ static char *gather_options(char *argv[])
 		argv++;
 	}
 	return optstring;
+}
+
+/* Do an install/remove command: replace $CMDLINE_OPTS if it's specified. */
+static void do_command(const char *modname,
+		       const char *command,
+		       int dry_run,
+		       errfn_t error,
+		       const char *type,
+		       const char *cmdline_opts)
+{
+	int ret;
+	char *p, *replaced_cmd = NOFAIL(strdup(command));
+
+	while ((p = strstr(replaced_cmd, "$CMDLINE_OPTS")) != NULL) {
+		char *new;
+		nofail_asprintf(&new, "%.*s%s%s",
+			 (int)(p - replaced_cmd), replaced_cmd, cmdline_opts,
+			 p + strlen("$CMDLINE_OPTS"));
+		free(replaced_cmd);
+		replaced_cmd = new;
+	}
+
+	info("%s %s\n", type, replaced_cmd);
+	if (dry_run)
+		return;
+
+	setenv("MODPROBE_MODULE", modname, 1);
+	ret = system(replaced_cmd);
+	if (ret == -1 || WEXITSTATUS(ret))
+		error("Error running %s command for %s\n", type, modname);
+	free(replaced_cmd);
+}
+
+/* Actually do the insert.  Frees second arg. */
+static int insmod(struct list_head *list,
+		   char *optstring,
+		   const char *newname,
+		   int first_time,
+		   errfn_t error,
+		   int dry_run,
+		   const struct module_options *options,
+		   const struct module_command *commands,
+		   int ignore_commands,
+		   int ignore_proc,
+		   int strip_vermagic,
+		   int strip_modversion,
+		   const char *cmdline_opts)
+{
+	int ret, fd;
+	struct elf_file *module;
+	const char *command;
+	struct module *mod = list_entry(list->next, struct module, list);
+	int rc = 0;
+
+	/* Take us off the list. */
+	list_del(&mod->list);
+
+	/* Do things we (or parent) depend on first. */
+	if (!list_empty(list)) {
+		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
+		       dry_run, options, commands, 0, ignore_proc,
+		       strip_vermagic, strip_modversion, "")) != 0) {
+			error("Error inserting %s (%s): %s\n",
+				mod->modname, mod->filename,
+				insert_moderror(errno));
+			goto out_optstring;
+		}
+	}
+
+	fd = open_file(mod->filename);
+	if (fd < 0) {
+		error("Could not open '%s': %s\n",
+		      mod->filename, strerror(errno));
+		goto out_optstring;
+	}
+
+	/* Don't do ANYTHING if already in kernel. */
+	if (!ignore_proc
+	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
+		if (first_time)
+			error("Module %s already in kernel.\n",
+			      newname ?: mod->modname);
+		goto out_unlock;
+	}
+
+	command = find_command(mod->modname, commands);
+	if (command && !ignore_commands) {
+		close_file(fd);
+		do_command(mod->modname, command, dry_run, error,
+			   "install", cmdline_opts);
+		goto out_optstring;
+	}
+
+	module = grab_elf_file_fd(mod->filename, fd);
+	if (!module) {
+		error("Could not read '%s': %s\n", mod->filename,
+			(errno == ENOEXEC) ? "Invalid module format" :
+				strerror(errno));
+		goto out_unlock;
+	}
+	if (newname)
+		rename_module(module, mod->modname, newname);
+	if (strip_modversion)
+		module->ops->strip_section(module, "__versions");
+	if (strip_vermagic)
+		clear_magic(module);
+
+	/* Config file might have given more options */
+	optstring = add_extra_options(mod->modname, optstring, options);
+
+	info("insmod %s %s\n", mod->filename, optstring);
+
+	if (dry_run)
+		goto out;
+
+	ret = init_module(module->data, module->len, optstring);
+	if (ret != 0) {
+		if (errno == EEXIST) {
+			if (first_time)
+				error("Module %s already in kernel.\n",
+				      newname ?: mod->modname);
+			goto out_unlock;
+		}
+		/* don't warn noisely if we're loading multiple aliases. */
+		/* one of the aliases may try to use hardware we don't have. */
+		if ((error != warn) || (verbose))
+			error("Error inserting %s (%s): %s\n",
+			      mod->modname, mod->filename,
+			      insert_moderror(errno));
+		rc = 1;
+	}
+ out:
+	release_elf_file(module);
+ out_unlock:
+	close_file(fd);
+ out_optstring:
+	free(optstring);
+	return rc;
+}
+
+/* Do recursive removal. */
+static void rmmod(struct list_head *list,
+		  const char *name,
+		  int first_time,
+		  errfn_t error,
+		  int dry_run,
+		  struct module_command *commands,
+		  int ignore_commands,
+		  int ignore_inuse,
+		  const char *cmdline_opts,
+		  int flags)
+{
+	const char *command;
+	unsigned int usecount = 0;
+	struct module *mod = list_entry(list->next, struct module, list);
+
+	/* Take first one off the list. */
+	list_del(&mod->list);
+
+	if (!name)
+		name = mod->modname;
+
+	/* Even if renamed, find commands to orig. name. */
+	command = find_command(mod->modname, commands);
+	if (command && !ignore_commands) {
+		do_command(mod->modname, command, dry_run, error,
+			   "remove", cmdline_opts);
+		goto remove_rest;
+	}
+
+	if (module_in_kernel(name, &usecount) == 0)
+		goto nonexistent_module;
+
+	if (usecount != 0) {
+		if (!ignore_inuse)
+			error("Module %s is in use.\n", name);
+		goto remove_rest;
+	}
+
+	info("rmmod %s\n", mod->filename);
+
+	if (dry_run)
+		goto remove_rest;
+
+	if (delete_module(name, O_EXCL) != 0) {
+		if (errno == ENOENT)
+			goto nonexistent_module;
+		error("Error removing %s (%s): %s\n",
+		      name, mod->filename,
+		      remove_moderror(errno));
+	}
+
+ remove_rest:
+	/* Now do things we depend. */
+	if (!list_empty(list))
+		rmmod(list, NULL, 0, warn, dry_run, commands,
+		      0, 1, "", flags);
+	return;
+
+nonexistent_module:
+	if (first_time)
+		fatal("Module %s is not in kernel.\n", mod->modname);
+	goto remove_rest;
 }
 
 static int handle_module(const char *modname,
