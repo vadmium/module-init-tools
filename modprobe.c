@@ -1183,8 +1183,7 @@ static void rmmod(struct list_head *list,
 		  struct module_command *commands,
 		  int ignore_commands,
 		  int ignore_inuse,
-		  const char *cmdline_opts,
-		  int flags)
+		  const char *cmdline_opts)
 {
 	const char *command;
 	unsigned int usecount = 0;
@@ -1230,7 +1229,7 @@ static void rmmod(struct list_head *list,
 	/* Now do things we depend. */
 	if (!list_empty(list))
 		rmmod(list, NULL, 0, warn, dry_run, commands,
-		      0, 1, "", flags);
+		      0, 1, "");
 	return;
 
 nonexistent_module:
@@ -1253,8 +1252,7 @@ static int handle_module(const char *modname,
 			  int ignore_inuse,
 			  int strip_vermagic,
 			  int strip_modversion,
-			  const char *cmdline_opts,
-			  int flags)
+			  const char *cmdline_opts)
 {
 	if (list_empty(todo_list)) {
 		const char *command;
@@ -1275,7 +1273,7 @@ static int handle_module(const char *modname,
 
 	if (remove)
 		rmmod(todo_list, newname, first_time, error, dry_run,
-		      commands, ignore_commands, 0, cmdline_opts, flags);
+		      commands, ignore_commands, 0, cmdline_opts);
 	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
 		       first_time, error, dry_run, modoptions,
@@ -1297,7 +1295,6 @@ static struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "config", 1, NULL, 'C' },
 				   { "name", 1, NULL, 'o' },
 				   { "remove", 0, NULL, 'r' },
-				   { "wait", 0, NULL, 'w' },
 				   { "showconfig", 0, NULL, 'c' },
 				   { "list", 0, NULL, 'l' },
 				   { "type", 1, NULL, 't' },
@@ -1337,14 +1334,13 @@ int main(int argc, char *argv[])
 	char *newname = NULL;
 	char *dirname, *aliasfilename, *symfilename;
 	errfn_t error = fatal;
-	int flags = O_NONBLOCK|O_EXCL;
 	int failed = 0;
 
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rwclt:aibf", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rclt:aibf", options, NULL)) != -1){
 		switch (opt) {
 		case 'V':
 			puts(PACKAGE " version " VERSION);
@@ -1386,9 +1382,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'r':
 			remove = 1;
-			break;
-		case 'w':
-			flags &= ~O_NONBLOCK;
 			break;
 		case 'c':
 			dump_config = 1;
@@ -1544,7 +1537,7 @@ int main(int argc, char *argv[])
 					      commands, ignore_commands,
 					      ignore_inuse, strip_vermagic,
 					      strip_modversion,
-					      cmdline_opts, flags))
+					      cmdline_opts))
 					failed = 1;
 
 				aliases = aliases->next;
@@ -1560,7 +1553,7 @@ int main(int argc, char *argv[])
 				      modoptions, commands,
 				      ignore_commands, ignore_inuse,
 				      strip_vermagic, strip_modversion,
-				      cmdline_opts, flags))
+				      cmdline_opts))
 				failed = 1;
 		}
 	}
