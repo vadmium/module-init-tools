@@ -1077,7 +1077,7 @@ static int insmod(struct list_head *list,
 		   const struct module_options *options,
 		   const struct module_command *commands,
 		   int ignore_commands,
-		   int ignore_proc,
+		   int ignore_inuse,
 		   int strip_vermagic,
 		   int strip_modversion,
 		   const char *cmdline_opts)
@@ -1094,7 +1094,7 @@ static int insmod(struct list_head *list,
 	/* Do things we (or parent) depend on first. */
 	if (!list_empty(list)) {
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL, 0, warn,
-		       dry_run, options, commands, 0, ignore_proc,
+		       dry_run, options, commands, 0, ignore_inuse,
 		       strip_vermagic, strip_modversion, "")) != 0) {
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
@@ -1111,7 +1111,7 @@ static int insmod(struct list_head *list,
 	}
 
 	/* Don't do ANYTHING if already in kernel. */
-	if (!ignore_proc
+	if (!ignore_inuse
 	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
 		if (first_time)
 			error("Module %s already in kernel.\n",
@@ -1250,7 +1250,7 @@ static int handle_module(const char *modname,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
 			  int ignore_commands,
-			  int ignore_proc,
+			  int ignore_inuse,
 			  int strip_vermagic,
 			  int strip_modversion,
 			  const char *cmdline_opts,
@@ -1279,7 +1279,7 @@ static int handle_module(const char *modname,
 	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
 		       first_time, error, dry_run, modoptions,
-		       commands, ignore_commands, ignore_proc, strip_vermagic,
+		       commands, ignore_commands, ignore_inuse, strip_vermagic,
 		       strip_modversion, cmdline_opts);
 
 	return 0;
@@ -1317,7 +1317,7 @@ int main(int argc, char *argv[])
 	struct utsname buf;
 	struct stat statbuf;
 	int opt;
-	int dump_only = 0;
+	int dump_config = 0;
 	int dry_run = 0;
 	int remove = 0;
 	int list_only = 0;
@@ -1325,20 +1325,20 @@ int main(int argc, char *argv[])
 	int ignore_commands = 0;
 	int strip_vermagic = 0;
 	int strip_modversion = 0;
-	int ignore_proc = 0;
+	int ignore_inuse = 0;
 	int first_time = 0;
 	int dump_modver = 0;
 	int use_blacklist = 0;
 	unsigned int i, num_modules;
 	char *type = NULL;
-	const char *config = NULL;
+	const char *configname = NULL;
 	char *basedir = "";
-	char *optstring = NULL;
+	char *cmdline_opts = NULL;
 	char *newname = NULL;
 	char *dirname, *aliasfilename, *symfilename;
 	errfn_t error = fatal;
 	int flags = O_NONBLOCK|O_EXCL;
-	int was_error = 0;
+	int failed = 0;
 
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
@@ -1372,13 +1372,13 @@ int main(int argc, char *argv[])
 			buf.release[sizeof(buf.release)-1] = '\0';
 			break;
 		case 'C':
-			config = optarg;
+			configname = optarg;
 			add_to_env_var("-C");
-			add_to_env_var(config);
+			add_to_env_var(configname);
 			break;
 		case 'D':
 			dry_run = 1;
-			ignore_proc = 1;
+			ignore_inuse = 1;
 			verbose = 1;
 			break;
 		case 'o':
@@ -1391,7 +1391,7 @@ int main(int argc, char *argv[])
 			flags &= ~O_NONBLOCK;
 			break;
 		case 'c':
-			dump_only = 1;
+			dump_config = 1;
 			break;
 		case 'l':
 			list_only = 1;
@@ -1436,7 +1436,7 @@ int main(int argc, char *argv[])
 		logging = 1;
 	}
 
-	if (argc < optind + 1 && !dump_only && !list_only)
+	if (argc < optind + 1 && !dump_config && !list_only)
 		print_usage(argv[0]);
 
 	nofail_asprintf(&dirname, "%s%s/%s", basedir, MODULE_DIR, buf.release);
@@ -1453,13 +1453,13 @@ int main(int argc, char *argv[])
 	if (type)
 		fatal("-t only supported with -l");
 
-	if (dump_only) {
+	if (dump_config) {
 		struct module_command *commands = NULL;
 		struct module_options *modoptions = NULL;
 		struct module_alias *aliases = NULL;
 		struct module_blacklist *blacklist = NULL;
 
-		parse_toplevel_config(config, "", 1, 0, &modoptions,
+		parse_toplevel_config(configname, "", 1, 0, &modoptions,
 				      &commands, &aliases, &blacklist);
 		/* Read module options from kernel command line */
 		parse_kcmdline(1, &modoptions);
@@ -1472,10 +1472,10 @@ int main(int argc, char *argv[])
 
 	if (remove || all) {
 		num_modules = argc - optind;
-		optstring = NOFAIL(strdup(""));
+		cmdline_opts = NOFAIL(strdup(""));
 	} else {
 		num_modules = 1;
-		optstring = gather_options(argv+optind+1);
+		cmdline_opts = gather_options(argv+optind+1);
 	}
 
 	/* num_modules is always 1 except for -r or -a. */
@@ -1485,39 +1485,39 @@ int main(int argc, char *argv[])
 		struct module_alias *aliases = NULL;
 		struct module_blacklist *blacklist = NULL;
 		LIST_HEAD(list);
-		char *modulearg = argv[optind + i];
+		char *modname = argv[optind + i];
 
 		if (dump_modver) {
-			dump_modversions(modulearg, error);
+			dump_modversions(modname, error);
 			continue;
 		}
 
 		/* Convert name we are looking for */
-		underscores(modulearg);
+		underscores(modname);
 
 		/* Returns the resolved alias, options */
-		parse_toplevel_config(config, modulearg, 0,
+		parse_toplevel_config(configname, modname, 0,
 		     remove, &modoptions, &commands, &aliases, &blacklist);
 
 		/* Read module options from kernel command line */
 		parse_kcmdline(0, &modoptions);
 
 		/* No luck?  Try symbol names, if starts with symbol:. */
-		if (!aliases && strstarts(modulearg, "symbol:")) {
-			parse_config_file(symfilename, modulearg, 0,
+		if (!aliases && strstarts(modname, "symbol:")) {
+			parse_config_file(symfilename, modname, 0,
 					  remove, &modoptions, &commands,
 					  &aliases, &blacklist);
 		}
 		if (!aliases) {
-			if(!strchr(modulearg, ':'))
-				read_depends(dirname, modulearg, &list);
+			if(!strchr(modname, ':'))
+				read_depends(dirname, modname, &list);
 
 			/* We only use canned aliases as last resort. */
 			if (list_empty(&list)
-			    && !find_command(modulearg, commands))
+			    && !find_command(modname, commands))
 			{
 				read_aliases_file(aliasfilename,
-						  modulearg, 0, remove,
+						  modname, 0, remove,
 						  &modoptions, &commands,
 						  &aliases, &blacklist);
 			}
@@ -1532,8 +1532,8 @@ int main(int argc, char *argv[])
 				err = warn;
 			while (aliases) {
 				/* Add the options for this alias. */
-				char *opts = NOFAIL(strdup(optstring));
-				opts = add_extra_options(modulearg,
+				char *opts = NOFAIL(strdup(cmdline_opts));
+				opts = add_extra_options(modname,
 							 opts, modoptions);
 
 				read_depends(dirname, aliases->module, &list);
@@ -1542,26 +1542,26 @@ int main(int argc, char *argv[])
 					      first_time, err,
 					      dry_run, modoptions,
 					      commands, ignore_commands,
-					      ignore_proc, strip_vermagic,
+					      ignore_inuse, strip_vermagic,
 					      strip_modversion,
-					      optstring, flags))
-					was_error = 1;
+					      cmdline_opts, flags))
+					failed = 1;
 
 				aliases = aliases->next;
 				INIT_LIST_HEAD(&list);
 			}
 		} else {
 			if (use_blacklist
-			    && find_blacklist(modulearg, blacklist))
+			    && find_blacklist(modname, blacklist))
 				continue;
 
-			if (handle_module(modulearg, &list, newname, remove,
-				      optstring, first_time, error, dry_run,
+			if (handle_module(modname, &list, newname, remove,
+				      cmdline_opts, first_time, error, dry_run,
 				      modoptions, commands,
-				      ignore_commands, ignore_proc,
+				      ignore_commands, ignore_inuse,
 				      strip_vermagic, strip_modversion,
-				      optstring, flags))
-				was_error = 1;
+				      cmdline_opts, flags))
+				failed = 1;
 		}
 	}
 	if (logging)
@@ -1570,9 +1570,9 @@ int main(int argc, char *argv[])
 	free(dirname);
 	free(aliasfilename);
 	free(symfilename);
-	free(optstring);
+	free(cmdline_opts);
 
-	if (was_error)
+	if (failed)
 		exit(1);
 	else
 		exit(0);
