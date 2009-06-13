@@ -1285,6 +1285,87 @@ static int handle_module(modprobe_flags_t flags,
 	return 0;
 }
 
+int do_modprobe(modprobe_flags_t flags,
+		errfn_t error,
+		char *modname,
+		char *newname,
+		char *cmdline_opts,
+		const char *configname,
+		const char *dirname,
+		const char *aliasfilename,
+		const char *symfilename)
+{
+	struct module_command *commands = NULL;
+	struct module_options *modoptions = NULL;
+	struct module_alias *aliases = NULL;
+	struct module_blacklist *blacklist = NULL;
+	LIST_HEAD(list);
+	int failed = 0;
+
+	/* Convert name we are looking for */
+	underscores(modname);
+
+	/* Returns the resolved alias, options */
+	parse_toplevel_config(configname, modname, 0,
+	     flags & mit_remove, &modoptions, &commands, &aliases, &blacklist);
+
+	/* Read module options from kernel command line */
+	parse_kcmdline(0, &modoptions);
+
+	/* No luck?  Try symbol names, if starts with symbol:. */
+	if (!aliases && strstarts(modname, "symbol:")) {
+		parse_config_file(symfilename, modname, 0,
+				  flags & mit_remove, &modoptions, &commands,
+				  &aliases, &blacklist);
+	}
+	if (!aliases) {
+		if(!strchr(modname, ':'))
+			read_depends(dirname, modname, &list);
+
+		/* We only use canned aliases as last resort. */
+		if (list_empty(&list)
+		    && !find_command(modname, commands))
+		{
+			read_aliases_file(aliasfilename,
+					  modname, 0, flags & mit_remove,
+					  &modoptions, &commands,
+					  &aliases, &blacklist);
+		}
+	}
+
+	aliases = apply_blacklist(aliases, blacklist);
+	if (aliases) {
+		errfn_t err = error;
+
+		/* More than one alias?  Don't bail out on failure. */
+		if (aliases->next)
+			err = warn;
+		while (aliases) {
+			/* Add the options for this alias. */
+			char *opts = NOFAIL(strdup(cmdline_opts));
+			opts = add_extra_options(modname,
+						 opts, modoptions);
+
+			read_depends(dirname, aliases->module, &list);
+			failed |= handle_module(flags, aliases->module,
+				&list, newname, opts, err, modoptions,
+				commands, cmdline_opts);
+
+			aliases = aliases->next;
+			INIT_LIST_HEAD(&list);
+		}
+	} else {
+		if (flags & mit_use_blacklist
+		    && find_blacklist(modname, blacklist))
+			return failed;
+
+		failed |= handle_module(flags, modname, &list,
+			newname, cmdline_opts, error, modoptions,
+			commands, cmdline_opts);
+	}
+	return failed;
+}
+
 static struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "verbose", 0, NULL, 'v' },
 				   { "quiet", 0, NULL, 'q' },
@@ -1467,79 +1548,15 @@ int main(int argc, char *argv[])
 
 	/* num_modules is always 1 except for -r or -a. */
 	for (i = 0; i < num_modules; i++) {
-		struct module_command *commands = NULL;
-		struct module_options *modoptions = NULL;
-		struct module_alias *aliases = NULL;
-		struct module_blacklist *blacklist = NULL;
-		LIST_HEAD(list);
 		char *modname = argv[optind + i];
 
-		if (dump_modver) {
+		if (dump_modver)
 			dump_modversions(modname, error);
-			continue;
-		}
+		else
+			failed |= do_modprobe(flags, error, modname,
+				newname, cmdline_opts, configname, dirname,
+				aliasfilename, symfilename);
 
-		/* Convert name we are looking for */
-		underscores(modname);
-
-		/* Returns the resolved alias, options */
-		parse_toplevel_config(configname, modname, 0,
-		     flags & mit_remove, &modoptions, &commands, &aliases, &blacklist);
-
-		/* Read module options from kernel command line */
-		parse_kcmdline(0, &modoptions);
-
-		/* No luck?  Try symbol names, if starts with symbol:. */
-		if (!aliases && strstarts(modname, "symbol:")) {
-			parse_config_file(symfilename, modname, 0,
-					  flags & mit_remove, &modoptions, &commands,
-					  &aliases, &blacklist);
-		}
-		if (!aliases) {
-			if(!strchr(modname, ':'))
-				read_depends(dirname, modname, &list);
-
-			/* We only use canned aliases as last resort. */
-			if (list_empty(&list)
-			    && !find_command(modname, commands))
-			{
-				read_aliases_file(aliasfilename,
-						  modname, 0, flags & mit_remove,
-						  &modoptions, &commands,
-						  &aliases, &blacklist);
-			}
-		}
-
-		aliases = apply_blacklist(aliases, blacklist);
-		if (aliases) {
-			errfn_t err = error;
-
-			/* More than one alias?  Don't bail out on failure. */
-			if (aliases->next)
-				err = warn;
-			while (aliases) {
-				/* Add the options for this alias. */
-				char *opts = NOFAIL(strdup(cmdline_opts));
-				opts = add_extra_options(modname,
-							 opts, modoptions);
-
-				read_depends(dirname, aliases->module, &list);
-				failed |= handle_module(flags, aliases->module,
-					&list, newname, opts, err, modoptions,
-					commands, cmdline_opts);
-
-				aliases = aliases->next;
-				INIT_LIST_HEAD(&list);
-			}
-		} else {
-			if (flags & mit_use_blacklist
-			    && find_blacklist(modname, blacklist))
-				continue;
-
-			failed |= handle_module(flags, modname, &list,
-				newname, cmdline_opts, error, modoptions,
-				commands, cmdline_opts);
-		}
 	}
 	if (logging)
 		closelog();
