@@ -67,7 +67,7 @@ typedef enum
 	mit_first_time = 4,
 	mit_use_blacklist = 8,
 	mit_ignore_commands = 16,
-	mit_ignore_inuse = 32,
+	mit_ignore_loaded = 32,
 	mit_strip_vermagic = 64,
 	mit_strip_modversion = 128
 
@@ -1081,14 +1081,14 @@ static void do_command(const char *modname,
 }
 
 /* Actually do the insert.  Frees second arg. */
-static int insmod(modprobe_flags_t flags,
-		  struct list_head *list,
+static int insmod(struct list_head *list,
 		   char *optstring,
 		   const char *newname,
-		   errfn_t error,
 		   const struct module_options *options,
 		   const struct module_command *commands,
-		   const char *cmdline_opts)
+		   const char *cmdline_opts,
+		   errfn_t error,
+		   modprobe_flags_t flags)
 {
 	int ret, fd;
 	struct elf_file *module;
@@ -1104,8 +1104,8 @@ static int insmod(modprobe_flags_t flags,
 		modprobe_flags_t f = flags;
 		f &= ~mit_first_time;
 		f &= ~mit_ignore_commands;
-		if ((rc = insmod(f, list, NOFAIL(strdup("")), NULL, warn,
-		       options, commands, "")) != 0) {
+		if ((rc = insmod(list, NOFAIL(strdup("")), NULL,
+		       options, commands, "", warn, f)) != 0) {
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
 				insert_moderror(errno));
@@ -1121,7 +1121,7 @@ static int insmod(modprobe_flags_t flags,
 	}
 
 	/* Don't do ANYTHING if already in kernel. */
-	if (!(flags & mit_ignore_inuse)
+	if (!(flags & mit_ignore_loaded)
 	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
 		if (flags & mit_first_time)
 			error("Module %s already in kernel.\n",
@@ -1185,12 +1185,12 @@ static int insmod(modprobe_flags_t flags,
 }
 
 /* Do recursive removal. */
-static void rmmod(modprobe_flags_t flags,
-		  struct list_head *list,
+static void rmmod(struct list_head *list,
 		  const char *name,
-		  errfn_t error,
 		  struct module_command *commands,
-		  const char *cmdline_opts)
+		  const char *cmdline_opts,
+		  errfn_t error,
+		  modprobe_flags_t flags)
 {
 	const char *command;
 	unsigned int usecount = 0;
@@ -1214,7 +1214,7 @@ static void rmmod(modprobe_flags_t flags,
 		goto nonexistent_module;
 
 	if (usecount != 0) {
-		if (!(flags & mit_ignore_inuse))
+		if (!(flags & mit_ignore_loaded))
 			error("Module %s is in use.\n", name);
 		goto remove_rest;
 	}
@@ -1235,10 +1235,11 @@ static void rmmod(modprobe_flags_t flags,
  remove_rest:
 	/* Now do things we depend. */
 	if (!list_empty(list)) {
-		flags &= ~(mit_first_time | mit_ignore_commands);
-		flags |= mit_ignore_inuse;
+		flags &= ~mit_first_time;
+		flags &= ~mit_ignore_commands;
+		flags |= mit_ignore_loaded;
 
-		rmmod(flags, list, NULL, warn, commands, "");
+		rmmod(list, NULL, commands, "", warn, flags);
 	}
 	return;
 
@@ -1248,15 +1249,15 @@ nonexistent_module:
 	goto remove_rest;
 }
 
-static int handle_module(modprobe_flags_t flags,
-			 const char *modname,
+static int handle_module(const char *modname,
 			  struct list_head *todo_list,
 			  const char *newname,
 			  char *options,
-			  errfn_t error,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
-			  const char *cmdline_opts)
+			  const char *cmdline_opts,
+			  errfn_t error,
+			  modprobe_flags_t flags)
 {
 	if (list_empty(todo_list)) {
 		const char *command;
@@ -1276,24 +1277,24 @@ static int handle_module(modprobe_flags_t flags,
 	}
 
 	if (flags & mit_remove) {
-		flags &= ~mit_ignore_inuse;
-		rmmod(flags, todo_list, newname, error, commands, cmdline_opts);
+		flags &= ~mit_ignore_loaded;
+		rmmod(todo_list, newname, commands, cmdline_opts, error, flags);
 	} else
-		insmod(flags, todo_list, NOFAIL(strdup(options)), newname,
-		       error, modoptions, commands, cmdline_opts);
+		insmod(todo_list, NOFAIL(strdup(options)), newname,
+		       modoptions, commands, cmdline_opts, error, flags);
 
 	return 0;
 }
 
-int do_modprobe(modprobe_flags_t flags,
-		errfn_t error,
-		char *modname,
+int do_modprobe(char *modname,
 		char *newname,
 		char *cmdline_opts,
 		const char *configname,
 		const char *dirname,
 		const char *aliasfilename,
-		const char *symfilename)
+		const char *symfilename,
+		errfn_t error,
+		modprobe_flags_t flags)
 {
 	struct module_command *commands = NULL;
 	struct module_options *modoptions = NULL;
@@ -1347,9 +1348,9 @@ int do_modprobe(modprobe_flags_t flags,
 						 opts, modoptions);
 
 			read_depends(dirname, aliases->module, &list);
-			failed |= handle_module(flags, aliases->module,
-				&list, newname, opts, err, modoptions,
-				commands, cmdline_opts);
+			failed |= handle_module(aliases->module,
+				&list, newname, opts, modoptions,
+				commands, cmdline_opts, err, flags);
 
 			aliases = aliases->next;
 			INIT_LIST_HEAD(&list);
@@ -1359,9 +1360,8 @@ int do_modprobe(modprobe_flags_t flags,
 		    && find_blacklist(modname, blacklist))
 			return failed;
 
-		failed |= handle_module(flags, modname, &list,
-			newname, cmdline_opts, error, modoptions,
-			commands, cmdline_opts);
+		failed |= handle_module(modname, &list, newname, cmdline_opts,
+			modoptions, commands, cmdline_opts, error, flags);
 	}
 	return failed;
 }
@@ -1449,7 +1449,8 @@ int main(int argc, char *argv[])
 			add_to_env_var(configname);
 			break;
 		case 'D':
-			flags |= mit_dry_run | mit_ignore_inuse;
+			flags |= mit_dry_run;
+			flags |= mit_ignore_loaded;
 			verbose = 1;
 			break;
 		case 'o':
@@ -1553,9 +1554,9 @@ int main(int argc, char *argv[])
 		if (dump_modver)
 			dump_modversions(modname, error);
 		else
-			failed |= do_modprobe(flags, error, modname,
-				newname, cmdline_opts, configname, dirname,
-				aliasfilename, symfilename);
+			failed |= do_modprobe(modname, newname, cmdline_opts,
+				configname, dirname, aliasfilename, symfilename,
+				error, flags);
 
 	}
 	if (logging)
