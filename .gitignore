@@ -30,6 +30,12 @@ rmmod
 # But don't ignore the symlinks with the same names in this directory
 !tests/valgrind/*
 
+# cscope/tags
+tags
+TAGS
+cscope.*
+ncscope.*
+
 # Generated documentation
 *.8
 *.5
