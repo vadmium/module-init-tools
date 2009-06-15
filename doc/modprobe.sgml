@@ -217,20 +217,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-w</option> <option>--wait</option>
-        </term>
-        <listitem>
-          <para>
-            This option is applicable only with the -r or --remove option.
-            It causes modprobe to block in the kernel (within the kernel
-            module handling code itself) waiting for the specified module's
-            reference count to reach zero. Default operation is for modprobe
-            to operate like rmmod, which exits with EWOULDBLOCK if the
-            module's reference count is non-zero.
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>-V</option> <option>--version</option>
         </term>
         <listitem>
