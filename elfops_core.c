@@ -122,8 +122,7 @@ static char *PERBIT(get_modinfo)(struct elf_file *module, unsigned long *size)
 #define STT_REGISTER    13              /* Global register reserved to app. */
 #endif
 
-static struct string_table *PERBIT(load_dep_syms)(const char *pathname,
-						  struct elf_file *module,
+static struct string_table *PERBIT(load_dep_syms)(struct elf_file *module,
 						  struct string_table **types)
 {
 	unsigned int i;
@@ -143,7 +142,7 @@ static struct string_table *PERBIT(load_dep_syms)(const char *pathname,
 
 	if (!strings || !syms) {
 		warn("Couldn't find symtab and strtab in module %s\n",
-		     pathname);
+		     module->pathname);
 		return NULL;
 	}
 

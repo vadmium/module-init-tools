@@ -656,7 +656,7 @@ static void calculate_deps(struct module *module)
 	module->deps = NULL;
 	file = module->file;
 
-	symnames = file->ops->load_dep_syms(module->pathname, file, &symtypes);
+	symnames = file->ops->load_dep_syms(file, &symtypes);
 	if (!symnames || !symtypes)
 		return;
 
