@@ -6,16 +6,6 @@
 
 /* All the icky stuff to do with manipulating 64 and 32-bit modules
    belongs here. */
-struct kernel_symbol32 {
-	char value[4];
-	char name[64 - 4];
-};
-
-struct kernel_symbol64 {
-	char value[8];
-	char name[64 - 8];
-};
-
 struct modver_info32
 {
 	uint32_t crc;

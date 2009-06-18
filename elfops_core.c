@@ -102,29 +102,10 @@ static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 
 static struct string_table *PERBIT(load_symbols)(struct elf_file *module)
 {
-	struct PERBIT(kernel_symbol) *ksyms;
-	struct string_table *symtbl;
-	unsigned long i, size;
+	struct string_table *symtbl = NULL;
 
-	symtbl = NULL;
-
-	/* New-style: strings are in this section. */
-	symtbl = PERBIT(load_strings)(module, "__ksymtab_strings", symtbl, fatal);
-	if (symtbl) {
-		/* GPL symbols too */
-		return PERBIT(load_strings)(module, "__ksymtab_strings_gpl",
-			symtbl, fatal);
-	}
-
-	/* Old-style. */
-	ksyms = PERBIT(load_section)(module, "__ksymtab", &size);
-	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
-		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
-	ksyms = PERBIT(load_section)(module, "__gpl_ksymtab", &size);
-	for (i = 0; i < size / sizeof(struct PERBIT(kernel_symbol)); i++)
-		symtbl = NOFAIL(strtbl_add(ksyms[i].name, symtbl));
-
-	return symtbl;
+	return PERBIT(load_strings)(module, "__ksymtab_strings", symtbl,
+			fatal);
 }
 
 static char *PERBIT(get_aliases)(struct elf_file *module, unsigned long *size)
