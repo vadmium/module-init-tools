@@ -18,6 +18,7 @@ missing
 
 # Compiled executables
 *.o
+*.a
 depmod
 insmod
 insmod.static
