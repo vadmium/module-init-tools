@@ -68,6 +68,7 @@ struct symbol
 {
 	struct symbol *next;
 	struct module *owner;
+	uint64_t ver;
 	char name[0];
 };
 
@@ -86,12 +87,13 @@ static inline unsigned int tdb_hash(const char *name)
 	return (1103515243 * value + 12345);
 }
 
-void add_symbol(const char *name, struct module *owner)
+void add_symbol(const char *name, uint64_t ver, struct module *owner)
 {
 	unsigned int hash;
 	struct symbol *new = NOFAIL(malloc(sizeof *new + strlen(name) + 1));
 
 	new->owner = owner;
+	new->ver = ver;
 	strcpy(new->name, name);
 
 	hash = tdb_hash(name) % SYMBOL_HASH_SIZE;
@@ -99,9 +101,10 @@ void add_symbol(const char *name, struct module *owner)
 	symbolhash[hash] = new;
 }
 
-static int print_unknown;
+static int print_unknown, check_symvers;
 
-struct module *find_symbol(const char *name, const char *modname, int weak)
+struct module *find_symbol(const char *name, uint64_t ver,
+		const char *modname, int weak)
 {
 	struct symbol *s;
 
@@ -111,7 +114,13 @@ struct module *find_symbol(const char *name, const char *modname, int weak)
 
 	for (s = symbolhash[tdb_hash(name) % SYMBOL_HASH_SIZE]; s; s=s->next) {
 		if (streq(s->name, name))
-			return s->owner;
+			break;
+	}
+	if (s) {
+		if (ver && s->ver && s->ver != ver && print_unknown && !weak)
+			warn("%s disagrees about version of symbol %s\n",
+					modname, name);
+		return s->owner;
 	}
 
 	if (print_unknown && !weak)
@@ -130,6 +139,14 @@ void add_dep(struct module *mod, struct module *depends_on)
 
 	mod->deps = NOFAIL(realloc(mod->deps, sizeof(mod->deps[0])*(mod->num_deps+1)));
 	mod->deps[mod->num_deps++] = depends_on;
+}
+
+static void add_fake_syms(void)
+{
+	/* __this_module is magic inserted by kernel loader. */
+	add_symbol("__this_module", 0, NULL);
+	/* On S390, this is faked up too */
+	add_symbol("_GLOBAL_OFFSET_TABLE_", 0, NULL);
 }
 
 static void load_system_map(const char *filename)
@@ -158,21 +175,45 @@ static void load_system_map(const char *filename)
 
 		/* Covers gpl-only and normal symbols. */
 		if (strstarts(ptr+1, ksymstr))
-			add_symbol(ptr+1+ksymstr_len, NULL);
+			add_symbol(ptr+1+ksymstr_len, 0, NULL);
 	}
 
 	fclose(system_map);
+	add_fake_syms();
+}
 
-	/* __this_module is magic inserted by kernel loader. */
-	add_symbol("__this_module", NULL);
-	/* On S390, this is faked up too */
-	add_symbol("_GLOBAL_OFFSET_TABLE_", NULL);
+static void load_module_symvers(const char *filename)
+{
+	FILE *module_symvers;
+	char line[10240];
+
+	module_symvers = fopen(filename, "r");
+	if (!module_symvers)
+		fatal("Could not open '%s': %s\n", filename, strerror(errno));
+
+	/* eg. "0xb352177e\tfind_first_bit\tvmlinux\tEXPORT_SYMBOL" */
+	while (fgets(line, sizeof(line)-1, module_symvers)) {
+		const char *ver, *sym, *where;
+
+		ver = strtok(line, " \t");
+		sym = strtok(NULL, " \t");
+		where = strtok(NULL, " \t");
+		if (!ver || !sym || !where)
+			continue;
+
+		if (streq(where, "vmlinux"))
+			add_symbol(sym, strtoull(ver, NULL, 16), NULL);
+	}
+
+	fclose(module_symvers);
+	add_fake_syms();
 }
 
 static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "quick", 0, NULL, 'A' },
 				   { "basedir", 1, NULL, 'b' },
 				   { "config", 1, NULL, 'C' },
+				   { "symvers", 1, NULL, 'E' },
 				   { "filesyms", 1, NULL, 'F' },
 				   { "errsyms", 0, NULL, 'e' },
 				   { "unresolved-error", 0, NULL, 'u' },
@@ -242,7 +283,10 @@ static void print_usage(const char *name)
 	"\t    --basedir basedirectory    Use an image of a module tree.\n"
 	"\t-F kernelsyms\n"
 	"\t    --filesyms kernelsyms      Use the file instead of the\n"
-	"\t                               current kernel symbols.\n",
+	"\t                               current kernel symbols.\n"
+	"\t-E Module.symvers\n"
+	"\t    --symvers Module.symvers   Use Module.symvers file to check\n"
+	"\t                               symbol versions.\n",
 	"depmod", "depmod");
 }
 
@@ -650,24 +694,28 @@ static void calculate_deps(struct module *module)
 	unsigned int i;
 	struct string_table *symnames;
 	struct string_table *symtypes;
+	uint64_t *symvers = NULL;
 	struct elf_file *file;
 
 	module->num_deps = 0;
 	module->deps = NULL;
 	file = module->file;
 
-	symnames = file->ops->load_dep_syms(file, &symtypes);
+	symnames = file->ops->load_dep_syms(file, &symtypes,
+			check_symvers ? &symvers : NULL);
 	if (!symnames || !symtypes)
 		return;
 
 	for (i = 0; i < symnames->cnt; i++) {
 		const char *name;
+		uint64_t ver;
 		struct module *owner;
 		int weak;
 
 		name = symnames->str[i];
+		ver = symvers ? symvers[i] : 0;
 		weak = (*(symtypes->str[i]) == 'W');
-		owner = find_symbol(name, module->pathname, weak);
+		owner = find_symbol(name, ver, module->pathname, weak);
 		if (owner) {
 			info("%s needs \"%s\": %s\n",
 			       module->pathname, name,
@@ -678,6 +726,7 @@ static void calculate_deps(struct module *module)
 
 	free(symnames);
 	free(symtypes);
+	free(symvers);
 }
 
 static struct module *parse_modules(struct module *list)
@@ -688,13 +737,17 @@ static struct module *parse_modules(struct module *list)
 	int j;
 
 	for (i = list; i; i = i->next) {
+		uint64_t *symvers = NULL;
 		file = i->file;
-		syms = file->ops->load_symbols(file);
+		syms = file->ops->load_symbols(file,
+				check_symvers ? &symvers : NULL);
 		if (syms) {
 			for (j = 0; j < syms->cnt; j++)
-				add_symbol(syms->str[j], i);
+				add_symbol(syms->str[j],
+					symvers ? symvers[j] : 0, i);
 			strtbl_free(syms);
 		}
+		free(symvers);
 		file->ops->fetch_tables(file, &i->tables);
 	}
 	
@@ -1175,14 +1228,15 @@ struct module_overrides *overrides = NULL;
 int main(int argc, char *argv[])
 {
 	int opt, all = 0, maybe_all = 0, doing_stdout = 0;
-	char *basedir = "", *dirname, *version, *system_map = NULL;
+	char *basedir = "", *dirname, *version;
+	char *system_map = NULL, *module_symvers = NULL;
 	int i;
 	const char *config = NULL;
 
 	if (native_endianness() == 0)
 		abort();
 
-	while ((opt = getopt_long(argc, argv, "aAb:C:F:euqrvnhVwm", options, NULL))
+	while ((opt = getopt_long(argc, argv, "aAb:C:E:F:euqrvnhVwm", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
@@ -1197,6 +1251,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'C':
 			config = optarg;
+			break;
+		case 'E':
+			module_symvers = optarg;
+			check_symvers = 1;
 			break;
 		case 'F':
 			system_map = optarg;
@@ -1233,11 +1291,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* We can't print unknowns without a System.map */
-	if (!system_map)
-		print_unknown = 0;
-	else
+	if (module_symvers)
+		load_module_symvers(module_symvers);
+	else if (system_map)
 		load_system_map(system_map);
+	else if (print_unknown) {
+		warn("-e needs -E or -F");
+		print_unknown = 0;
+	}
 
 	/* They can specify the version naked on the command line */
 	if (optind < argc && is_version_number(argv[optind])) {

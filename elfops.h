@@ -64,9 +64,10 @@ struct module_ops
 		const char *secname, unsigned long *secsize);
 	struct string_table *(*load_strings)(struct elf_file *module,
 		const char *secname, struct string_table *tbl, errfn_t error);
-	struct string_table *(*load_symbols)(struct elf_file *module);
+	struct string_table *(*load_symbols)(struct elf_file *module,
+		uint64_t **versions);
 	struct string_table *(*load_dep_syms)(struct elf_file *module,
-			struct string_table **types);
+		struct string_table **types, uint64_t **versions);
 	void (*fetch_tables)(struct elf_file *module,
 		struct module_tables *tables);
 	char *(*get_aliases)(struct elf_file *module, unsigned long *size);

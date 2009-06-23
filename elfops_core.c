@@ -100,10 +100,53 @@ static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 	return tbl;
 }
 
-static struct string_table *PERBIT(load_symbols)(struct elf_file *module)
+static struct string_table *PERBIT(load_symbols)(struct elf_file *module,
+                                                 uint64_t **versions)
 {
 	struct string_table *symtbl = NULL;
 
+	if (versions) {
+		static const char crc[] = "__crc_";
+		static const int crc_len = sizeof(crc) - 1;
+		unsigned int num_syms, i;
+		unsigned long size;
+		ElfPERBIT(Sym) *syms;
+		char *strings;
+		int conv;
+
+		*versions = NULL;
+		strings = PERBIT(load_section)(module, ".strtab", &size);
+		syms = PERBIT(load_section)(module, ".symtab", &size);
+		if (!strings || !syms)
+			goto fallback;
+		num_syms = size / sizeof(syms[0]);
+		*versions = NOFAIL(calloc(sizeof(**versions), num_syms));
+
+		conv = module->conv;
+		for (i = 1; i < num_syms; i++) {
+			const char *name;
+			name = strings + END(syms[i].st_name, conv);
+			if (strncmp(name, crc, crc_len) != 0)
+				continue;
+			name += crc_len;
+			symtbl = NOFAIL(strtbl_add(name, symtbl));
+			(*versions)[symtbl->cnt - 1] = END(syms[i].st_value,
+					conv);
+		}
+		if (!symtbl) {
+			/* Either this module does not export any symbols, or
+			 * it was compiled without CONFIG_MODVERSIONS. If the
+			 * latter, we will print a warning in load_dep_syms,
+			 * so just silently fallback to __ksymtab_strings in
+			 * both cases.
+			 */
+			free(*versions);
+			*versions = NULL;
+			goto fallback;
+		}
+		return symtbl;
+	}
+fallback:
 	return PERBIT(load_strings)(module, "__ksymtab_strings", symtbl,
 			fatal);
 }
@@ -123,37 +166,78 @@ static char *PERBIT(get_modinfo)(struct elf_file *module, unsigned long *size)
 #endif
 
 static struct string_table *PERBIT(load_dep_syms)(struct elf_file *module,
-						  struct string_table **types)
+						  struct string_table **types,
+						  uint64_t **versions)
 {
-	unsigned int i;
+	unsigned int i, num_syms;
+	unsigned int j, num_symvers, versions_size;
 	unsigned long size;
 	char *strings;
 	ElfPERBIT(Sym) *syms;
 	ElfPERBIT(Ehdr) *hdr;
+	struct PERBIT(modver_info) **symvers;
 	int handle_register_symbols;
 	struct string_table *names;
 	int conv;
 
 	names = NULL;
 	*types = NULL;
+	symvers = NULL;
+	num_symvers = versions_size = 0;
+
+	if (versions) {
+		int ok = 1;
+		*versions = NULL;
+		struct PERBIT(modver_info) *symvers_sec;
+
+		symvers_sec = module->ops->load_section(module, "__versions",
+				&size);
+		if (!symvers_sec) {
+			warn("%s is built without modversions",
+					module->pathname);
+			ok = 0;
+		}
+		if (size % sizeof(symvers[0]) != 0) {
+			warn("invalid __versions section size in %s",
+					module->pathname);
+			ok = 0;
+		}
+		if (ok) {
+			num_symvers = size / sizeof(symvers_sec[0]);
+			/* symvers is used to keep track of each visited entry.
+			 * The table also contains the fake struct_module /
+			 * module_layout symbol which we don't want to miss.
+			 */
+			symvers = NOFAIL(malloc(num_symvers *
+						sizeof(symvers[0])));
+			for (j = 0; j < num_symvers; j++)
+				symvers[j] = &symvers_sec[j];
+		} else {
+			versions = NULL;
+		}
+	}
 
 	strings = PERBIT(load_section)(module, ".strtab", &size);
 	syms = PERBIT(load_section)(module, ".symtab", &size);
-
 	if (!strings || !syms) {
 		warn("Couldn't find symtab and strtab in module %s\n",
 		     module->pathname);
-		return NULL;
+		goto out;
 	}
 
+	num_syms = size / sizeof(syms[0]);
 	hdr = module->data;
 	conv = module->conv;
+	if (versions) {
+		versions_size = num_syms;
+		*versions = NOFAIL(calloc(sizeof(**versions), versions_size));
+	}
 
 	handle_register_symbols =
 		(END(hdr->e_machine, conv) == EM_SPARC ||
 		 END(hdr->e_machine, conv) == EM_SPARCV9);
 
-	for (i = 1; i < size / sizeof(syms[0]); i++) {
+	for (i = 1; i < num_syms; i++) {
 		if (END(syms[i].st_shndx, conv) == SHN_UNDEF) {
 			/* Look for symbol */
 			const char *name;
@@ -175,8 +259,43 @@ static struct string_table *PERBIT(load_dep_syms)(struct elf_file *module,
 			names = NOFAIL(strtbl_add(name, names));
 			*types = NOFAIL(strtbl_add(weak ? weak_sym : undef_sym,
 				*types));
+
+			if (!versions)
+				continue;
+			/* Not optimal, but the number of required symbols
+			 * is usually not huge and this is only called by
+			 * depmod.
+			 */
+			for (j = 0; j < num_symvers; j++) {
+				struct PERBIT(modver_info) *info = symvers[j];
+
+				if (!info)
+					continue;
+				if (streq(name, info->name)) {
+					(*versions)[names->cnt - 1] =
+						END(info->crc, conv);
+					symvers[j] = NULL;
+					break;
+				}
+			}
 		}
 	}
+	/* add struct_module / module_layout */
+	for (j = 0; j < num_symvers; j++) {
+		struct PERBIT(modver_info) *info = symvers[j];
+
+		if (!info)
+			continue;
+		if ((names ? names->cnt : 0) >= versions_size) {
+			versions_size++;
+			*versions = NOFAIL(realloc(*versions, versions_size));
+		}
+		names = NOFAIL(strtbl_add(info->name, names));
+		*types = NOFAIL(strtbl_add(undef_sym, *types));
+		(*versions)[names->cnt - 1] = END(info->crc, conv);
+	}
+out:
+	free(symvers);
 	return names;
 }
 
