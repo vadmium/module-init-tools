@@ -6,7 +6,8 @@ section_attributes()
     readelf -W -S "$1" | cut -d\] -f2- | awk '{print $1 " " $7}' | grep -w -- "$2"
 }
 
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 
@@ -17,7 +18,7 @@ export MODTEST_DUMP_INIT
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS/rename/rename-version-$BITNESS.ko \
+ln tests/data/$BITNESS$ENDIAN/rename/rename-version-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep file (neither has dependencies).
@@ -42,6 +43,7 @@ echo "/lib/modules/$MODTEST_UNAME/rename-version-$BITNESS.ko:" >> $MODULE_DIR/mo
 [ "`section_attributes tests/tmp/out __versions`" = "__versions 0" ]
 [ "`section_attributes tests/tmp/out __vermagic`" = "__vermagic A" ]
 
+done
 done
 
 exit 0

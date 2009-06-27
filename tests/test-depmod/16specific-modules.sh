@@ -1,8 +1,8 @@
 #! /bin/sh
 # Test depmod with specific names on the cmdline (bug report from Andrew Snare)
 
-for ENDIAN in -be -le; do
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 

@@ -3,14 +3,15 @@
 
 [ -n "$CONFIG_HAVE_ZLIB" ] || exit 0
 
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 
 # Copy modules instead of linking, so we can compress them
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-cp tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko \
+cp tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko \
    $MODULE_DIR
 
 gzip $MODULE_DIR/noexport_nodep-$BITNESS.ko
@@ -32,4 +33,5 @@ SIZE=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
 [ "`modprobe noexport-nodep_$BITNESS foo=\"bar baz\" 2>&1`" = "INIT_MODULE: $SIZE foo=\"bar baz\"" ]
 [ "`modprobe noexport_nodep_$BITNESS foo=\"bar baz\" 2>&1`" = "INIT_MODULE: $SIZE foo=\"bar baz\"" ]
 
+done
 done

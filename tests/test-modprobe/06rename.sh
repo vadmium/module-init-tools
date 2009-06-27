@@ -1,7 +1,8 @@
 #! /bin/sh
 # Test the module renaming code.
 
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 
@@ -12,8 +13,8 @@ export MODTEST_DUMP_INIT
 # Create inputs
 MODULE_DIR=tests/tmp/lib/modules/$MODTEST_UNAME
 mkdir -p $MODULE_DIR
-ln tests/data/$BITNESS/rename/rename-new-$BITNESS.ko \
-   tests/data/$BITNESS/rename/rename-old-$BITNESS.ko \
+ln tests/data/$BITNESS$ENDIAN/rename/rename-new-$BITNESS.ko \
+   tests/data/$BITNESS$ENDIAN/rename/rename-old-$BITNESS.ko \
    $MODULE_DIR
 
 # Set up modules.dep file (neither has dependencies).
@@ -95,4 +96,5 @@ strings tests/tmp/out | grep -q 'short'
 if strings tests/tmp/out | grep -q 'rename_new'; then exit 1; fi
 strings tests/tmp/out | grep -q 'very_very_long_name'
 
+done
 done

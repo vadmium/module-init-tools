@@ -1,8 +1,8 @@
 #! /bin/sh
 # Simple tests of generation of 32-bit and 64-bit modules.dep
 
-for ENDIAN in -be -le; do
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 

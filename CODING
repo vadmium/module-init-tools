@@ -32,6 +32,10 @@ what the test is doing, use -vv, eg
 
 	./tests/runtests -vv 26blacklist.sh
 
+To only test a given endianess or bitness, use
+
+	TEST_ENDIAN=32 TEST_BITS=le ./tests/runtests
+
 Each test is a shell script run with "-e": ie. if any command fails,
 the test will fail.  The path is set up with special test versions of
 the utilities (and possibly valgrind wrappers), so just invoke

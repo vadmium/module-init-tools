@@ -1,8 +1,8 @@
 #! /bin/sh
 # Check for undefined symbols.
 
-for ENDIAN in -le -be; do
-for BITNESS in 32 64; do
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 

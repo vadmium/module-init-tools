@@ -9,6 +9,8 @@ usage()
     echo " -v (or --verbose) prints each test as it is run"
     echo " -vv (very verbose) traces test execution"
     echo " --valgrind runs the test programs using the valgrind memory checker"
+    echo "The TEST_ENDIAN and TEST_BITS variables can be used to limit which"
+    echo "endianess (le, be) and bitness (32, 64) will be tested"
     exit
 }
 
@@ -82,6 +84,34 @@ if [ ! -e "tests/tmp" ]; then
     echo Making temporary directory for tests
     mkdir tests/tmp
 fi
+
+: ${TEST_ENDIAN:=-be -le}
+_tmp=
+for e in $TEST_ENDIAN; do
+	case $e in
+	-be | -le)
+		_tmp="$_tmp $e"
+		;;
+	be | le)
+		_tmp="$_tmp -$e"
+		;;
+	*)
+		echo "Unknown endian: $e, valid values are \"be\" and \"le\"" >&2
+		exit 1
+	esac
+done
+TEST_ENDIAN="$_tmp"
+
+: ${TEST_BITS:=32 64}
+for b in $TEST_BITS; do
+	case $b in
+	32 | 64)
+		;;
+	*)
+		echo "Unknown word size: $b, valid values are 32 and 64" >&2
+		exit 1
+	esac
+done
 
 for config in --enable-zlib --disable-zlib; do
     echo Building with $config...

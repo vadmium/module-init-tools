@@ -1,8 +1,8 @@
 #! /bin/sh
 # Check that -A works correctly.
 
-ENDIAN=-le
-BITNESS=32
+for ENDIAN in $TEST_ENDIAN; do
+for BITNESS in $TEST_BITS; do
 
 rm -rf tests/tmp/*
 
@@ -73,3 +73,6 @@ rm $MODULE_DIR/noexport_doubledep-$BITNESS.ko
 [ "`depmod -A 2>&1`" = "" ]
 diff -u /dev/null $MODULE_DIR/modules.dep
 diff -u /dev/null $MODULE_DIR/modules.symbols
+
+done
+done
