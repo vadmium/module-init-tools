@@ -14,6 +14,7 @@ depcomp
 install-sh
 Makefile.in
 Makefile
+!tests/data/Makefile
 missing
 
 # Compiled executables
