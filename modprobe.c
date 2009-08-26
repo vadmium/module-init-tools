@@ -69,7 +69,8 @@ typedef enum
 	mit_ignore_commands = 16,
 	mit_ignore_loaded = 32,
 	mit_strip_vermagic = 64,
-	mit_strip_modversion = 128
+	mit_strip_modversion = 128,
+	mit_resolve_alias = 256
 
 } modprobe_flags_t;
 
@@ -1335,6 +1336,11 @@ int do_modprobe(char *modname,
 	}
 
 	aliases = apply_blacklist(aliases, blacklist);
+	if(flags & mit_resolve_alias) {
+		for(; aliases; aliases=aliases->next)
+			printf("%s\n", aliases->module);
+		return 0;
+	}
 	if (aliases) {
 		errfn_t err = error;
 
@@ -1373,6 +1379,7 @@ static struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "show", 0, NULL, 'n' },
 				   { "dry-run", 0, NULL, 'n' },
 				   { "show-depends", 0, NULL, 'D' },
+				   { "resolve-alias", 0, NULL, 'R' },
 				   { "dirname", 1, NULL, 'd' },
 				   { "set-version", 1, NULL, 'S' },
 				   { "config", 1, NULL, 'C' },
@@ -1452,6 +1459,9 @@ int main(int argc, char *argv[])
 			flags |= mit_dry_run;
 			flags |= mit_ignore_loaded;
 			verbose = 1;
+			break;
+		case 'R':
+			flags |= mit_resolve_alias;
 			break;
 		case 'o':
 			newname = optarg;
