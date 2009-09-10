@@ -434,7 +434,7 @@ static const char *compress_path(const char *path, const char *basedir)
 	return path;
 }
 
-static void output_deps(struct module *modules,
+static int output_deps(struct module *modules,
 			FILE *out, char *dirname)
 {
 	struct module *i;
@@ -453,12 +453,13 @@ static void output_deps(struct module *modules,
 		}
 		fprintf(out, "\n");
 	}
+	return 1;
 }
 
 /* warn whenever duplicate module aliases, deps, or symbols are found. */
 int warn_dups = 0;
 
-static void output_deps_bin(struct module *modules,
+static int output_deps_bin(struct module *modules,
 			FILE *out, char *dirname)
 {
 	struct module *i;
@@ -495,6 +496,8 @@ static void output_deps_bin(struct module *modules,
 	
 	index_write(index, out);
 	index_destroy(index);
+
+	return 1;
 }
 
 
@@ -769,7 +772,7 @@ static struct module *parse_modules(struct module *list)
 }
 
 /* Simply dump hash table. */
-static void output_symbols(struct module *unused, FILE *out, char *dirname)
+static int output_symbols(struct module *unused, FILE *out, char *dirname)
 {
 	unsigned int i;
 
@@ -786,9 +789,10 @@ static void output_symbols(struct module *unused, FILE *out, char *dirname)
 			}
 		}
 	}
+	return 1;
 }
 
-static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
+static int output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 {
 	struct index_node *index;
 	unsigned int i;
@@ -817,9 +821,11 @@ static void output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 	
 	index_write(index, out);
 	index_destroy(index);
+
+	return 1;
 }
 
-static void output_aliases(struct module *modules, FILE *out, char *dirname)
+static int output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	struct elf_file *file;
@@ -849,9 +855,10 @@ static void output_aliases(struct module *modules, FILE *out, char *dirname)
 		}
 		strtbl_free(tbl);
 	}
+	return 1;
 }
 
-static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
+static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 	struct elf_file *file;
@@ -901,11 +908,13 @@ static void output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 	
 	index_write(index, out);
 	index_destroy(index);
+
+	return 1;
 }
 
 struct depfile {
 	char *name;
-	void (*func)(struct module *, FILE *, char *dirname);
+	int (*func)(struct module *, FILE *, char *dirname);
 	int map_file;
 };
 
@@ -1368,6 +1377,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < sizeof(depfiles)/sizeof(depfiles[0]); i++) {
 		FILE *out;
+		int res;
 		struct depfile *d = &depfiles[i];
 		char depname[strlen(dirname) + 1 + strlen(d->name) + 1];
 		char tmpname[strlen(dirname) + 1 + strlen(d->name) +
@@ -1388,12 +1398,18 @@ int main(int argc, char *argv[])
 			if (ends_in(depname, ".bin"))
 				continue;
 		}
-		d->func(list, out, dirname);
-		if (!doing_stdout) {
-			fclose(out);
+		res = d->func(list, out, dirname);
+		if (doing_stdout)
+			continue;
+		fclose(out);
+		if (res) {
 			if (rename(tmpname, depname) < 0)
 				fatal("Could not rename %s into %s: %s\n",
 					tmpname, depname, strerror(errno));
+		} else {
+			if (unlink(tmpname) < 0)
+				warn("Could not delete %s: %s\n",
+					tmpname, strerror(errno));
 		}
 	}
 
