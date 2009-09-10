@@ -825,6 +825,42 @@ static int output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 	return 1;
 }
 
+static int output_builtin_bin(struct module *unused, FILE *out, char *dirname)
+{
+	struct index_node *index;
+	char *textfile, *line;
+	unsigned int linenum;
+	FILE *f;
+
+	nofail_asprintf(&textfile, "%s/modules.builtin", dirname);
+	if (!(f = fopen(textfile, "r"))) {
+		if (errno != ENOENT)
+			fatal("Could not open '%s': %s\n",
+					textfile, strerror(errno));
+		free(textfile);
+		return 0;
+	}
+	free(textfile);
+	index = index_create();
+
+	while ((line = getline_wrapped(f, &linenum)) != NULL) {
+		char *module = line;
+
+		if (!*line || *line == '#') {
+			free(line);
+			continue;
+		}
+		filename2modname(module, module);
+		index_insert(index, module, "", 0);
+		free(line);
+	}
+	fclose(f);
+	index_write(index, out);
+	index_destroy(index);
+
+	return 1;
+}
+
 static int output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -932,7 +968,8 @@ static struct depfile depfiles[] = {
 	{ "modules.alias", output_aliases, 0 },
 	{ "modules.alias.bin", output_aliases_bin, 0 },
 	{ "modules.symbols", output_symbols, 0 },
-	{ "modules.symbols.bin", output_symbols_bin, 0 }
+	{ "modules.symbols.bin", output_symbols_bin, 0 },
+	{ "modules.builtin.bin", output_builtin_bin, 0 },
 };
 
 /* If we can't figure it out, it's safe to say "true". */

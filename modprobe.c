@@ -538,6 +538,24 @@ static int read_attribute(const char *filename, char *buf, size_t buflen)
 	return (s == NULL) ? -1 : 1;
 }
 
+/* is this a built-in module?
+ * 0: no, 1: yes, -1: don't know
+ */
+static int module_builtin(const char *dirname, const char *modname)
+{
+	struct index_file *index;
+	char *filename, *value;
+
+	nofail_asprintf(&filename, "%s/modules.builtin.bin", dirname);
+	index = index_file_open(filename);
+	free(filename);
+	if (!index)
+		return -1;
+	value = index_search(index, modname);
+	free(value);
+	return value ? 1 : 0;
+}
+
 /* Is module in /sys/module?  If so, fill in usecount if not NULL. 
    0 means no, 1 means yes, -1 means unknown.
  */
@@ -1287,6 +1305,23 @@ static int handle_module(const char *modname,
 	return 0;
 }
 
+int handle_builtin_module(const char *modname,
+                          errfn_t error,
+                          modprobe_flags_t flags)
+{
+	if (flags & mit_remove) {
+		error("Module %s is builtin\n", modname);
+		return 1;
+	} else if (flags & mit_first_time) {
+		error("Module %s already in kernel (builtin).\n", modname);
+		return 1;
+	} else if (flags & mit_ignore_loaded) {
+		/* --show-depends given */
+		info("builtin %s\n", modname);
+	}
+	return 0;
+}
+
 int do_modprobe(char *modname,
 		char *newname,
 		char *cmdline_opts,
@@ -1332,6 +1367,11 @@ int do_modprobe(char *modname,
 					  modname, 0, flags & mit_remove,
 					  &modoptions, &commands,
 					  &aliases, &blacklist);
+			/* builtin module? */
+			if (!aliases && module_builtin(dirname, modname) > 0) {
+				return handle_builtin_module(modname, error,
+						flags);
+			}
 		}
 	}
 
