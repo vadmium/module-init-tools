@@ -1293,6 +1293,10 @@ static void rmmod(struct list_head *list,
 	if (!name)
 		name = mod->modname;
 
+	/* Don't do ANYTHING if not loaded. */
+	if (module_in_kernel(name, &usecount) == 0)
+		goto nonexistent_module;
+
 	/* Even if renamed, find commands to orig. name. */
 	command = find_command(mod->modname, commands);
 	if (command && !(flags & mit_ignore_commands)) {
@@ -1300,9 +1304,6 @@ static void rmmod(struct list_head *list,
 			   "remove", cmdline_opts);
 		goto remove_rest;
 	}
-
-	if (module_in_kernel(name, &usecount) == 0)
-		goto nonexistent_module;
 
 	if (usecount != 0) {
 		if (!(flags & mit_ignore_loaded))
