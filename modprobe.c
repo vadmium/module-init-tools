@@ -560,14 +560,26 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	if (ret < 0)
 		return (errno == ENOENT) ? 0 : -1; /* Not found or unknown. */
 
-	/* Wait for the existing module to either go live or disappear. */
 	nofail_asprintf(&name, "/sys/module/%s/initstate", modname);
-	while (1) {
-		ret = read_attribute(name, attr, ATTR_LEN);
-		if (ret != 1 || streq(attr, "live\n"))
-			break;
+	ret = read_attribute(name, attr, ATTR_LEN);
+	if (ret == 0) {
+		free(name);
+		nofail_asprintf(&name, "/sys/module/%s", modname);
+		if (stat(name, &finfo) < 0) {
+			/* module was removed before we could read initstate */
+			ret = 0;
+		} else {
+			/* initstate not available (2.6.19 or earlier) */
+			ret = -1;
+		}
+		free(name);
+		return ret;
+	}
 
+	/* Wait for the existing module to either go live or disappear. */
+	while (ret == 1 && !streq(attr, "live\n")) {
 		usleep(100000);
+		ret = read_attribute(name, attr, ATTR_LEN);
 	}
 	free(name);
 
