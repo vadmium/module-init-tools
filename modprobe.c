@@ -519,6 +519,59 @@ static char *add_extra_options(const char *modname,
 	return optstring;
 }
 
+/* Is module in /proc/modules?  If so, fill in usecount if not NULL.
+   0 means no, 1 means yes, -1 means unknown.
+ */
+static int module_in_procfs(const char *modname, unsigned int *usecount)
+{
+	FILE *proc_modules;
+	char *line;
+
+again:
+	/* Might not be mounted yet.  Don't fail. */
+	proc_modules = fopen("/proc/modules", "r");
+	if (!proc_modules)
+		return -1;
+
+	while ((line = getline_wrapped(proc_modules, NULL)) != NULL) {
+		char *entry = strtok(line, " \n");
+
+		if (entry && streq(entry, modname)) {
+			/* If it exists, usecount is the third entry. */
+			if (!strtok(NULL, " \n"))
+				goto out;
+
+			if (!(entry = strtok(NULL, " \n"))) /* usecount */
+				goto out;
+			else
+				if (usecount)
+					*usecount = atoi(entry);
+
+			/* Followed by - then status. */
+			if (strtok(NULL, " \n")
+			    && (entry = strtok(NULL, " \n")) != NULL) {
+				/* No locking, we might hit cases
+				 * where module is in flux.  Spin. */
+				if (streq(entry, "Loading")
+				    || streq(entry, "Unloading")) {
+					usleep(100000);
+					free(line);
+					fclose(proc_modules);
+					goto again;
+				}
+			}
+
+		out:
+			free(line);
+			fclose(proc_modules);
+			return 1;
+		}
+		free(line);
+	}
+	fclose(proc_modules);
+	return 0;
+}
+
 /* Read sysfs attribute into a buffer.
  * returns: 1 = ok, 0 = attribute missing,
  * -1 = file error (or empty file, but we don't care).
@@ -537,10 +590,10 @@ static int read_attribute(const char *filename, char *buf, size_t buflen)
 	return (s == NULL) ? -1 : 1;
 }
 
-/* Is module in /sys/module?  If so, fill in usecount if not NULL. 
+/* Is module in /sys/module?  If so, fill in usecount if not NULL.
    0 means no, 1 means yes, -1 means unknown.
  */
-static int module_in_kernel(const char *modname, unsigned int *usecount)
+static int module_in_sysfs(const char *modname, unsigned int *usecount)
 {
 	int ret;
 	char *name;
@@ -596,6 +649,22 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	}
 
 	return 1;
+}
+
+/* Is module loaded?  If so, fill in usecount if not NULL. 
+   0 means no, 1 means yes, -1 means unknown.
+ */
+static int module_in_kernel(const char *modname, unsigned int *usecount)
+{
+	int result;
+
+	result = module_in_sysfs(modname, usecount);
+	if (result != -1)
+		return result;
+
+	/* /sys/module/%s/initstate is only available since 2.6.20,
+	   fallback to /proc/modules to get module state on earlier kernels. */
+	return module_in_procfs(modname, usecount);
 }
 
 void dump_modversions(const char *filename, errfn_t error)
@@ -1146,7 +1215,8 @@ static int insmod(struct list_head *list,
 	command = find_command(mod->modname, commands);
 	if (command && !(flags & mit_ignore_commands)) {
 		if (already_loaded == -1) {
-			warn("/sys/module/ not present.\n");
+			warn("/sys/module/ not present or too old,"
+				" and /proc/modules does not exist.\n");
 			warn("Ignoring install commands for %s"
 				" in case it is already loaded.\n",
 				newname ?: mod->modname);
