@@ -62,30 +62,6 @@ static int elf_ident(void *file, unsigned long fsize, int *conv)
  */
 struct elf_file *grab_elf_file(const char *pathname)
 {
-	int fd;
-	int err;
-	struct elf_file *file;
-
-	fd = open(pathname, O_RDONLY, 0);
-	if (fd < 0)
-		return NULL;
-	file = grab_elf_file_fd(pathname, fd);
-
-	err = errno;
-	close(fd);
-	errno = err;
-	return file;
-}
-
-/*
- * grab_elf_file_fd - read ELF file from file descriptor into memory
- * @pathame: name of file to load
- * @fd: file descriptor of file to load
- *
- * Returns NULL, and errno set on error.
- */
-struct elf_file *grab_elf_file_fd(const char *pathname, int fd)
-{
 	struct elf_file *file;
 
 	file = malloc(sizeof(*file));
@@ -98,7 +74,7 @@ struct elf_file *grab_elf_file_fd(const char *pathname, int fd)
 		errno = ENOMEM;
 		goto fail_free_file;
 	}
-	file->data = grab_fd(fd, &file->len);
+	file->data = grab_file(pathname, &file->len);
 	if (!file->data)
 		goto fail_free_pathname;
 

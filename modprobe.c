@@ -100,24 +100,6 @@ static struct module *find_module(const char *filename, struct list_head *list)
 	return NULL;
 }
 
-/* We used to lock with a write flock but that allows regular users to block
- * module load by having a read lock on the module file (no way to bust the
- * existing locks without killing the offending process). Instead, we now
- * do the system call/init_module and allow the kernel to fail us instead.
- */
-static int open_file(const char *filename)
-{
-	int fd = open(filename, O_RDONLY, 0);
-
-	return fd;
-}
-
-static void close_file(int fd)
-{
-	/* Valgrind is picky... */
-	close(fd);
-}
-
 static void add_module(char *filename, int namelen, struct list_head *list)
 {
 	struct module *mod;
@@ -1193,7 +1175,7 @@ static int insmod(struct list_head *list,
 		   errfn_t error,
 		   modprobe_flags_t flags)
 {
-	int ret, fd;
+	int ret;
 	struct elf_file *module;
 	const char *command;
 	struct module *mod = list_entry(list->next, struct module, list);
@@ -1218,13 +1200,6 @@ static int insmod(struct list_head *list,
 		}
 	}
 
-	fd = open_file(mod->filename);
-	if (fd < 0) {
-		error("Could not open '%s': %s\n",
-		      mod->filename, strerror(errno));
-		goto out;
-	}
-
 	/* Don't do ANYTHING if already in kernel. */
 	already_loaded = module_in_kernel(newname ?: mod->modname, NULL);
 
@@ -1232,7 +1207,7 @@ static int insmod(struct list_head *list,
 		if (flags & mit_first_time)
 			error("Module %s already in kernel.\n",
 			      newname ?: mod->modname);
-		goto out_unlock;
+		goto out;
 	}
 
 	command = find_command(mod->modname, commands);
@@ -1244,19 +1219,18 @@ static int insmod(struct list_head *list,
 				" in case it is already loaded.\n",
 				newname ?: mod->modname);
 		} else {
-			close_file(fd);
 			do_command(mod->modname, command, flags & mit_dry_run,
 				   error, "install", cmdline_opts);
 			goto out;
 		}
 	}
 
-	module = grab_elf_file_fd(mod->filename, fd);
+	module = grab_elf_file(mod->filename);
 	if (!module) {
 		error("Could not read '%s': %s\n", mod->filename,
 			(errno == ENOEXEC) ? "Invalid module format" :
 				strerror(errno));
-		goto out_unlock;
+		goto out;
 	}
 	if (newname)
 		rename_module(module, mod->modname, newname);
@@ -1291,8 +1265,6 @@ static int insmod(struct list_head *list,
 	}
  out_elf_file:
 	release_elf_file(module);
- out_unlock:
-	close_file(fd);
 	free(opts);
  out:
 	return rc;
