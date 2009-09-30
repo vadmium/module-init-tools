@@ -1286,6 +1286,7 @@ static void rmmod(struct list_head *list,
 	const char *command;
 	unsigned int usecount = 0;
 	struct module *mod = list_entry(list->next, struct module, list);
+	int exists;
 
 	/* Take first one off the list. */
 	list_del(&mod->list);
@@ -1294,15 +1295,24 @@ static void rmmod(struct list_head *list,
 		name = mod->modname;
 
 	/* Don't do ANYTHING if not loaded. */
-	if (module_in_kernel(name, &usecount) == 0)
+	exists = module_in_kernel(name, &usecount);
+	if (exists == 0)
 		goto nonexistent_module;
 
 	/* Even if renamed, find commands to orig. name. */
 	command = find_command(mod->modname, commands);
 	if (command && !(flags & mit_ignore_commands)) {
-		do_command(mod->modname, command, flags & mit_dry_run, error,
-			   "remove", cmdline_opts);
-		goto remove_rest;
+		if (exists == -1) {
+			warn("/sys/module/ not present or too old,"
+				" and /proc/modules does not exist.\n");
+			warn("Ignoring remove commands for %s"
+				" in case it is not loaded.\n",
+				mod->modname);
+		} else {
+			do_command(mod->modname, command, flags & mit_dry_run,
+				   error, "remove", cmdline_opts);
+			goto remove_rest;
+		}
 	}
 
 	if (usecount != 0) {
