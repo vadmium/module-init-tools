@@ -68,9 +68,10 @@ typedef enum
 	mit_use_blacklist = 8,
 	mit_ignore_commands = 16,
 	mit_ignore_loaded = 32,
-	mit_strip_vermagic = 64,
-	mit_strip_modversion = 128,
-	mit_resolve_alias = 256
+	mit_quiet_inuse = 64,
+	mit_strip_vermagic = 128,
+	mit_strip_modversion = 256,
+	mit_resolve_alias = 512
 
 } modprobe_flags_t;
 
@@ -1335,7 +1336,7 @@ static void rmmod(struct list_head *list,
 	}
 
 	if (usecount != 0) {
-		if (!(flags & mit_ignore_loaded))
+		if (!(flags & mit_quiet_inuse))
 			error("Module %s is in use.\n", name);
 		goto remove_rest;
 	}
@@ -1358,7 +1359,7 @@ static void rmmod(struct list_head *list,
 	if (!list_empty(list)) {
 		flags &= ~mit_first_time;
 		flags &= ~mit_ignore_commands;
-		flags |= mit_ignore_loaded;
+		flags |= mit_quiet_inuse;
 
 		rmmod(list, NULL, commands, "", warn, flags);
 	}
@@ -1397,10 +1398,9 @@ static int handle_module(const char *modname,
 		return 1;
 	}
 
-	if (flags & mit_remove) {
-		flags &= ~mit_ignore_loaded;
+	if (flags & mit_remove)
 		rmmod(todo_list, newname, commands, cmdline_opts, error, flags);
-	} else
+	else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
 		       modoptions, commands, cmdline_opts, error, flags);
 
