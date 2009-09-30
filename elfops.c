@@ -91,17 +91,16 @@ struct elf_file *grab_elf_file_fd(const char *pathname, int fd)
 	file = malloc(sizeof(*file));
 	if (!file) {
 		errno = ENOMEM;
-		return NULL;
+		goto fail;
 	}
 	file->pathname = strdup(pathname);
 	if (!file->pathname) {
-		free(file);
 		errno = ENOMEM;
-		return NULL;
+		goto fail_free_file;
 	}
 	file->data = grab_fd(fd, &file->len);
 	if (!file->data)
-		goto fail;
+		goto fail_free_pathname;
 
 	switch (elf_ident(file->data, file->len, &file->conv)) {
 	case ELFCLASS32:
@@ -117,8 +116,12 @@ struct elf_file *grab_elf_file_fd(const char *pathname, int fd)
 		goto fail;
 	}
 	return file;
+
+fail_free_pathname:
+	free(file->pathname);
+fail_free_file:
+	free(file);
 fail:
-	release_elf_file(file);
 	return NULL;
 }
 
