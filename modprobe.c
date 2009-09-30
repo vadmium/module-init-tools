@@ -1279,7 +1279,7 @@ static int insmod(struct list_head *list,
 			if (flags & mit_first_time)
 				error("Module %s already in kernel.\n",
 				      newname ?: mod->modname);
-			goto out_unlock;
+			goto out_elf_file;
 		}
 		/* don't warn noisely if we're loading multiple aliases. */
 		/* one of the aliases may try to use hardware we don't have. */
