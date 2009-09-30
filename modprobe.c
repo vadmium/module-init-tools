@@ -1095,6 +1095,7 @@ static int insmod(struct list_head *list,
 	const char *command;
 	struct module *mod = list_entry(list->next, struct module, list);
 	int rc = 0;
+	int already_loaded;
 
 	/* Take us off the list. */
 	list_del(&mod->list);
@@ -1121,8 +1122,9 @@ static int insmod(struct list_head *list,
 	}
 
 	/* Don't do ANYTHING if already in kernel. */
-	if (!(flags & mit_ignore_loaded)
-	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
+	already_loaded = module_in_kernel(newname ?: mod->modname, NULL);
+
+	if (!(flags & mit_ignore_loaded) && already_loaded == 1) {
 		if (flags & mit_first_time)
 			error("Module %s already in kernel.\n",
 			      newname ?: mod->modname);
@@ -1131,10 +1133,17 @@ static int insmod(struct list_head *list,
 
 	command = find_command(mod->modname, commands);
 	if (command && !(flags & mit_ignore_commands)) {
-		close_file(fd);
-		do_command(mod->modname, command, flags & mit_dry_run, error,
-			   "install", cmdline_opts);
-		goto out_optstring;
+		if (already_loaded == -1) {
+			warn("/sys/module/ not present.\n");
+			warn("Ignoring install commands for %s"
+				" in case it is already loaded.\n",
+				newname ?: mod->modname);
+		} else {
+			close_file(fd);
+			do_command(mod->modname, command, flags & mit_dry_run,
+				   error, "install", cmdline_opts);
+			goto out_optstring;
+		}
 	}
 
 	module = grab_elf_file_fd(mod->filename, fd);
