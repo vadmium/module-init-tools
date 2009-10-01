@@ -367,6 +367,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--resolve-alias</option>
+        </term>
+        <listitem>
+          <para>
+	    Print all module names matching an alias.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-o</option> <option>--name</option>
         </term>
         <listitem>

@@ -10,12 +10,18 @@ extern int quiet;
 /* Do we want informative messages as well as errors? */
 extern int verbose;
 
-extern void fatal(const char *fmt, ...);
-extern void error(const char *fmt, ...);
-extern void warn(const char *fmt, ...);
-extern void info(const char *fmt, ...);
+#ifdef __GNUC__
+#define _printf __attribute__((format(printf, 1, 2)))
+#else
+#define _printf
+#endif
 
-typedef void (*errfn_t)(const char *fmt, ...);
+extern void _printf fatal(const char *fmt, ...);
+extern void _printf error(const char *fmt, ...);
+extern void _printf warn(const char *fmt, ...);
+extern void _printf info(const char *fmt, ...);
+
+typedef void _printf (*errfn_t)(const char *fmt, ...);
 
 static inline void grammar(const char *cmd,
 			   const char *filename, unsigned int line)

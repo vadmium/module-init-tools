@@ -34,7 +34,7 @@ static void output_pci_entry(struct pci_device_id *pci, char *name, FILE *out,
 		END(pci->class_mask, conv));
 }
 
-void output_pci_table(struct module *modules, FILE *out, char *dirname)
+int output_pci_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -53,6 +53,7 @@ void output_pci_table(struct module *modules, FILE *out, char *dirname)
 		for (e = t->pci_table; e->vendor; e = (void *)e + t->pci_size)
 			output_pci_entry(e, shortname, out, i->file->conv);
 	}
+	return 1;
 }
 
 /* We set driver_info to zero */
@@ -78,7 +79,7 @@ static void output_usb_entry(struct usb_device_id *usb, char *name, FILE *out,
 		END(usb->bInterfaceProtocol, conv));
 }
 
-void output_usb_table(struct module *modules, FILE *out, char *dirname)
+int output_usb_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -104,6 +105,7 @@ void output_usb_table(struct module *modules, FILE *out, char *dirname)
 		     e = (void *)e + t->usb_size)
 			output_usb_entry(e, shortname, out, i->file->conv);
 	}
+	return 1;
 }
 
 static void output_ieee1394_entry(struct ieee1394_device_id *fw, char *name,
@@ -118,7 +120,7 @@ static void output_ieee1394_entry(struct ieee1394_device_id *fw, char *name,
 		END(fw->version, conv));
 }
 
-void output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
+int output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -138,6 +140,7 @@ void output_ieee1394_table(struct module *modules, FILE *out, char *dirname)
 		     fw = (void *) fw + t->ieee1394_size)
 			output_ieee1394_entry(fw, shortname, out, i->file->conv);
 	}
+	return 1;
 }
 
 
@@ -151,7 +154,7 @@ static void output_ccw_entry(struct ccw_device_id *ccw, char *name, FILE *out,
 		END(ccw->dev_type, conv), END(ccw->dev_model, conv));
 }
 
-void output_ccw_table(struct module *modules, FILE *out, char *dirname)
+int output_ccw_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -172,6 +175,7 @@ void output_ccw_table(struct module *modules, FILE *out, char *dirname)
 		     e = (void *) e + t->ccw_size)
 			output_ccw_entry(e, shortname, out, i->file->conv);
 	}
+	return 1;
 }
 
 #define ISAPNP_VENDOR(a,b,c)	(((((a)-'A'+1)&0x3f)<<2)|\
@@ -192,7 +196,7 @@ static void put_isapnp_id(FILE *out, const char *id)
 	fprintf(out, " 0x%04x     0x%04x    ", vendor, device);
 }
 
-void output_isapnp_table(struct module *modules, FILE *out, char *dirname)
+int output_isapnp_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -238,6 +242,7 @@ void output_isapnp_table(struct module *modules, FILE *out, char *dirname)
 			}
 		}
 	}
+	return 1;
 }
 
 #define MATCH_bustype   1
@@ -412,7 +417,7 @@ static int output_input_entry_64_old(struct input_device_id_old_64 *input,
 	return 0;
 }
 
-void output_input_table(struct module *modules, FILE *out, char *dirname)
+int output_input_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -468,6 +473,7 @@ void output_input_table(struct module *modules, FILE *out, char *dirname)
 			}
 		}				
 	}
+	return 1;
 }
 
 static void output_serio_entry(struct serio_device_id *serio, char *name, FILE *out)
@@ -482,7 +488,7 @@ static void output_serio_entry(struct serio_device_id *serio, char *name, FILE *
 }
 
 
-void output_serio_table(struct module *modules, FILE *out, char *dirname)
+int output_serio_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -500,6 +506,7 @@ void output_serio_table(struct module *modules, FILE *out, char *dirname)
 		for (e = t->serio_table; e->type || e->proto; e = (void *)e + t->serio_size)
 			output_serio_entry(e, shortname, out);
 	}
+	return 1;
 }
 
 
@@ -542,7 +549,7 @@ static void output_of_entry(struct of_device_id *dev, char *name, FILE *out)
 	free(compatible);
 }
 
-void output_of_table(struct module *modules, FILE *out, char *dirname)
+int output_of_table(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
 
@@ -560,4 +567,5 @@ void output_of_table(struct module *modules, FILE *out, char *dirname)
                      e = (void *)e + t->of_size)
 			output_of_entry(e, shortname, out);
 	}
+	return 1;
 }

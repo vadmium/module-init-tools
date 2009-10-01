@@ -242,7 +242,7 @@ static struct elf_file *grab_module(const char *name,
 			module = grab_elf_file(filename);
 			if (!module)
 				error("modinfo: could not open %s: %s\n",
-					*filename, strerror(errno));
+					 filename, strerror(errno));
 			free(filename);
 			return module;
 		}

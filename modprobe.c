@@ -69,7 +69,8 @@ typedef enum
 	mit_ignore_commands = 16,
 	mit_ignore_loaded = 32,
 	mit_strip_vermagic = 64,
-	mit_strip_modversion = 128
+	mit_strip_modversion = 128,
+	mit_resolve_alias = 256
 
 } modprobe_flags_t;
 
@@ -590,7 +591,25 @@ static int read_attribute(const char *filename, char *buf, size_t buflen)
 	return (s == NULL) ? -1 : 1;
 }
 
-/* Is module in /sys/module?  If so, fill in usecount if not NULL.
+/* is this a built-in module?
+ * 0: no, 1: yes, -1: don't know
+ */
+static int module_builtin(const char *dirname, const char *modname)
+{
+	struct index_file *index;
+	char *filename, *value;
+
+	nofail_asprintf(&filename, "%s/modules.builtin.bin", dirname);
+	index = index_file_open(filename);
+	free(filename);
+	if (!index)
+		return -1;
+	value = index_search(index, modname);
+	free(value);
+	return value ? 1 : 0;
+}
+
+/* Is module in /sys/module?  If so, fill in usecount if not NULL. 
    0 means no, 1 means yes, -1 means unknown.
  */
 static int module_in_sysfs(const char *modname, unsigned int *usecount)
@@ -1388,6 +1407,23 @@ static int handle_module(const char *modname,
 	return 0;
 }
 
+int handle_builtin_module(const char *modname,
+                          errfn_t error,
+                          modprobe_flags_t flags)
+{
+	if (flags & mit_remove) {
+		error("Module %s is builtin\n", modname);
+		return 1;
+	} else if (flags & mit_first_time) {
+		error("Module %s already in kernel (builtin).\n", modname);
+		return 1;
+	} else if (flags & mit_ignore_loaded) {
+		/* --show-depends given */
+		info("builtin %s\n", modname);
+	}
+	return 0;
+}
+
 int do_modprobe(char *modname,
 		char *newname,
 		char *cmdline_opts,
@@ -1433,10 +1469,20 @@ int do_modprobe(char *modname,
 					  modname, 0, flags & mit_remove,
 					  &modoptions, &commands,
 					  &aliases, &blacklist);
+			/* builtin module? */
+			if (!aliases && module_builtin(dirname, modname) > 0) {
+				return handle_builtin_module(modname, error,
+						flags);
+			}
 		}
 	}
 
 	aliases = apply_blacklist(aliases, blacklist);
+	if(flags & mit_resolve_alias) {
+		for(; aliases; aliases=aliases->next)
+			printf("%s\n", aliases->module);
+		return 0;
+	}
 	if (aliases) {
 		errfn_t err = error;
 
@@ -1475,6 +1521,7 @@ static struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "show", 0, NULL, 'n' },
 				   { "dry-run", 0, NULL, 'n' },
 				   { "show-depends", 0, NULL, 'D' },
+				   { "resolve-alias", 0, NULL, 'R' },
 				   { "dirname", 1, NULL, 'd' },
 				   { "set-version", 1, NULL, 'S' },
 				   { "config", 1, NULL, 'C' },
@@ -1554,6 +1601,9 @@ int main(int argc, char *argv[])
 			flags |= mit_dry_run;
 			flags |= mit_ignore_loaded;
 			verbose = 1;
+			break;
+		case 'R':
+			flags |= mit_resolve_alias;
 			break;
 		case 'o':
 			newname = optarg;
