@@ -727,7 +727,6 @@ static int parse_config_file(const char *filename,
 		if (streq(cmd, "alias")) {
 			char *wildcard = strsep_skipspace(&ptr, "\t ");
 			char *realname = strsep_skipspace(&ptr, "\t ");
-
 			if (!wildcard || !realname)
 				goto syntax_error;
 			if (fnmatch(underscores(wildcard),name,0) == 0)
@@ -735,38 +734,37 @@ static int parse_config_file(const char *filename,
 		} else if (streq(cmd, "include")) {
 			struct module_alias *newalias = NULL;
 			char *newfilename;
-
 			newfilename = strsep_skipspace(&ptr, "\t ");
 			if (!newfilename)
 				goto syntax_error;
 
-				warn("\"include %s\" is deprecated, "
-				     "please use /etc/modprobe.d\n", newfilename);
-				if (strstarts(newfilename, "/etc/modprobe.d")) {
-					warn("\"include /etc/modprobe.d\" is "
-					     "the default, ignored\n");
-				} else {
-					if (!parse_config_scan(newfilename, name,
-							      dump_only, removing,
-							      options, commands, &newalias,
-							      blacklist))
-						warn("Failed to open included"
-						      " config file %s: %s\n",
-						      newfilename, strerror(errno));
-				}
-				/* Files included override aliases,
-				   etc that was already set ... */
-				if (newalias)
-					*aliases = newalias;
+			warn("\"include %s\" is deprecated, "
+			     "please use /etc/modprobe.d\n", newfilename);
+			if (strstarts(newfilename, "/etc/modprobe.d")) {
+				warn("\"include /etc/modprobe.d\" is "
+				     "the default, ignored\n");
+			} else {
+				if (!parse_config_scan(newfilename, name,
+						      dump_only, removing,
+						      options, commands, &newalias,
+						      blacklist))
+					warn("Failed to open included"
+					      " config file %s: %s\n",
+					      newfilename, strerror(errno));
+			}
+			/* Files included override aliases,
+			   etc that was already set ... */
+			if (newalias)
+				*aliases = newalias;
 
 		} else if (streq(cmd, "options")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				goto syntax_error;
 
-				ptr += strspn(ptr, "\t ");
-				*options = add_options(underscores(modname),
-						       ptr, *options);
+			ptr += strspn(ptr, "\t ");
+			*options = add_options(underscores(modname),
+					       ptr, *options);
 
 		} else if (streq(cmd, "install")) {
 			modname = strsep_skipspace(&ptr, "\t ");
