@@ -729,17 +729,17 @@ static int parse_config_file(const char *filename,
 			char *realname = strsep_skipspace(&ptr, "\t ");
 
 			if (!wildcard || !realname)
-				grammar(cmd, filename, linenum);
-			else if (fnmatch(underscores(wildcard),name,0) == 0)
+				goto syntax_error;
+			if (fnmatch(underscores(wildcard),name,0) == 0)
 				*aliases = add_alias(underscores(realname), *aliases);
 		} else if (streq(cmd, "include")) {
 			struct module_alias *newalias = NULL;
 			char *newfilename;
 
 			newfilename = strsep_skipspace(&ptr, "\t ");
-			if (!newfilename) {
-				grammar(cmd, filename, linenum);
-			} else {
+			if (!newfilename)
+				goto syntax_error;
+
 				warn("\"include %s\" is deprecated, "
 				     "please use /etc/modprobe.d\n", newfilename);
 				if (strstarts(newfilename, "/etc/modprobe.d")) {
@@ -758,21 +758,21 @@ static int parse_config_file(const char *filename,
 				   etc that was already set ... */
 				if (newalias)
 					*aliases = newalias;
-			}
+
 		} else if (streq(cmd, "options")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
-				grammar(cmd, filename, linenum);
-			else {
+				goto syntax_error;
+
 				ptr += strspn(ptr, "\t ");
 				*options = add_options(underscores(modname),
 						       ptr, *options);
-			}
+
 		} else if (streq(cmd, "install")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
-				grammar(cmd, filename, linenum);
-			else if (!removing) {
+				goto syntax_error;
+			if (!removing) {
 				ptr += strspn(ptr, "\t ");
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
@@ -780,16 +780,16 @@ static int parse_config_file(const char *filename,
 		} else if (streq(cmd, "blacklist")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname)
-				grammar(cmd, filename, linenum);
-			else if (!removing) {
+				goto syntax_error;
+			if (!removing) {
 				*blacklist = add_blacklist(underscores(modname),
 							*blacklist);
 			}
 		} else if (streq(cmd, "remove")) {
 			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
-				grammar(cmd, filename, linenum);
-			else if (removing) {
+				goto syntax_error;
+			if (removing) {
 				ptr += strspn(ptr, "\t ");
 				*commands = add_command(underscores(modname),
 							ptr, *commands);
@@ -798,16 +798,18 @@ static int parse_config_file(const char *filename,
 			char *tmp = strsep_skipspace(&ptr, "\t ");
 
 			if (!tmp)
-				grammar(cmd, filename, linenum);
-			else if (streq(tmp, "binary_indexes")) {
+				goto syntax_error;
+			if (streq(tmp, "binary_indexes")) {
 				tmp = strsep_skipspace(&ptr, "\t ");
 				if (streq(tmp, "yes"))
 					use_binary_indexes = 1;
 				if (streq(tmp, "no"))
 					use_binary_indexes = 0;
 			}
-		} else
+		} else {
+syntax_error:
 			grammar(cmd, filename, linenum);
+		}
 
 		free(line);
 	}
