@@ -1270,7 +1270,7 @@ nonexistent_module:
 static int handle_module(const char *modname,
 			  struct list_head *todo_list,
 			  const char *newname,
-			  char *options,
+			  const char *options,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
 			  const char *cmdline_opts,
@@ -1325,20 +1325,21 @@ int handle_builtin_module(const char *modname,
 	return 0;
 }
 
-int do_modprobe(char *modname,
-		char *newname,
-		char *cmdline_opts,
+int do_modprobe(const char *modulename,
+		const char *newname,
+		const char *cmdline_opts,
 		const char *configname,
 		const char *dirname,
 		errfn_t error,
 		modprobe_flags_t flags)
 {
+	char *modname;
 	struct modprobe_conf conf = {};
 	LIST_HEAD(list);
 	int failed = 0;
 
 	/* Convert name we are looking for */
-	underscores(modname);
+	modname = underscores(NOFAIL(strdup(modulename)));
 
 	/* Returns the resolved alias, options */
 	parse_toplevel_config(configname, modname, &conf, 0, flags & mit_remove);
@@ -1372,8 +1373,9 @@ int do_modprobe(char *modname,
 			free(aliasfilename);
 			/* builtin module? */
 			if (!conf.aliases && module_builtin(dirname, modname) > 0) {
-				return handle_builtin_module(modname, error,
-						flags);
+				failed |= handle_builtin_module(modname, error,
+								flags);
+				goto out;
 			}
 		}
 	}
@@ -1384,7 +1386,7 @@ int do_modprobe(char *modname,
 
 		for(; aliases; aliases=aliases->next)
 			printf("%s\n", aliases->module);
-		return 0;
+		goto out;
 	}
 	if (conf.aliases) {
 		errfn_t err = error;
@@ -1410,12 +1412,14 @@ int do_modprobe(char *modname,
 	} else {
 		if (flags & mit_use_blacklist
 		    && find_blacklist(modname, conf.blacklist))
-			return failed;
+			goto out;
 
 		failed |= handle_module(modname, &list, newname, cmdline_opts,
 			conf.options, conf.commands, cmdline_opts,
 			configname, dirname, error, flags);
 	}
+out:
+	free(modname);
 	return failed;
 }
 
