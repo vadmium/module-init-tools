@@ -564,7 +564,7 @@ static int module_builtin(const char *dirname, const char *modname)
 	return value ? 1 : 0;
 }
 
-/* Is module in /sys/module?  If so, fill in usecount if not NULL. 
+/* Is module in /sys/module?  If so, fill in usecount if not NULL.
    0 means no, 1 means yes, -1 means unknown.
  */
 static int module_in_kernel(const char *modname, unsigned int *usecount)
@@ -1098,6 +1098,8 @@ static int insmod(struct list_head *list,
 		   const struct module_options *options,
 		   const struct module_command *commands,
 		   const char *cmdline_opts,
+		   const char *configname,
+		   const char *dirname,
 		   errfn_t error,
 		   modprobe_flags_t flags)
 {
@@ -1116,7 +1118,9 @@ static int insmod(struct list_head *list,
 		f &= ~mit_first_time;
 		f &= ~mit_ignore_commands;
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL,
-		       options, commands, "", warn, f)) != 0) {
+		       options, commands, "",
+		       configname, dirname, warn, f)) != 0)
+		{
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
 				insert_moderror(errno));
@@ -1200,6 +1204,8 @@ static void rmmod(struct list_head *list,
 		  const char *name,
 		  struct module_command *commands,
 		  const char *cmdline_opts,
+		  const char *configname,
+		  const char *dirname,
 		  errfn_t error,
 		  modprobe_flags_t flags)
 {
@@ -1250,7 +1256,8 @@ static void rmmod(struct list_head *list,
 		flags &= ~mit_ignore_commands;
 		flags |= mit_ignore_loaded;
 
-		rmmod(list, NULL, commands, "", warn, flags);
+		rmmod(list, NULL, commands, "",
+		      configname, dirname, warn, flags);
 	}
 	return;
 
@@ -1267,6 +1274,8 @@ static int handle_module(const char *modname,
 			  struct module_options *modoptions,
 			  struct module_command *commands,
 			  const char *cmdline_opts,
+			  const char *configname,
+			  const char *dirname,
 			  errfn_t error,
 			  modprobe_flags_t flags)
 {
@@ -1289,10 +1298,12 @@ static int handle_module(const char *modname,
 
 	if (flags & mit_remove) {
 		flags &= ~mit_ignore_loaded;
-		rmmod(todo_list, newname, commands, cmdline_opts, error, flags);
+		rmmod(todo_list, newname, commands, cmdline_opts,
+		      configname, dirname, error, flags);
 	} else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
-		       modoptions, commands, cmdline_opts, error, flags);
+		       modoptions, commands, cmdline_opts,
+		       configname, dirname, error, flags);
 
 	return 0;
 }
@@ -1319,8 +1330,6 @@ int do_modprobe(char *modname,
 		char *cmdline_opts,
 		const char *configname,
 		const char *dirname,
-		const char *aliasfilename,
-		const char *symfilename,
 		errfn_t error,
 		modprobe_flags_t flags)
 {
@@ -1339,8 +1348,12 @@ int do_modprobe(char *modname,
 
 	/* No luck?  Try symbol names, if starts with symbol:. */
 	if (!conf.aliases && strstarts(modname, "symbol:")) {
+		char *symfilename;
+
+		nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 		parse_config_file(symfilename, modname, &conf, 0,
 				  flags & mit_remove);
+		free(symfilename);
 	}
 	if (!conf.aliases) {
 		if(!strchr(modname, ':'))
@@ -1350,8 +1363,13 @@ int do_modprobe(char *modname,
 		if (list_empty(&list)
 		    && !find_command(modname, conf.commands))
 		{
+			char *aliasfilename;
+
+			nofail_asprintf(&aliasfilename, "%s/modules.alias",
+					dirname);
 			read_aliases_file(aliasfilename, modname, &conf,
 					  0, flags & mit_remove);
+			free(aliasfilename);
 			/* builtin module? */
 			if (!conf.aliases && module_builtin(dirname, modname) > 0) {
 				return handle_builtin_module(modname, error,
@@ -1383,7 +1401,8 @@ int do_modprobe(char *modname,
 			read_depends(dirname, aliases->module, &list);
 			failed |= handle_module(aliases->module,
 				&list, newname, opts, conf.options,
-				conf.commands, cmdline_opts, err, flags);
+				conf.commands, cmdline_opts,
+				configname, dirname, err, flags);
 
 			aliases = aliases->next;
 			INIT_LIST_HEAD(&list);
@@ -1394,7 +1413,8 @@ int do_modprobe(char *modname,
 			return failed;
 
 		failed |= handle_module(modname, &list, newname, cmdline_opts,
-			conf.options, conf.commands, cmdline_opts, error, flags);
+			conf.options, conf.commands, cmdline_opts,
+			configname, dirname, error, flags);
 	}
 	return failed;
 }
@@ -1441,7 +1461,7 @@ int main(int argc, char *argv[])
 	char *basedir = "";
 	char *cmdline_opts = NULL;
 	char *newname = NULL;
-	char *dirname, *aliasfilename, *symfilename;
+	char *dirname;
 	errfn_t error = fatal;
 	int failed = 0;
 	modprobe_flags_t flags = 0;
@@ -1546,8 +1566,6 @@ int main(int argc, char *argv[])
 		print_usage(argv[0]);
 
 	nofail_asprintf(&dirname, "%s%s/%s", basedir, MODULE_DIR, buf.release);
-	nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
-	nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 
 	/* Old-style -t xxx wildcard?  Only with -l. */
 	if (list_only) {
@@ -1560,13 +1578,20 @@ int main(int argc, char *argv[])
 		fatal("-t only supported with -l");
 
 	if (dump_config) {
+		char *aliasfilename, *symfilename;
 		struct modprobe_conf conf = {};
+
+		nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
+		nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 
 		parse_toplevel_config(configname, "", &conf, 1, 0);
 		/* Read module options from kernel command line */
 		parse_kcmdline(1, &conf.options);
 		parse_config_file(aliasfilename, "", &conf, 1, 0);
 		parse_config_file(symfilename, "", &conf, 1, 0);
+
+		free(dirname);
+		free(aliasfilename);
 		exit(0);
 	}
 
@@ -1586,16 +1611,13 @@ int main(int argc, char *argv[])
 			dump_modversions(modname, error);
 		else
 			failed |= do_modprobe(modname, newname, cmdline_opts,
-				configname, dirname, aliasfilename, symfilename,
-				error, flags);
+				configname, dirname, error, flags);
 
 	}
 	if (logging)
 		closelog();
 
 	free(dirname);
-	free(aliasfilename);
-	free(symfilename);
 	free(cmdline_opts);
 
 	exit(failed);
