@@ -51,6 +51,13 @@
 
 int use_binary_indexes = 1; /* default to enabled. */
 
+/* Limit do_softdep/do_modprobe recursion.
+ * This is a simple way to handle dependency loops
+ * caused by poorly written softdep commands.
+ */
+static int recursion_depth = 0;
+const int MAX_RECURSION = 50; /* Arbitrary choice */
+
 extern long init_module(void *, unsigned long, const char *);
 extern long delete_module(const char *, unsigned int);
 
@@ -1170,6 +1177,11 @@ static void do_softdep(const struct module_softdep *softdep,
 	struct string_table *pre_modnames, *post_modnames;
 	int i, j;
 
+	if (++recursion_depth >= MAX_RECURSION)
+		fatal("modprobe: softdep dependency loop encountered %s %s\n",
+			(flags & mit_remove) ? "removing" : "inserting",
+			softdep->modname);
+
 	if (flags & mit_remove) {
 		/* Reverse module order if removing. */
 		pre_modnames = softdep->post;
@@ -1614,6 +1626,8 @@ int main(int argc, char *argv[])
 	errfn_t error = fatal;
 	int failed = 0;
 	modprobe_flags_t flags = 0;
+
+	recursion_depth = 0;
 
 	/* Prepend options from environment. */
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
