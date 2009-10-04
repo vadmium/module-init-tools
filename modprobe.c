@@ -345,7 +345,7 @@ static void clear_magic(struct elf_file *module)
 	module->ops->strip_section(module, "__vermagic");
 
 	/* New-style: in .modinfo section */
-	tbl = module->ops->load_strings(module, ".modinfo", NULL, fatal);
+	tbl = module->ops->load_strings(module, ".modinfo", NULL);
 	for (j = 0; tbl && j < tbl->cnt; j++) {
 		const char *p = tbl->str[j];
 		if (strstarts(p, "vermagic=")) {

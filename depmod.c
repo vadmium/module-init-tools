@@ -876,13 +876,13 @@ static int output_aliases(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modalias", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++)
 			fprintf(out, "alias %s %s\n", tbl->str[j], modname);
 		strtbl_free(tbl);
 
 		/* Grab from new-style .modinfo section. */
-		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modinfo", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			const char *p = tbl->str[j];
 			if (strstarts(p, "alias="))
@@ -913,7 +913,7 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modalias", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			alias = NOFAIL(strdup(tbl->str[j]));
 			underscores(alias);
@@ -926,7 +926,7 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		strtbl_free(tbl);
 
 		/* Grab from new-style .modinfo section. */
-		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modinfo", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			const char *p = tbl->str[j];
 			if (strstarts(p, "alias=")) {
