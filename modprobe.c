@@ -1193,7 +1193,7 @@ static void do_softdep(const struct module_softdep *softdep,
 
 	/* Modprobe pre_modnames */
 
-	for (i = 0; i < pre_modnames->cnt; i++) {
+	for (i = 0; pre_modnames && i < pre_modnames->cnt; i++) {
 		/* Reverse module order if removing. */
 		j = (flags & mit_remove) ? pre_modnames->cnt-1 - i : i;
 
@@ -1208,11 +1208,11 @@ static void do_softdep(const struct module_softdep *softdep,
 
 	/* Modprobe post_modnames */
 
-	for (i = 0; i < post_modnames->cnt; i++) {
+	for (i = 0; post_modnames && i < post_modnames->cnt; i++) {
 		/* Reverse module order if removing. */
 		j = (flags & mit_remove) ? post_modnames->cnt-1 - i : i;
 
-		do_modprobe(pre_modnames->str[j], NULL, "", configname,
+		do_modprobe(post_modnames->str[j], NULL, "", configname,
 			dirname, warn, flags);
 	}
 }
