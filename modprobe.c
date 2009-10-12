@@ -840,9 +840,9 @@ static int parse_config_file(const char *filename,
 			if (!modname || !ptr)
 				goto syntax_error;
 			while ((tk = strsep_skipspace(&ptr, "\t ")) != NULL) {
-				if (streq(tk, "--pre")) {
+				if (streq(tk, "pre:")) {
 					pre = 1; post = 0;
-				} else if (streq(tk, "--post")) {
+				} else if (streq(tk, "post:")) {
 					pre = 0; post = 1;
 				} else if (pre) {
 					pre_modnames = NOFAIL(

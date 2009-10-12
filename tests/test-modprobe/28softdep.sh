@@ -31,9 +31,9 @@ mkdir -p tests/tmp/etc/modprobe.d
 cat > tests/tmp/etc/modprobe.d/modprobe.conf << EOF
 alias a_alias a
 alias c_alias c
-softdep c --pre a_alias b --post d e
-softdep e --post f
-softdep f --pre a
+softdep c pre: a_alias b post: d e
+softdep e post: f
+softdep f pre: a
 EOF
 
 # Insert-test
@@ -57,8 +57,8 @@ R2=`echo $R1`	# remove newlines
 mkdir -p tests/tmp/etc/modprobe.d
 cat > tests/tmp/etc/modprobe.d/modprobe.conf << EOF
 alias a_alias a
-softdep a --pre b
-softdep b --pre a
+softdep a pre: b
+softdep b pre: a
 EOF
 
 R1=`modprobe -v a_alias 2>&1 | cat` # shell won't assign to R1 without no-op cat.
