@@ -176,6 +176,37 @@
 	  </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term>softdep <replaceable>modulename</replaceable> &#91;pre: <replaceable>pre-deps...</replaceable>&#93; &#91;post: <replaceable>post-deps...</replaceable>&#93;
+        </term>
+	<listitem>
+	  <para>
+            The softdep command allows you to specify soft, or optional, module
+            dependencies. <replaceable>modulename</replaceable> can be used
+            without these optional modules installed, but usually with some
+            features missing.
+	  </para>
+	  <para>
+            pre-deps and post-deps are lists of names and/or aliases of other
+            modules that modprobe will attempt to install (or remove) in order
+            before and after the main module given in the
+            <replaceable>modulename</replaceable> argument.
+	  </para>
+	  <para>
+            Example: Assume "softdep c pre: a b post: d e" is provided in the
+            configuration. Running "modprobe c" is now equivalent to
+            "modprobe a b c d e" without the softdep.
+            Flags such as --use-blacklist are applied to all the specified
+            modules, while module parameters only apply to module c.
+	  </para>
+	  <para>
+            Note: if there are <command>install</command> or
+            <command>remove</command> commands with the same
+            <replaceable>modulename</replaceable> argument,
+            <command>softdep</command> takes precedence.
+	  </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
