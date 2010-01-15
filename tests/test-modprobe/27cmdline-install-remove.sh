@@ -19,6 +19,9 @@ echo "options noexport_nodep-$BITNESS file-options" > tests/tmp/etc/modprobe.d/m
 echo "install noexport_nodep-$BITNESS modprobe --ignore-install noexport_nodep-$BITNESS \$CMDLINE_OPTS" >> tests/tmp/etc/modprobe.d/modprobe.conf
 echo "install othertarget echo \$CMDLINE_OPTS otheropts" >> tests/tmp/etc/modprobe.d/modprobe.conf
 
+# Empty /sys/module/ for install commands
+mkdir -p tests/tmp/sys/module
+
 # With quoted args
 [ "`modprobe noexport_nodep-$BITNESS 'foo="bar baz"' 2>&1`" = "SYSTEM: modprobe --ignore-install noexport_nodep-$BITNESS foo=\"bar baz\"" ]
 # With unquoted args

@@ -82,38 +82,29 @@ SIZE_NOEXPORT_DEP=`wc -c < tests/data/$BITNESS/normal/noexport_dep-$BITNESS.ko`
 SIZE_EXPORT_DEP=`wc -c < tests/data/$BITNESS/normal/export_dep-$BITNESS.ko`
 SIZE_NOEXPORT_DOUBLEDEP=`wc -c < tests/data/$BITNESS/normal/noexport_doubledep-$BITNESS.ko`
 
-# Test ignoring install & remove.
+# Empty /sys/module/ for install commands
+mkdir -p tests/tmp/sys/module
 
+# Test ignoring install commands.
 [ "`modprobe --ignore-install export_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP " ]
 [ "`modprobe -i export_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP " ]
 [ "`modprobe -i foo 2>&1`" = "FATAL: Module foo not found." ]
-[ "`modprobe -r --ignore-remove export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-[ "`modprobe -r -i export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-[ "`modprobe -i -r foo 2>&1`" = "FATAL: Module foo not found." ]
 
-# Test install & remove (fake modules)
+# Test install commands (fake modules)
 [ "`modprobe foo 2>&1`" = "SYSTEM: echo Installing   foo" ]
 [ "`modprobe bar 2>&1`" = "SYSTEM: echo Installing   bar" ]
 [ "`modprobe baz 2>&1`" = "SYSTEM: echo Installing   baz" ]
-[ "`modprobe -r foo 2>&1`" = "SYSTEM: echo Removing   foo" ]
-[ "`modprobe -r bar 2>&1`" = "SYSTEM: echo Removing   bar" ]
-[ "`modprobe -r baz 2>&1`" = "SYSTEM: echo Removing   baz" ]
 
-# Test install & remove of a what is also a real module.
+# Test install of a what is also a real module.
 [ "`modprobe export_nodep-$BITNESS 2>&1`" = "SYSTEM: echo Installing   export_nodep" ]
-[ "`modprobe -r export_nodep-$BITNESS 2>&1`" = "SYSTEM: echo Removing   export_nodep" ]
 
-# Test install & remove of what is also a real module via dependency.
+# Test install of what is also a real module via dependency.
 [ "`modprobe noexport_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing   export_nodep
 INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep" ]
-[ "`modprobe -r noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
-SYSTEM: echo Removing   export_nodep" ]
 
-# Test ignoring install & remove: only effects commandline.
+# Test ignoring install commands: only effects commandline.
 [ "`modprobe -i noexport_dep-$BITNESS 2>&1`" = "SYSTEM: echo Installing   export_nodep
 INIT_MODULE: $SIZE_NOEXPORT_DEP I am noexport_dep" ]
-[ "`modprobe -r -i noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
-SYSTEM: echo Removing   export_nodep" ]
 
 # Test options
 [ "`modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_NOEXPORT_NODEP I am noexport_nodep" ]
@@ -163,6 +154,40 @@ INIT_MODULE: $SIZE_NOEXPORT_DOUBLEDEP I am noexport_doubledep I am alias to noex
 [ "`modprobe alias_to_foo 2>&1`" = "SYSTEM: echo Installing   foo" ]
 [ "`modprobe alias_to_bar 2>&1`" = "SYSTEM: echo Installing   bar" ]
 [ "`modprobe alias_to_baz 2>&1`" = "SYSTEM: echo Installing   baz" ]
+
+# Populate /sys/module/ for remove commands
+mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
+mkdir -p tests/tmp/sys/module/noexport_doubledep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
+mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
+echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/noexport_doubledep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
+echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
+
+# Test ignoring remove commands.
+
+[ "`modprobe -r --ignore-remove export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
+[ "`modprobe -r -i export_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
+[ "`modprobe -i -r foo 2>&1`" = "FATAL: Module foo not found." ]
+
+# Test remove commands (fake modules)
+[ "`modprobe -r foo 2>&1`" = "SYSTEM: echo Removing   foo" ]
+[ "`modprobe -r bar 2>&1`" = "SYSTEM: echo Removing   bar" ]
+[ "`modprobe -r baz 2>&1`" = "SYSTEM: echo Removing   baz" ]
+
+# Test remove of a what is also a real module.
+[ "`modprobe -r export_nodep-$BITNESS 2>&1`" = "SYSTEM: echo Removing   export_nodep" ]
+
+# Test remove of what is also a real module via dependency.
+[ "`modprobe -r noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
+SYSTEM: echo Removing   export_nodep" ]
+
+# Test ignoring remove commands: only effects commandline.
+[ "`modprobe -r -i noexport_dep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_dep_$BITNESS EXCL 
+SYSTEM: echo Removing   export_nodep" ]
 
 # Test aliases doing removal.
 [ "`modprobe -r alias_to_noexport_nodep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_nodep_$BITNESS EXCL " ]

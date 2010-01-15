@@ -28,7 +28,7 @@ mkdir -p tests/tmp/sys/module
 [ "`modprobe noexport_dep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE_EXPORT_NODEP 
 INIT_MODULE: $SIZE_NOEXPORT_DEP " ]
 
-# Check it's happy if we tell it dep is already instealled
+# Check it's happy if we tell it dep is already installed
 mkdir -p tests/tmp/sys/module
 mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
 echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
@@ -37,7 +37,7 @@ echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 
 # If there's an install command, it will be done.
 # Clean up sysfs (so we don't think it's loaded)
-rm -rf tests/tmp/sys
+rm -rf tests/tmp/sys/module/*
 
 mkdir -p tests/tmp/etc/modprobe.d
 echo "install export_nodep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.d/modprobe.conf
@@ -53,7 +53,7 @@ echo "live" >tests/tmp/sys/module/export_nodep_$BITNESS/initstate
 
 # Do dependencies even if install command.
 # clean up sysfs (so we don't think it's loaded)
-rm -rf tests/tmp/sys
+rm -rf tests/tmp/sys/module/*
 
 echo "install noexport_dep-$BITNESS COMMAND" > tests/tmp/etc/modprobe.d/modprobe.conf
 
