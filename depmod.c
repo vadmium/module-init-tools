@@ -1,6 +1,7 @@
 /* New simplified depmod without backwards compat stuff and not
    requiring ksyms.
 
+   (C) 2010 Jon Masters <jcm@jonmasters.org>, and others.
    (C) 2002 Rusty Russell IBM Corporation
  */
 #define _GNU_SOURCE /* asprintf */
@@ -1120,8 +1121,7 @@ static int parse_config_file(const char *filename,
 			version = strsep_skipspace(&ptr, "\t ");
 			subdir = strsep_skipspace(&ptr, "\t ");
 
-			if (strcmp(version, kernelversion) != 0 &&
-			    strcmp(version, "*") != 0)
+			if (!regex_match(kernelversion, (const char *)version))
 				continue;
 
 			nofail_asprintf(&pathname, "%s%s%s/%s/%s.ko", basedir,
