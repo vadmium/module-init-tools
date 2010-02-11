@@ -21,8 +21,6 @@
     <date>2005-06-01</date>
   </refentryinfo>
   <refmeta>
-    <refentrytitle>modprobe.d</refentrytitle>
-    <manvolnum>5</manvolnum>
     <refentrytitle>modprobe.conf</refentrytitle>
     <manvolnum>5</manvolnum>
   </refmeta>
