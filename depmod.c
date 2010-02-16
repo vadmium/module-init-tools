@@ -1342,7 +1342,7 @@ int main(int argc, char *argv[])
 	else if (system_map)
 		load_system_map(system_map);
 	else if (print_unknown) {
-		warn("-e needs -E or -F");
+		warn("-e needs -E or -F\n");
 		print_unknown = 0;
 	}
 
