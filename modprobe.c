@@ -145,6 +145,12 @@ static void add_module(char *filename, int namelen, struct list_head *list)
 	list_add_tail(&mod->list, list);
 }
 
+static void free_module(struct module *mod)
+{
+	free(mod->modname);
+	free(mod);
+}
+
 /* Compare len chars of a to b, with _ and - equivalent. */
 static int modname_equal(const char *a, const char *b, unsigned int len)
 {
@@ -451,6 +457,19 @@ add_alias(const char *modname, struct module_alias *aliases)
 	new->module = NOFAIL(strdup(modname));
 	new->next = aliases;
 	return new;
+}
+
+static void free_aliases(struct module_alias *alias_list)
+{
+	while (alias_list) {
+		struct module_alias *alias;
+
+		alias = alias_list;
+		alias_list = alias_list->next;
+
+		free(alias->module);
+		free(alias);
+	}
 }
 
 /* Link in a new blacklist line from the config file. */
@@ -1081,6 +1100,7 @@ static void add_to_env_var(const char *option)
 		char *newenv;
 		nofail_asprintf(&newenv, "%s %s", oldenv, option);
 		setenv("MODPROBE_OPTIONS", newenv, 1);
+		free(newenv);
 	} else
 		setenv("MODPROBE_OPTIONS", option, 1);
 }
@@ -1159,12 +1179,14 @@ static void do_command(const char *modname,
 
 	info("%s %s\n", type, replaced_cmd);
 	if (dry_run)
-		return;
+		goto out;
 
 	setenv("MODPROBE_MODULE", modname, 1);
 	ret = system(replaced_cmd);
 	if (ret == -1 || WEXITSTATUS(ret))
 		error("Error running %s command for %s\n", type, modname);
+
+out:
 	free(replaced_cmd);
 }
 
@@ -1342,6 +1364,7 @@ static int insmod(struct list_head *list,
 	close_file(fd);
  out_optstring:
 	free(optstring);
+	free_module(mod);
 	return rc;
 }
 
@@ -1415,6 +1438,7 @@ static void rmmod(struct list_head *list,
 		rmmod(list, NULL, softdeps, commands, "",
 		      configname, dirname, warn, flags);
 	}
+	free_module(mod);
 	return;
 
 nonexistent_module:
@@ -1501,6 +1525,7 @@ int do_modprobe(const char *modulename,
 {
 	char *modname;
 	struct modprobe_conf conf = {};
+	struct module_alias *filtered_aliases;
 	LIST_HEAD(list);
 	int failed = 0;
 
@@ -1547,17 +1572,17 @@ int do_modprobe(const char *modulename,
 		}
 	}
 
-	conf.aliases = apply_blacklist(conf.aliases, conf.blacklist);
+	filtered_aliases = apply_blacklist(conf.aliases, conf.blacklist);
 	if(flags & mit_resolve_alias) {
-		struct module_alias *aliases = conf.aliases;
+		struct module_alias *aliases = filtered_aliases;
 
 		for(; aliases; aliases=aliases->next)
 			printf("%s\n", aliases->module);
 		goto out;
 	}
-	if (conf.aliases) {
+	if (filtered_aliases) {
 		errfn_t err = error;
-		struct module_alias *aliases = conf.aliases;
+		struct module_alias *aliases = filtered_aliases;
 
 		/* More than one alias?  Don't bail out on failure. */
 		if (aliases->next)
@@ -1587,6 +1612,7 @@ int do_modprobe(const char *modulename,
 	}
 out:
 	free(modname);
+	free_aliases(filtered_aliases);
 	return failed;
 }
 
@@ -1745,7 +1771,8 @@ int main(int argc, char *argv[])
 		if (optind+1 < argc)
 			fatal("Can't have multiple wildcards\n");
 		/* fprintf(stderr, "man find\n"); return 1; */
-		return do_wildcard(dirname, type, argv[optind]?:"*");
+		failed = do_wildcard(dirname, type, argv[optind]?:"*");
+		goto out;
 	}
 	if (type)
 		fatal("-t only supported with -l");
@@ -1763,9 +1790,7 @@ int main(int argc, char *argv[])
 		read_aliases(aliasfilename, "", 1, &conf.aliases);
 		read_aliases(symfilename, "", 1, &conf.aliases);
 
-		free(dirname);
-		free(aliasfilename);
-		exit(0);
+		goto out;
 	}
 
 	if ((flags & mit_remove) || all) {
@@ -1787,9 +1812,10 @@ int main(int argc, char *argv[])
 				configname, dirname, error, flags);
 
 	}
+
+out:
 	if (logging)
 		closelog();
-
 	free(dirname);
 	free(cmdline_opts);
 
