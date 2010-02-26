@@ -889,26 +889,22 @@ syntax_error:
 	return 1;
 }
 
-/* fallback to plain-text aliases file as necessary */
+/* Read binary index file containing aliases only */
 static int read_aliases_file(const char *filename,
 			     const char *name,
-			     struct modprobe_conf *conf,
 			     int dump_only,
-			     int removing)
+			     struct module_alias **aliases)
 {
 	struct index_value *realnames;
 	struct index_value *realname;
 	char *binfile;
 	struct index_file *index;
 
-	if (!use_binary_indexes)
-		goto plain_text;
-
 	nofail_asprintf(&binfile, "%s.bin", filename);
 	index = index_file_open(binfile);
 	if (!index) {
 		free(binfile);
-		goto plain_text;
+		return 0;
 	}
 
 	if (dump_only) {
@@ -920,15 +916,30 @@ static int read_aliases_file(const char *filename,
 
 	realnames = index_searchwild(index, name);
 	for (realname = realnames; realname; realname = realname->next)
-		conf->aliases = add_alias(realname->value, conf->aliases);
+		*aliases = add_alias(realname->value, *aliases);
 	index_values_free(realnames);
 
 	free(binfile);
 	index_file_close(index);
 	return 1;
+}
 
-plain_text:
-	return parse_config_file(filename, name, conf, dump_only, removing);
+/* fallback to plain-text aliases file if necessary */
+static int read_aliases(const char *filename,
+			const char *name,
+			int dump_only,
+			struct module_alias **aliases)
+{
+	struct modprobe_conf conf = { .aliases = *aliases };
+	int ret;
+
+	if (use_binary_indexes)
+		if (read_aliases_file(filename, name, dump_only, aliases))
+			return 1;
+
+	ret = parse_config_file(filename, name, &conf, dump_only, 0);
+	*aliases = conf.aliases;
+	return ret;
 }
 
 static int parse_config_scan(const char *filename,
@@ -999,7 +1010,6 @@ static int parse_config_scan(const char *filename,
 	return ret;
 }
 
-/* Read binary index file containing aliases only */
 static void parse_toplevel_config(const char *filename,
 				  const char *name,
 				  struct modprobe_conf *conf,
@@ -1508,8 +1518,7 @@ int do_modprobe(const char *modulename,
 		char *symfilename;
 
 		nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
-		parse_config_file(symfilename, modname, &conf, 0,
-				  flags & mit_remove);
+		read_aliases(symfilename, modname, 0, &conf.aliases);
 		free(symfilename);
 	}
 	if (!conf.aliases) {
@@ -1523,10 +1532,11 @@ int do_modprobe(const char *modulename,
 		{
 			char *aliasfilename;
 
+
 			nofail_asprintf(&aliasfilename, "%s/modules.alias",
 					dirname);
-			read_aliases_file(aliasfilename, modname, &conf,
-					  0, flags & mit_remove);
+			read_aliases(aliasfilename, modname, 0,
+				     &conf.aliases);
 			free(aliasfilename);
 			/* builtin module? */
 			if (!conf.aliases && module_builtin(dirname, modname) > 0) {
@@ -1750,8 +1760,8 @@ int main(int argc, char *argv[])
 		parse_toplevel_config(configname, "", &conf, 1, 0);
 		/* Read module options from kernel command line */
 		parse_kcmdline(1, &conf.options);
-		parse_config_file(aliasfilename, "", &conf, 1, 0);
-		parse_config_file(symfilename, "", &conf, 1, 0);
+		read_aliases(aliasfilename, "", 1, &conf.aliases);
+		read_aliases(symfilename, "", 1, &conf.aliases);
 
 		free(dirname);
 		free(aliasfilename);
