@@ -1246,14 +1246,14 @@ out:
 int do_modprobe(const char *modname,
 		const char *newname,
 		const char *cmdline_opts,
-		const char *configname,
+		const struct modprobe_conf *conf,
 		const char *dirname,
 		errfn_t error,
 		modprobe_flags_t flags);
 
 static void do_softdep(const struct module_softdep *softdep,
 		       const char *cmdline_opts,
-		       const char *configname,
+		       const struct modprobe_conf *conf,
 		       const char *dirname,
 		       errfn_t error,
 		       modprobe_flags_t flags)
@@ -1282,13 +1282,13 @@ static void do_softdep(const struct module_softdep *softdep,
 		j = (flags & mit_remove) ? pre_modnames->cnt-1 - i : i;
 
 		do_modprobe(pre_modnames->str[j], NULL, "",
-			configname, dirname, warn, flags);
+			conf, dirname, warn, flags);
 	}
 
 	/* Modprobe main module, passing cmdline_opts, ignoring softdep */
 
 	do_modprobe(softdep->modname, NULL, cmdline_opts,
-		configname, dirname, warn, flags | mit_ignore_commands);
+		conf, dirname, warn, flags | mit_ignore_commands);
 
 	/* Modprobe post_modnames */
 
@@ -1296,7 +1296,7 @@ static void do_softdep(const struct module_softdep *softdep,
 		/* Reverse module order if removing. */
 		j = (flags & mit_remove) ? post_modnames->cnt-1 - i : i;
 
-		do_modprobe(post_modnames->str[j], NULL, "", configname,
+		do_modprobe(post_modnames->str[j], NULL, "", conf,
 			dirname, warn, flags);
 	}
 }
@@ -1305,11 +1305,8 @@ static void do_softdep(const struct module_softdep *softdep,
 static int insmod(struct list_head *list,
 		   char *optstring,
 		   const char *newname,
-		   const struct module_options *options,
-		   const struct module_softdep *softdeps,
-		   const struct module_command *commands,
 		   const char *cmdline_opts,
-		   const char *configname,
+		   const struct modprobe_conf *conf,
 		   const char *dirname,
 		   errfn_t error,
 		   modprobe_flags_t flags)
@@ -1330,8 +1327,7 @@ static int insmod(struct list_head *list,
 		f &= ~mit_first_time;
 		f &= ~mit_ignore_commands;
 		if ((rc = insmod(list, NOFAIL(strdup("")), NULL,
-		       options, softdeps, commands, "",
-		       configname, dirname, warn, f)) != 0)
+		       "", conf, dirname, warn, f)) != 0)
 		{
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
@@ -1356,15 +1352,15 @@ static int insmod(struct list_head *list,
 		goto out_unlock;
 	}
 
-	softdep = find_softdep(mod->modname, softdeps);
+	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
 		close_file(fd);
-		do_softdep(softdep, cmdline_opts, configname, dirname, 
+		do_softdep(softdep, cmdline_opts, conf, dirname, 
 			   error, flags & (mit_remove | mit_dry_run));
 		goto out_optstring;
 	}
 
-	command = find_command(mod->modname, commands);
+	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
 		close_file(fd);
 		do_command(mod->modname, command, flags & mit_dry_run, error,
@@ -1387,7 +1383,7 @@ static int insmod(struct list_head *list,
 		clear_magic(module);
 
 	/* Config file might have given more options */
-	optstring = add_extra_options(mod->modname, optstring, options);
+	optstring = add_extra_options(mod->modname, optstring, conf->options);
 
 	info("insmod %s %s\n", mod->filename, optstring);
 
@@ -1423,10 +1419,8 @@ static int insmod(struct list_head *list,
 /* Do recursive removal. */
 static void rmmod(struct list_head *list,
 		  const char *name,
-		  struct module_softdep *softdeps,
-		  struct module_command *commands,
 		  const char *cmdline_opts,
-		  const char *configname,
+		  const struct modprobe_conf *conf,
 		  const char *dirname,
 		  errfn_t error,
 		  modprobe_flags_t flags)
@@ -1444,14 +1438,14 @@ static void rmmod(struct list_head *list,
 
 	/* Even if renamed, find commands/softdeps to orig. name. */
 
-	softdep = find_softdep(mod->modname, softdeps);
+	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
-		do_softdep(softdep, cmdline_opts, configname, dirname,
+		do_softdep(softdep, cmdline_opts, conf, dirname,
 			   error, flags & (mit_remove | mit_dry_run));
 		goto remove_rest;
 	}
 
-	command = find_command(mod->modname, commands);
+	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
 		do_command(mod->modname, command, flags & mit_dry_run, error,
 			   "remove", cmdline_opts);
@@ -1487,8 +1481,7 @@ static void rmmod(struct list_head *list,
 		flags &= ~mit_ignore_commands;
 		flags |= mit_ignore_loaded;
 
-		rmmod(list, NULL, softdeps, commands, "",
-		      configname, dirname, warn, flags);
+		rmmod(list, NULL, "", conf, dirname, warn, flags);
 	}
 	free_module(mod);
 	return;
@@ -1503,11 +1496,8 @@ static int handle_module(const char *modname,
 			  struct list_head *todo_list,
 			  const char *newname,
 			  const char *options,
-			  struct module_options *modoptions,
-			  struct module_softdep *softdeps,
-			  struct module_command *commands,
 			  const char *cmdline_opts,
-			  const char *configname,
+			  const struct modprobe_conf *conf,
 			  const char *dirname,
 			  errfn_t error,
 			  modprobe_flags_t flags)
@@ -1519,14 +1509,14 @@ static int handle_module(const char *modname,
 		/* The dependencies have to be real modules, but
 		   handle case where the first is completely bogus. */
 
-		softdep = find_softdep(modname, softdeps);
+		softdep = find_softdep(modname, conf->softdeps);
 		if (softdep && !(flags & mit_ignore_commands)) {
-			do_softdep(softdep, cmdline_opts, configname, dirname,
+			do_softdep(softdep, cmdline_opts, conf, dirname,
 				   error, flags & (mit_remove | mit_dry_run));
 			return 0;
 		}
 
-		command = find_command(modname, commands);
+		command = find_command(modname, conf->commands);
 		if (command && !(flags & mit_ignore_commands)) {
 			do_command(modname, command, flags & mit_dry_run, error,
 				   (flags & mit_remove) ? "remove":"install", cmdline_opts);
@@ -1540,12 +1530,11 @@ static int handle_module(const char *modname,
 
 	if (flags & mit_remove) {
 		flags &= ~mit_ignore_loaded;
-		rmmod(todo_list, newname, softdeps, commands, cmdline_opts,
-		      configname, dirname, error, flags);
+		rmmod(todo_list, newname, cmdline_opts,
+		      conf, dirname, error, flags);
 	} else
 		insmod(todo_list, NOFAIL(strdup(options)), newname,
-		       modoptions, softdeps, commands, cmdline_opts,
-		       configname, dirname, error, flags);
+		       cmdline_opts, conf, dirname, error, flags);
 
 	return 0;
 }
@@ -1570,13 +1559,12 @@ int handle_builtin_module(const char *modname,
 int do_modprobe(const char *modulename,
 		const char *newname,
 		const char *cmdline_opts,
-		const char *configname,
+		const struct modprobe_conf *conf,
 		const char *dirname,
 		errfn_t error,
 		modprobe_flags_t flags)
 {
 	char *modname;
-	struct modprobe_conf conf = {};
 	struct module_alias *matching_aliases;
 	LIST_HEAD(list);
 	int failed = 0;
@@ -1584,13 +1572,7 @@ int do_modprobe(const char *modulename,
 	/* Convert name we are looking for */
 	modname = underscores(NOFAIL(strdup(modulename)));
 
-	/* Read aliases, options etc. */
-	parse_toplevel_config(configname, &conf, 0, flags & mit_remove);
-
-	/* Read module options from kernel command line */
-	parse_kcmdline(0, &conf.options);
-
-	matching_aliases = find_aliases(conf.aliases, modname);
+	matching_aliases = find_aliases(conf->aliases, modname);
 
 	/* No luck?  Try symbol names, if starts with symbol:. */
 	if (!matching_aliases && strstarts(modname, "symbol:")) {
@@ -1606,8 +1588,8 @@ int do_modprobe(const char *modulename,
 
 		/* We only use canned aliases as last resort. */
 		if (list_empty(&list)
-		    && !find_softdep(modname, conf.softdeps)
-		    && !find_command(modname, conf.commands))
+		    && !find_softdep(modname, conf->softdeps)
+		    && !find_command(modname, conf->commands))
 		{
 			char *aliasfilename;
 
@@ -1625,7 +1607,7 @@ int do_modprobe(const char *modulename,
 		}
 	}
 
-	apply_blacklist(&matching_aliases, conf.blacklist);
+	apply_blacklist(&matching_aliases, conf->blacklist);
 	if(flags & mit_resolve_alias) {
 		struct module_alias *aliases = matching_aliases;
 
@@ -1643,25 +1625,23 @@ int do_modprobe(const char *modulename,
 		while (aliases) {
 			/* Add the options for this alias. */
 			char *opts = NOFAIL(strdup(cmdline_opts));
-			opts = add_extra_options(modname, opts, conf.options);
+			opts = add_extra_options(modname, opts, conf->options);
 
 			read_depends(dirname, aliases->module, &list);
 			failed |= handle_module(aliases->module,
-				&list, newname, opts, conf.options,
-				conf.softdeps, conf.commands, cmdline_opts,
-				configname, dirname, err, flags);
+				&list, newname, opts, cmdline_opts,
+				conf, dirname, err, flags);
 
 			aliases = aliases->next;
 			INIT_LIST_HEAD(&list);
 		}
 	} else {
 		if (flags & mit_use_blacklist
-		    && find_blacklist(modname, conf.blacklist))
+		    && find_blacklist(modname, conf->blacklist))
 			goto out;
 
 		failed |= handle_module(modname, &list, newname, cmdline_opts,
-			conf.options, conf.softdeps, conf.commands, cmdline_opts,
-			configname, dirname, error, flags);
+			cmdline_opts, conf, dirname, error, flags);
 	}
 out:
 	free(modname);
@@ -1715,6 +1695,7 @@ int main(int argc, char *argv[])
 	errfn_t error = fatal;
 	int failed = 0;
 	modprobe_flags_t flags = 0;
+	struct modprobe_conf conf = {};
 
 	recursion_depth = 0;
 
@@ -1830,6 +1811,12 @@ int main(int argc, char *argv[])
 	if (type)
 		fatal("-t only supported with -l");
 
+	/* Read aliases, options etc. */
+	parse_toplevel_config(configname, &conf, dump_config, flags & mit_remove);
+
+	/* Read module options from kernel command line */
+	parse_kcmdline(1, &conf.options);
+	
 	if (dump_config) {
 		char *aliasfilename, *symfilename;
 		struct modprobe_conf conf = {};
@@ -1862,7 +1849,7 @@ int main(int argc, char *argv[])
 			dump_modversions(modname, error);
 		else
 			failed |= do_modprobe(modname, newname, cmdline_opts,
-				configname, dirname, error, flags);
+				&conf, dirname, error, flags);
 
 	}
 
@@ -1871,6 +1858,7 @@ out:
 		closelog();
 	free(dirname);
 	free(cmdline_opts);
+	/* Don't bother to free conf */
 
 	exit(failed);
 }
