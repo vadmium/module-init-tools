@@ -8,5 +8,6 @@ build
 
 modprobe
 --------
+	* Fix grab_elf_file_fd error handling for test-module/10alias.sh.
 	* Enforce use of *.conf files in /etc/modprobe.d as filename extension.
 	* Add a "depends" config file directive to obviate "install" hacks.

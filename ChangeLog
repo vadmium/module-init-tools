@@ -1,3 +1,31 @@
+3.11 Version:
+o modinfo: Fix crash if module recently deleted from system (Ozan)
+o modprobe: Handle built-in modules (Michal)
+
+3.10 Version:
+o modprobe: cleanup some option handling (Alan)
+o testsuite: Rebuild all the test modules (32/64/be/le) to avoid bitrot
+
+3.9 Version:
+o NOTE: tools now fail loudly in the case of non-ELF files being used
+o elfops: rename moduleops to elfops, remove struct module from it (Andreas)
+o depmod: various symbol lookup and dependency calculation fixes (Andreas)
+o doc: various cleanup of man pages (Robby)
+
+3.8 Version:
+o doc: Fix build documentation
+o zlib: allow dynamic linking (Michal)
+
+
+3.7 Version:
+o NOTE: *** support for pre-2.6 kernels was removed in this version ***
+o bindex: modules.order support and fallback in case trie is outdated (Alan)
+o depmod: fix is_higher_priority() (Michal)
+o depmod: officially disallow specifying modules using relative paths (Alan)
+o lib: fix underscore conversion (Alan)
+o modprobe: parse empty options correctly
+o testsuite: lots of random fixes and cleanups
+
 3.6 Version:
 o depmod: make building map files optional (does anyone use them anyway?)
 o demod: use shortened path names in index files (relative paths used)
