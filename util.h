@@ -44,4 +44,6 @@ int native_endianness(void);
 #define streq(a,b) (strcmp((a),(b)) == 0)
 #define strstarts(a,start) (strncmp((a),(start), strlen(start)) == 0)
 
+int regex_match(const char *string, const char *pattern);
+
 #endif

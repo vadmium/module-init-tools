@@ -75,9 +75,10 @@ typedef enum
 	mit_use_blacklist = 8,
 	mit_ignore_commands = 16,
 	mit_ignore_loaded = 32,
-	mit_strip_vermagic = 64,
-	mit_strip_modversion = 128,
-	mit_resolve_alias = 256
+	mit_quiet_inuse = 64,
+	mit_strip_vermagic = 128,
+	mit_strip_modversion = 256,
+	mit_resolve_alias = 512
 
 } modprobe_flags_t;
 
@@ -104,24 +105,6 @@ static struct module *find_module(const char *filename, struct list_head *list)
 			return i;
 	}
 	return NULL;
-}
-
-/* We used to lock with a write flock but that allows regular users to block
- * module load by having a read lock on the module file (no way to bust the
- * existing locks without killing the offending process). Instead, we now
- * do the system call/init_module and allow the kernel to fail us instead.
- */
-static int open_file(const char *filename)
-{
-	int fd = open(filename, O_RDONLY, 0);
-
-	return fd;
-}
-
-static void close_file(int fd)
-{
-	/* Valgrind is picky... */
-	close(fd);
 }
 
 static void add_module(char *filename, int namelen, struct list_head *list)
@@ -588,15 +571,70 @@ static char *prepend_option(char *options, const char *newoption)
 
 /* Add to options */
 static char *add_extra_options(const char *modname,
-			       char *optstring,
+			       const char *optstring,
 			       const struct module_options *options)
 {
+	char *opts = NOFAIL(strdup(optstring));
+
 	while (options) {
 		if (streq(options->modulename, modname))
-			optstring = prepend_option(optstring, options->options);
+			opts = prepend_option(opts, options->options);
 		options = options->next;
 	}
-	return optstring;
+	return opts;
+}
+
+/* Is module in /proc/modules?  If so, fill in usecount if not NULL.
+   0 means no, 1 means yes, -1 means unknown.
+ */
+static int module_in_procfs(const char *modname, unsigned int *usecount)
+{
+	FILE *proc_modules;
+	char *line;
+
+again:
+	/* Might not be mounted yet.  Don't fail. */
+	proc_modules = fopen("/proc/modules", "r");
+	if (!proc_modules)
+		return -1;
+
+	while ((line = getline_wrapped(proc_modules, NULL)) != NULL) {
+		char *entry = strtok(line, " \n");
+
+		if (entry && streq(entry, modname)) {
+			/* If it exists, usecount is the third entry. */
+			if (!strtok(NULL, " \n"))
+				goto out;
+
+			if (!(entry = strtok(NULL, " \n"))) /* usecount */
+				goto out;
+			else
+				if (usecount)
+					*usecount = atoi(entry);
+
+			/* Followed by - then status. */
+			if (strtok(NULL, " \n")
+			    && (entry = strtok(NULL, " \n")) != NULL) {
+				/* No locking, we might hit cases
+				 * where module is in flux.  Spin. */
+				if (streq(entry, "Loading")
+				    || streq(entry, "Unloading")) {
+					usleep(100000);
+					free(line);
+					fclose(proc_modules);
+					goto again;
+				}
+			}
+
+		out:
+			free(line);
+			fclose(proc_modules);
+			return 1;
+		}
+		free(line);
+	}
+	fclose(proc_modules);
+	return 0;
 }
 
 /* Read sysfs attribute into a buffer.
@@ -638,7 +676,7 @@ static int module_builtin(const char *dirname, const char *modname)
 /* Is module in /sys/module?  If so, fill in usecount if not NULL.
    0 means no, 1 means yes, -1 means unknown.
  */
-static int module_in_kernel(const char *modname, unsigned int *usecount)
+static int module_in_sysfs(const char *modname, unsigned int *usecount)
 {
 	int ret;
 	char *name;
@@ -658,14 +696,26 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	if (ret < 0)
 		return (errno == ENOENT) ? 0 : -1; /* Not found or unknown. */
 
-	/* Wait for the existing module to either go live or disappear. */
 	nofail_asprintf(&name, "/sys/module/%s/initstate", modname);
-	while (1) {
-		ret = read_attribute(name, attr, ATTR_LEN);
-		if (ret != 1 || streq(attr, "live\n"))
-			break;
+	ret = read_attribute(name, attr, ATTR_LEN);
+	if (ret == 0) {
+		free(name);
+		nofail_asprintf(&name, "/sys/module/%s", modname);
+		if (stat(name, &finfo) < 0) {
+			/* module was removed before we could read initstate */
+			ret = 0;
+		} else {
+			/* initstate not available (2.6.19 or earlier) */
+			ret = -1;
+		}
+		free(name);
+		return ret;
+	}
 
+	/* Wait for the existing module to either go live or disappear. */
+	while (ret == 1 && !streq(attr, "live\n")) {
 		usleep(100000);
+		ret = read_attribute(name, attr, ATTR_LEN);
 	}
 	free(name);
 
@@ -682,6 +732,22 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	}
 
 	return 1;
+}
+
+/* Is module loaded?  If so, fill in usecount if not NULL. 
+   0 means no, 1 means yes, -1 means unknown.
+ */
+static int module_in_kernel(const char *modname, unsigned int *usecount)
+{
+	int result;
+
+	result = module_in_sysfs(modname, usecount);
+	if (result != -1)
+		return result;
+
+	/* /sys/module/%s/initstate is only available since 2.6.20,
+	   fallback to /proc/modules to get module state on earlier kernels. */
+	return module_in_procfs(modname, usecount);
 }
 
 void dump_modversions(const char *filename, errfn_t error)
@@ -1301,9 +1367,9 @@ static void do_softdep(const struct module_softdep *softdep,
 	}
 }
 
-/* Actually do the insert.  Frees second arg. */
+/* Actually do the insert. */
 static int insmod(struct list_head *list,
-		   char *optstring,
+		   const char *optstring,
 		   const char *newname,
 		   const char *cmdline_opts,
 		   const struct modprobe_conf *conf,
@@ -1311,12 +1377,14 @@ static int insmod(struct list_head *list,
 		   errfn_t error,
 		   modprobe_flags_t flags)
 {
-	int ret, fd;
+	int ret;
 	struct elf_file *module;
 	const struct module_softdep *softdep;
 	const char *command;
 	struct module *mod = list_entry(list->next, struct module, list);
 	int rc = 0;
+	int already_loaded;
+	char *opts = NULL;
 
 	/* Take us off the list. */
 	list_del(&mod->list);
@@ -1326,54 +1394,54 @@ static int insmod(struct list_head *list,
 		modprobe_flags_t f = flags;
 		f &= ~mit_first_time;
 		f &= ~mit_ignore_commands;
-		if ((rc = insmod(list, NOFAIL(strdup("")), NULL,
+		if ((rc = insmod(list, "", NULL,
 		       "", conf, dirname, warn, f)) != 0)
 		{
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
 				insert_moderror(errno));
-			goto out_optstring;
+			goto out;
 		}
 	}
 
-	fd = open_file(mod->filename);
-	if (fd < 0) {
-		error("Could not open '%s': %s\n",
-		      mod->filename, strerror(errno));
-		goto out_optstring;
-	}
-
 	/* Don't do ANYTHING if already in kernel. */
-	if (!(flags & mit_ignore_loaded)
-	    && module_in_kernel(newname ?: mod->modname, NULL) == 1) {
+	already_loaded = module_in_kernel(newname ?: mod->modname, NULL);
+
+	if (!(flags & mit_ignore_loaded) && already_loaded == 1) {
 		if (flags & mit_first_time)
 			error("Module %s already in kernel.\n",
 			      newname ?: mod->modname);
-		goto out_unlock;
+		goto out;
 	}
 
 	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
-		close_file(fd);
 		do_softdep(softdep, cmdline_opts, conf, dirname, 
 			   error, flags & (mit_remove | mit_dry_run));
-		goto out_optstring;
+		goto out;
 	}
 
 	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
-		close_file(fd);
-		do_command(mod->modname, command, flags & mit_dry_run, error,
-			   "install", cmdline_opts);
-		goto out_optstring;
+		if (already_loaded == -1) {
+			warn("/sys/module/ not present or too old,"
+				" and /proc/modules does not exist.\n");
+			warn("Ignoring install commands for %s"
+				" in case it is already loaded.\n",
+				newname ?: mod->modname);
+		} else {
+			do_command(mod->modname, command, flags & mit_dry_run,
+				   error, "install", cmdline_opts);
+			goto out;
+		}
 	}
 
-	module = grab_elf_file_fd(mod->filename, fd);
+	module = grab_elf_file(mod->filename);
 	if (!module) {
 		error("Could not read '%s': %s\n", mod->filename,
 			(errno == ENOEXEC) ? "Invalid module format" :
 				strerror(errno));
-		goto out_unlock;
+		goto out;
 	}
 	if (newname)
 		rename_module(module, mod->modname, newname);
@@ -1383,20 +1451,20 @@ static int insmod(struct list_head *list,
 		clear_magic(module);
 
 	/* Config file might have given more options */
-	optstring = add_extra_options(mod->modname, optstring, conf->options);
+	opts = add_extra_options(mod->modname, optstring, conf->options);
 
-	info("insmod %s %s\n", mod->filename, optstring);
+	info("insmod %s %s\n", mod->filename, opts);
 
 	if (flags & mit_dry_run)
-		goto out;
+		goto out_elf_file;
 
-	ret = init_module(module->data, module->len, optstring);
+	ret = init_module(module->data, module->len, opts);
 	if (ret != 0) {
 		if (errno == EEXIST) {
 			if (flags & mit_first_time)
 				error("Module %s already in kernel.\n",
 				      newname ?: mod->modname);
-			goto out_unlock;
+			goto out_elf_file;
 		}
 		/* don't warn noisely if we're loading multiple aliases. */
 		/* one of the aliases may try to use hardware we don't have. */
@@ -1406,12 +1474,10 @@ static int insmod(struct list_head *list,
 			      insert_moderror(errno));
 		rc = 1;
 	}
- out:
+ out_elf_file:
 	release_elf_file(module);
- out_unlock:
-	close_file(fd);
- out_optstring:
-	free(optstring);
+	free(opts);
+ out:
 	free_module(mod);
 	return rc;
 }
@@ -1429,12 +1495,18 @@ static void rmmod(struct list_head *list,
 	const char *command;
 	unsigned int usecount = 0;
 	struct module *mod = list_entry(list->next, struct module, list);
+	int exists;
 
 	/* Take first one off the list. */
 	list_del(&mod->list);
 
 	if (!name)
 		name = mod->modname;
+
+	/* Don't do ANYTHING if not loaded. */
+	exists = module_in_kernel(name, &usecount);
+	if (exists == 0)
+		goto nonexistent_module;
 
 	/* Even if renamed, find commands/softdeps to orig. name. */
 
@@ -1447,16 +1519,21 @@ static void rmmod(struct list_head *list,
 
 	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
-		do_command(mod->modname, command, flags & mit_dry_run, error,
-			   "remove", cmdline_opts);
-		goto remove_rest;
+		if (exists == -1) {
+			warn("/sys/module/ not present or too old,"
+				" and /proc/modules does not exist.\n");
+			warn("Ignoring remove commands for %s"
+				" in case it is not loaded.\n",
+				mod->modname);
+		} else {
+			do_command(mod->modname, command, flags & mit_dry_run,
+				   error, "remove", cmdline_opts);
+			goto remove_rest;
+		}
 	}
 
-	if (module_in_kernel(name, &usecount) == 0)
-		goto nonexistent_module;
-
 	if (usecount != 0) {
-		if (!(flags & mit_ignore_loaded))
+		if (!(flags & mit_quiet_inuse))
 			error("Module %s is in use.\n", name);
 		goto remove_rest;
 	}
@@ -1479,7 +1556,7 @@ static void rmmod(struct list_head *list,
 	if (!list_empty(list)) {
 		flags &= ~mit_first_time;
 		flags &= ~mit_ignore_commands;
-		flags |= mit_ignore_loaded;
+		flags |= mit_quiet_inuse;
 
 		rmmod(list, NULL, "", conf, dirname, warn, flags);
 	}
@@ -1528,12 +1605,11 @@ static int handle_module(const char *modname,
 		return 1;
 	}
 
-	if (flags & mit_remove) {
-		flags &= ~mit_ignore_loaded;
+	if (flags & mit_remove)
 		rmmod(todo_list, newname, cmdline_opts,
 		      conf, dirname, error, flags);
-	} else
-		insmod(todo_list, NOFAIL(strdup(options)), newname,
+	else
+		insmod(todo_list, options, newname,
 		       cmdline_opts, conf, dirname, error, flags);
 
 	return 0;
@@ -1624,8 +1700,8 @@ int do_modprobe(const char *modulename,
 			err = warn;
 		while (aliases) {
 			/* Add the options for this alias. */
-			char *opts = NOFAIL(strdup(cmdline_opts));
-			opts = add_extra_options(modname, opts, conf->options);
+			char *opts;
+			opts = add_extra_options(modname, cmdline_opts, conf->options);
 
 			read_depends(dirname, aliases->module, &list);
 			failed |= handle_module(aliases->module,
@@ -1633,6 +1709,7 @@ int do_modprobe(const char *modulename,
 				conf, dirname, err, flags);
 
 			aliases = aliases->next;
+			free(opts);
 			INIT_LIST_HEAD(&list);
 		}
 	} else {

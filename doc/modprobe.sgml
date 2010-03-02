@@ -187,13 +187,13 @@
         </term>
         <listitem>
           <para>
-	    Normally <command>modprobe</command> will report an error
-	    if you try to remove or insert a module it can't find (and
+	    With this flag, <command>modprobe</command> won't print an error
+	    message if you try to remove or insert a module it can't find (and
 	    isn't an alias or
-	    <command>install</command>/<command>remove</command>
-	    command).  With this flag, <command>modprobe</command>
-	    will simply ignore any bogus names (the kernel uses this
-	    to opportunistically probe for modules which might exist).
+	    <command>install</command>/<command>remove</command> command).
+	    However, it will still return with a non-zero exit status. The
+	    kernel uses this to opportunistically probe for modules which might
+	    exist.
 	  </para>
         </listitem>
       </varlistentry>

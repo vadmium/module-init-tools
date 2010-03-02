@@ -79,7 +79,6 @@ struct module_ops
 extern struct module_ops mod_ops32, mod_ops64;
 
 struct elf_file *grab_elf_file(const char *pathname);
-struct elf_file *grab_elf_file_fd(const char *pathname, int fd);
 void release_elf_file(struct elf_file *file);
 
 #endif /* MODINITTOOLS_MODULEOPS_H */

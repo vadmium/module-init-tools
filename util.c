@@ -4,6 +4,8 @@
 #include <string.h>
 #include <errno.h>
 #include <elf.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "logging.h"
 #include "util.h"
 
@@ -203,3 +205,30 @@ int __attribute__ ((pure)) native_endianness()
 	return (char) *((uint32_t*)("\1\0\0\2"));
 }
 
+/*
+ * Compare "string" with extended regex "pattern". Include backward compatible
+ * matching of "*" as a wildcard by replacing it with ".*" automatically.
+ */
+int regex_match(const char *string, const char *pattern)
+{
+	int status;
+	regex_t re;
+	char *fix_pattern;
+
+	/* backward compatibility with old "match" code */
+	if (strncmp("*", pattern, 1) != 0)
+		fix_pattern = (char *)pattern;
+	else
+		fix_pattern = ".*"; /* match everything */
+
+	if (regcomp(&re, fix_pattern, REG_EXTENDED|REG_NOSUB) != 0)
+		return 0;	/* alloc failure */
+
+	status = regexec(&re, string, (size_t) 0, NULL, 0);
+	regfree(&re);
+
+	if (status != 0)
+		return 0;	/* no match */
+
+	return 1;	/* match */
+}
