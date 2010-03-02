@@ -12,13 +12,13 @@
 <refentry>
   <refentryinfo>
     <address>
-      <email>rusty@rustcorp.com.au</email>
+      <email>jcm@jonmasters.org</email>
     </address>
     <author>
-      <firstname>Rusty</firstname>
-      <surname>Russell</surname>
+      <firstname>Jon</firstname>
+      <surname>Masters</surname>
     </author>
-    <date>2003-05-9</date>
+    <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>modinfo</refentrytitle>
@@ -49,8 +49,8 @@
       Kernel modules given on the command line.  If the module name is
       not a filename, then the
       <filename>/lib/modules/</filename><replaceable>version</replaceable>
-      directory is searched, as done by
-      <citerefentry><refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum></citerefentry>.
+      directory is searched, as is also done by
+      <citerefentry><refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum></citerefentry> when loading kernel modules.
     </para>
 
     <para><command>modinfo</command> by default lists each attribute
@@ -103,7 +103,7 @@
             information from a newly installed (but not yet running) set of
             kernel modules. For example, you wish to find which firmware files
             are needed by various modules in a new kernel for which you must
-            make an initrd image prior to booting.
+            make an initrd/initramfs image prior to booting.
           </para>
         </listitem>
       </varlistentry>
@@ -137,7 +137,8 @@
   <refsect1>
     <title>COPYRIGHT</title>
     <para>
-      This manual page Copyright 2003, Rusty Russell, IBM Corporation.
+      This manual page originally Copyright 2003, Rusty Russell, IBM
+      Corporation. Maintained by Jon Masters and others.
     </para>
   </refsect1>
   <refsect1>

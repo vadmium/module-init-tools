@@ -12,13 +12,13 @@
 <refentry>
   <refentryinfo>
     <address>
-      <email>rusty@rustcorp.com.au</email>
+      <email>jcm@jonmasters.org</email>
     </address>
     <author>
-      <firstname>Rusty</firstname>
-      <surname>Russell</surname>
+      <firstname>Jon</firstname>
+      <surname>Masters</surname>
     </author>
-    <date>2002-12-27</date>
+    <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>insmod</refentrytitle>
@@ -43,7 +43,7 @@
 	taken from standard input. Most users will want to use
 	<citerefentry><refentrytitle>modprobe</refentrytitle>
 	<manvolnum>8</manvolnum> </citerefentry> instead, which is
-	more clever.</para>
+	more clever and can handle module dependencies.</para>
 
     <para>Only the most general of error messages are reported: as the
 	work of trying to link the module is now done inside the kernel,
@@ -53,7 +53,8 @@
   <refsect1>
     <title>COPYRIGHT</title>
     <para>
-      This manual page Copyright 2002, Rusty Russell, IBM Corporation.
+      This manual page originally Copyright 2002, Rusty Russell, IBM
+      Corporation. Maintained by Jon Masters and others.
     </para>
   </refsect1>
   <refsect1>
@@ -67,6 +68,9 @@
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>lsmod</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>
+      <citerefentry>
+	<refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
   </refsect1>

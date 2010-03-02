@@ -12,13 +12,13 @@
 <refentry>
   <refentryinfo>
     <address>
-      <email>rusty@rustcorp.com.au</email>
+      <email>jcm@jonmasters.org</email>
     </address>
     <author>
-      <firstname>Rusty</firstname>
-      <surname>Russell</surname>
+      <firstname>Jon</firstname>
+      <surname>Masters</surname>
     </author>
-    <date>2002-12-27</date>
+    <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>lsmod</refentrytitle>
@@ -44,13 +44,18 @@
   <refsect1>
     <title>COPYRIGHT</title>
     <para>
-      This manual page Copyright 2002, Rusty Russell, IBM Corporation.
+      This manual page originally Copyright 2002, Rusty Russell, IBM
+      Corporation. Maintained by Jon Masters and others.
     </para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para><citerefentry>
+    <para>
+      <citerefentry>
+	<refentrytitle>insmod</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>,
+      <citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>,
       <citerefentry>

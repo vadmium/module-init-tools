@@ -12,13 +12,13 @@
 <refentry>
   <refentryinfo>
     <address>
-      <email>rusty@rustcorp.com.au</email>
+      <email>jcm@jonmasters.org</email>
     </address>
     <author>
-      <firstname>Rusty</firstname>
-      <surname>Russell</surname>
+      <firstname>Jon</firstname>
+      <surname>Masters</surname>
     </author>
-    <date>2002-12-27</date>
+    <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>rmmod</refentrytitle>
@@ -41,7 +41,8 @@
     <title>DESCRIPTION</title>
 
     <para><command>rmmod</command> is a trivial program to remove a
-      module from the kernel.  Most users will want to use
+      module (when module unloading support is provided) from the kernel.
+      Most users will want to use
       <citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry> with the <option>-r</option> option instead.
@@ -116,7 +117,8 @@
   <refsect1>
     <title>COPYRIGHT</title>
     <para>
-      This manual page Copyright 2002, Rusty Russell, IBM Corporation.
+      This manual page originally Copyright 2002, Rusty Russell, IBM
+      Corporation. Maintained by Jon Masters and others.
     </para>
   </refsect1>
   <refsect1>
@@ -131,6 +133,9 @@
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>lsmod</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>
+      <citerefentry>
+	<refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>
     </para>
   </refsect1>

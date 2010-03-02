@@ -12,13 +12,13 @@
 <refentry>
   <refentryinfo>
     <address>
-      <email>rusty@rustcorp.com.au</email>
+      <email>jcm@jonmasters.org</email>
     </address>
     <author>
-      <firstname>Rusty</firstname>
-      <surname>Russell</surname>
+      <firstname>Jon</firstname>
+      <surname>Masters</surname>
     </author>
-    <date>2007-03-21</date>
+    <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>depmod</refentrytitle>
@@ -52,10 +52,9 @@
     <title>DESCRIPTION</title>
     <para>
       Linux kernel modules can provide services (called "symbols") for
-      other modules to use (using EXPORT_SYMBOL in the code).  If a
-      second module uses this symbol, that second module clearly
-      depends on the first module.  These dependencies can get quite
-      complex.
+      other modules to use (using one of the EXPORT_SYMBOL variants in the
+      code).  If a second module uses this symbol, that second module clearly
+      depends on the first module.  These dependencies can get quite complex.
     </para>
     <para>
       <command>depmod</command> creates a list of module dependencies
@@ -63,10 +62,13 @@
       <filename>/lib/modules/</filename><replaceable>version</replaceable> 
       and determining what symbols it exports and what symbols it
       needs.  By default, this list is written to
-      <filename>modules.dep</filename> in the same directory.  If
+      <filename>modules.dep</filename>, and a binary hashed version named
+      <filename>modules.dep.bin</filename>, in the same directory.  If
       filenames are given on the command line, only those modules are
-      examined (which is rarely useful unless all modules are
-      listed).
+      examined (which is rarely useful unless all modules are listed).
+      <command>depmod</command> also creates a list of symbols provided
+      by modules in the file named <filename>modules.symbols</filename>
+      and its binary hashed version, <filename>modules.symbols.bin</filename>.
     </para>
     <para>
       If a <replaceable>version</replaceable> is provided, then that
@@ -74,8 +76,11 @@
       current kernel version (as returned by <command>uname -r</command>).
     </para>
     <para>
-      <command>depmod</command> will also generate various map files
-      in this directory for use by the hotplug infrastructure.
+      
+    <para>
+      <command>depmod</command> will also generate various legacy map
+      files in the output directory for use by the older hotplug
+      infrastructure. These map files are largely deprecated.
     </para>
   </refsect1>
   <refsect1>
@@ -115,7 +120,9 @@
 	      the directory name.  This
 	      <replaceable>basedir</replaceable> is stripped from the
 	      resulting <filename>modules.dep</filename> file, so it
-	      is ready to be moved into the normal location.
+	      is ready to be moved into the normal location. Use this option
+	      if you are a distribution vendor who needs to pre-generate the
+	      meta-data files rather than running depmod again later.
 	    </para>
         </listitem>
       </varlistentry>
@@ -140,7 +147,9 @@
 	      supplied by other modules or the kernel.  Normally, any
 	      symbols not provided by modules are assumed to be
 	      provided by the kernel (which should be true in a
-	      perfect world).
+	      perfect world), but this assumption can break espencially
+	      when additionally updated third party drivers are not
+	      correctly installed or were built incorrectly.
 	    </para>
 	  </listitem>
       </varlistentry>
@@ -202,7 +211,8 @@
     <title>COPYRIGHT</title>
 
     <para>
-      This manual page Copyright 2002, Rusty Russell, IBM Corporation.
+      This manual page originally Copyright 2002, Rusty Russell,
+      IBM Corporation. Maintained by Jon Masters and others.
     </para>
   </refsect1>
   <refsect1>
@@ -210,6 +220,9 @@
     <para>
       <citerefentry>
 	<refentrytitle>depmod.conf</refentrytitle><manvolnum>5</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+	<refentrytitle>depmod.d</refentrytitle><manvolnum>5</manvolnum>
       </citerefentry>,
       <citerefentry>
 	<refentrytitle>modprobe</refentrytitle><manvolnum>8</manvolnum>
