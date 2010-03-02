@@ -1565,7 +1565,7 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "Vvqsnd:C:o:rclt:aibf", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "Vvqsnd:S:C:DRo:rclt:aibf", options, NULL)) != -1){
 		switch (opt) {
 		case 'V':
 			puts(PACKAGE " version " VERSION);
