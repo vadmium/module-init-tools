@@ -6,8 +6,13 @@ build
 	* Fix "make dist" to build documentation.
 	* Fix "make distcheck" at the same time.
 
+depmod
+------
+	* Kill off the "map" files. They aren't really needed any more.
+
 modprobe
 --------
+	* Kill off some of the legacy options.
 	* Fix grab_elf_file_fd error handling for test-module/10alias.sh.
 	* Enforce use of *.conf files in /etc/modprobe.d as filename extension.
 	* Add a "depends" config file directive to obviate "install" hacks.

@@ -1,8 +1,12 @@
-Adam J. Richter <adam@yggdrasil.com>
-Alan Jenkins <alan-jenkins@tuffmail.co.uk>
-Jon Masters <jcm@jonmasters.org>
-Kay Sievers <kay.sievers@vrfy.org>
-Marco d'Itri <md@linux.it>
-Michal Marek <mmarek@suse.cz>
-Robby Workman <rworkman@slackware.com>
-Rusty Russell <rusty@rustcorp.com.au>
+Maintainer:
+	Jon Masters <jcm@jonmasters.org>
+
+Many thanks to:
+	Adam J. Richter <adam@yggdrasil.com>
+	Alan Jenkins <alan-jenkins@tuffmail.co.uk>
+	Jon Masters <jcm@jonmasters.org>
+	Kay Sievers <kay.sievers@vrfy.org>
+	Marco d'Itri <md@linux.it>
+	Michal Marek <mmarek@suse.cz>
+	Robby Workman <rworkman@slackware.com>
+	Rusty Russell <rusty@rustcorp.com.au>

@@ -1,3 +1,6 @@
+module-init-tools coding standards
+----------------------------------
+
 Patches to module-init-tools are welcome.  Please note the following
 design goals:
 
@@ -5,26 +8,21 @@ design goals:
 
 2) modprobe is designed to be a swiss-army-knife, but the config file
    format is designed to be as simple as possible: let the user create
-   complexity if they wish.
+   complexity if they wish. Having said that, the "install" and "remove"
+   commands serve as examples of what we don't want to do in the future,
+   due to the problems they cause with identifying module dependencies.
 
 3) module-init-tools contains a testsuite.  Patches which do not pass
-   the testsuite get a frowny face.
-
-New tests
----------
-
-The following tests have been recently added:
-
-	* Binary trie tests (test-modprobe-indexed)
+   the testsuite get a frowny face. It's easy to run the testsuite,
+   as you can see below. Please do test patches before posting.
 
 The testsuite
 -------------
 
-The testsuite is under tests/test-*: one directory for each tool.  You
-can run "make check" to run the testsuite: it will use valgrind (much
-slower, but catches more things) if it is installed.
+The testsuite is under tests/test-*: one directory for each tool. To
+run the testsuite, type the following from the top level directory:
 
-"make check" simply invokes "./tests/runtests".
+	./tests/runtests
 
 To start the tests at a particular test, use that test name on the
 command line, eg. "./tests/runtests 26blacklist.sh".  To see exactly

@@ -11,6 +11,8 @@ substantial over time. Development is preferably done via git merges.
       automake --add-missing --copy
       autoconf
 
+  You can also run "autoreconf -i" to perform these three stages.
+
 * Regression tests can be run as follows (try --help for more details):
 
       tests/runtests
@@ -19,9 +21,12 @@ substantial over time. Development is preferably done via git merges.
 
 Prior to a new release:
 
-      Update configure.ac with new version
-      prune git tree/commit with new version in configure.ac
-      prep tree for tarball
-      push to kerneltools.org (along with GPG signed ASC signature)
+	Update configure.ac with new version
+	commit git tree to appropriate branch (dev/master/topic)
+	perform a final tests/runtests on the tree
+	push tree up to git.kernel.org
+	prep tree for tarball (git archive)
+	sign tree with GPG and save signature
+	push archive up to kernel.org
 
 Jon Masters <jcm@jonmasters.org>
