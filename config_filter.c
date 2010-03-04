@@ -1,3 +1,11 @@
+/* config_filter.c: handle hidden or non-configuration files in config dirs.
+
+   These functions are called whenever we will parse configuration files to
+   ensure we are not picking up backups, SCM meta data, package artifacts.
+   Eventually all config files will have to follow a convention so these
+   lists of possible exceptions should not have to grow by very much.
+*/
+
 #include <string.h>
 
 #include "util.h"
