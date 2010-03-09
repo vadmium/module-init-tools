@@ -1,3 +1,7 @@
+/*
+ * depmod.h - prototypes for the depmod utility
+ */
+
 #ifndef MODINITTOOLS_DEPMOD_H
 #define MODINITTOOLS_DEPMOD_H
 #include "list.h"
