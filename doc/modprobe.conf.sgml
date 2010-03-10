@@ -18,7 +18,7 @@
       <firstname>Jon</firstname>
       <surname>Masters</surname>
     </author>
-    <date>2010-03-01</date>
+    <date>2010-03-09</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>modprobe.conf</refentrytitle>
@@ -86,21 +86,18 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>options <replaceable>modulename</replaceable> <replaceable>option...</replaceable>
+        <term>blacklist <replaceable>modulename</replaceable>
         </term>
 	<listitem>
 	  <para>
-	    This command allows you to add options to the module
-	    <replaceable>modulename</replaceable> (which might be an
-	    alias) every time it is inserted into the kernel: whether
-	    directly (using <command>modprobe</command> 
-	    <replaceable>modulename</replaceable> or because the
-	    module being inserted depends on this module.
-	  </para>
-	  <para>
-	    All options are added together: they can come from an
-	    <command>option</command> for the module itself, for an
-	    alias, and on the command line.
+	    Modules can contain their own aliases: usually these are
+	    aliases describing the devices they support, such as
+	    "pci:123...".  These "internal" aliases can be overridden
+	    by normal "alias" keywords, but there are cases where two
+	    or more modules both support the same devices, or a module
+	    invalidly claims to support a devicei that it does not: the
+	    <command>blacklist</command> keyword indicates that all of
+	    that particular module's internal aliases are to be ignored.
 	  </para>
         </listitem>
       </varlistentry>
@@ -148,6 +145,25 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term>options <replaceable>modulename</replaceable> <replaceable>option...</replaceable>
+        </term>
+	<listitem>
+	  <para>
+	    This command allows you to add options to the module
+	    <replaceable>modulename</replaceable> (which might be an
+	    alias) every time it is inserted into the kernel: whether
+	    directly (using <command>modprobe</command> 
+	    <replaceable>modulename</replaceable> or because the
+	    module being inserted depends on this module.
+	  </para>
+	  <para>
+	    All options are added together: they can come from an
+	    <command>option</command> for the module itself, for an
+	    alias, and on the command line.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term>remove <replaceable>modulename</replaceable> <replaceable>command...</replaceable>
         </term>
 	<listitem>
@@ -158,33 +174,18 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>blacklist <replaceable>modulename</replaceable>
+        <term>softdep <replaceable>modulename</replaceable> pre: <replaceable>modules...</replaceable> post: <replaceable>modules...</replaceable>
         </term>
 	<listitem>
 	  <para>
-	    Modules can contain their own aliases: usually these are
-	    aliases describing the devices they support, such as
-	    "pci:123...".  These "internal" aliases can be overridden
-	    by normal "alias" keywords, but there are cases where two
-	    or more modules both support the same devices, or a module
-	    invalidly claims to support a devicei that it does not: the
-	    <command>blacklist</command> keyword indicates that all of
-	    that particular module's internal aliases are to be ignored.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>softdep <replaceable>modulename</replaceable> &#91;pre: <replaceable>pre-deps...</replaceable>&#93; &#91;post: <replaceable>post-deps...</replaceable>&#93;
-        </term>
-	<listitem>
-	  <para>
-            The softdep command allows you to specify soft, or optional, module
-            dependencies. <replaceable>modulename</replaceable> can be used
-            without these optional modules installed, but usually with some
-            features missing.
+            The <command>softdep</command> command allows you to specify soft,
+            or optional, module dependencies. <replaceable>modulename</replaceable>
+            can be used without these optional modules installed, but usually with
+            some features missing. For example, a driver for a storage HBA might
+            require another module be loaded in order to use management features.
 	  </para>
 	  <para>
-            pre-deps and post-deps are lists of names and/or aliases of other
+            pre-deps and post-deps modules are lists of names and/or aliases of other
             modules that modprobe will attempt to install (or remove) in order
             before and after the main module given in the
             <replaceable>modulename</replaceable> argument.
@@ -212,6 +213,8 @@
       A future version of module-init-tools will come with a strong warning
       to avoid use of the <command>install</command> as explained above. This
       will happen once support for soft dependencies in the kernel is complete.
+      That support will complement the existing softdep support within this
+      utility by providing such dependencies directly within the modules.
     </para>
   </refsect1>
   <refsect1>
