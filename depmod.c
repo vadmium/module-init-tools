@@ -877,13 +877,13 @@ static int output_aliases(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modalias", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++)
 			fprintf(out, "alias %s %s\n", tbl->str[j], modname);
 		strtbl_free(tbl);
 
 		/* Grab from new-style .modinfo section. */
-		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modinfo", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			const char *p = tbl->str[j];
 			if (strstarts(p, "alias="))
@@ -914,7 +914,7 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		filename2modname(modname, i->pathname);
 
 		/* Grab from old-style .modalias section. */
-		tbl = file->ops->load_strings(file, ".modalias", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modalias", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			alias = NOFAIL(strdup(tbl->str[j]));
 			underscores(alias);
@@ -927,7 +927,7 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 		strtbl_free(tbl);
 
 		/* Grab from new-style .modinfo section. */
-		tbl = file->ops->load_strings(file, ".modinfo", NULL, fatal);
+		tbl = file->ops->load_strings(file, ".modinfo", NULL);
 		for (j = 0; tbl && j < tbl->cnt; j++) {
 			const char *p = tbl->str[j];
 			if (strstarts(p, "alias=")) {
@@ -946,6 +946,35 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 	index_write(index, out);
 	index_destroy(index);
 
+	return 1;
+}
+
+static int output_softdeps(struct module *modules, FILE *out, char *dirname)
+{
+	struct module *i;
+	struct elf_file *file;
+	struct string_table *tbl;
+	int j;
+
+	fprintf(out, "# Soft dependencies extracted from modules themselves.\n");
+	fprintf(out, "# Copy, with a .conf extension, to /etc/modprobe.d to use "
+		"it with modprobe.\n");
+	for (i = modules; i; i = i->next) {
+		char modname[strlen(i->pathname)+1];
+
+		file = i->file;
+		filename2modname(modname, i->pathname);
+
+		/* Grab from new-style .modinfo section. */
+		tbl = file->ops->load_strings(file, ".modinfo", NULL);
+		for (j = 0; tbl && j < tbl->cnt; j++) {
+			const char *p = tbl->str[j];
+			if (strstarts(p, "softdep="))
+				fprintf(out, "softdep %s %s\n",
+					modname, p + strlen("softdep="));
+		}
+		strtbl_free(tbl);
+	}
 	return 1;
 }
 
@@ -968,6 +997,7 @@ static struct depfile depfiles[] = {
 	{ "modules.seriomap", output_serio_table, 1 },
 	{ "modules.alias", output_aliases, 0 },
 	{ "modules.alias.bin", output_aliases_bin, 0 },
+	{ "modules.softdep", output_softdeps, 0 },
 	{ "modules.symbols", output_symbols, 0 },
 	{ "modules.symbols.bin", output_symbols_bin, 0 },
 	{ "modules.builtin.bin", output_builtin_bin, 0 },

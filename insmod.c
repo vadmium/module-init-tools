@@ -60,9 +60,7 @@ static void *grab_file(const char *filename, unsigned long *size)
 {
 	unsigned int max = 16384;
 	int ret, fd, err_save;
-	void *buffer = malloc(max);
-	if (!buffer)
-		return NULL;
+	void *buffer;
 
 	if (streq(filename, "-"))
 		fd = dup(STDIN_FILENO);
@@ -71,6 +69,10 @@ static void *grab_file(const char *filename, unsigned long *size)
 
 	if (fd < 0)
 		return NULL;
+
+	buffer = malloc(max);
+	if (!buffer)
+		goto out_error;
 
 	*size = 0;
 	while ((ret = read(fd, buffer + *size, max - *size)) > 0) {
@@ -158,7 +160,10 @@ int main(int argc, char *argv[])
 	if (ret != 0) {
 		fprintf(stderr, "insmod: error inserting '%s': %li %s\n",
 			filename, ret, moderror(errno));
-		exit(1);
 	}
+	free(file);
+
+	if (ret != 0)
+		exit(1);
 	exit(0);
 }

@@ -63,7 +63,7 @@ struct module_ops
 	void *(*load_section)(struct elf_file *module,
 		const char *secname, unsigned long *secsize);
 	struct string_table *(*load_strings)(struct elf_file *module,
-		const char *secname, struct string_table *tbl, errfn_t error);
+		const char *secname, struct string_table *tbl);
 	struct string_table *(*load_symbols)(struct elf_file *module,
 		uint64_t **versions);
 	struct string_table *(*load_dep_syms)(struct elf_file *module,
@@ -79,7 +79,6 @@ struct module_ops
 extern struct module_ops mod_ops32, mod_ops64;
 
 struct elf_file *grab_elf_file(const char *pathname);
-struct elf_file *grab_elf_file_fd(const char *pathname, int fd);
 void release_elf_file(struct elf_file *file);
 
 #endif /* MODINITTOOLS_MODULEOPS_H */

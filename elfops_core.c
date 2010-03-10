@@ -80,14 +80,18 @@ static void *PERBIT(load_section)(struct elf_file *module,
 
 static struct string_table *PERBIT(load_strings)(struct elf_file *module,
 						 const char *secname,
-						 struct string_table *tbl,
-						 errfn_t error)
+						 struct string_table *tbl)
 {
 	unsigned long size;
 	const char *strings;
 
 	strings = PERBIT(load_section)(module, secname, &size);
 	if (strings) {
+		if (strings[size-1] != 0) {
+			warn("%s may be corrupt; an unterminated string"
+			     " was found at the end of section %s\n",
+			     module->pathname, secname);
+		}
 		/* Skip any zero padding. */
 		while (!strings[0]) {
 			strings++;
@@ -147,8 +151,7 @@ static struct string_table *PERBIT(load_symbols)(struct elf_file *module,
 		return symtbl;
 	}
 fallback:
-	return PERBIT(load_strings)(module, "__ksymtab_strings", symtbl,
-			fatal);
+	return PERBIT(load_strings)(module, "__ksymtab_strings", symtbl);
 }
 
 static char *PERBIT(get_aliases)(struct elf_file *module, unsigned long *size)

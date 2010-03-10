@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 			ret = 1;
 			continue;
 		}
-		tags = mod->ops->load_strings(mod, ".modinfo", NULL, error);
+		tags = mod->ops->load_strings(mod, ".modinfo", NULL);
 		if (!tags) {
 			release_elf_file(mod);
 			continue;

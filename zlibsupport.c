@@ -40,23 +40,6 @@ void *grab_contents(gzFile *gzfd, unsigned long *size)
 	return buffer;
 }
 
-void *grab_fd(int fd, unsigned long *size)
-{
-	gzFile gzfd;
-
-	gzfd = gzdopen(fd, "rb");
-	if (!gzfd) {
-		if (errno == ENOMEM)
-			fatal("Memory allocation failure in gzdopen\n");
-		return NULL;
-	}
-
-	/* gzclose(gzfd) would close fd, which would drop locks.
-	   Don't blame zlib: POSIX locking semantics are so horribly
-	   broken that they should be ripped out. */
-	return grab_contents(gzfd, size);
-}
-
 /* gzopen handles uncompressed files transparently. */
 void *grab_file(const char *filename, unsigned long *size)
 {

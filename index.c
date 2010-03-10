@@ -624,6 +624,7 @@ char *index_search(struct index_file *in, const char *key)
 
 static char *index_search__node(struct index_node_f *node, const char *key, int i)
 {
+	char *value;
 	struct index_node_f *child;
 	int ch;
 	int j;
@@ -640,10 +641,13 @@ static char *index_search__node(struct index_node_f *node, const char *key, int 
 		i += j;
 		
 		if (key[i] == '\0') {
-			if (node->values)
-				return strdup(node->values[0].value);
-			else
+			if (node->values) {
+				value = strdup(node->values[0].value);
+				index_close(node);
+				return value;
+			} else {
 				return NULL;
+			}
 		}
 		
 		child = index_readchild(node, key[i]);
@@ -784,9 +788,10 @@ static void index_searchwild__all(struct index_node_f *node, int j,
 	if (node->values) {
 		if (fnmatch(buf_str(buf), subkey, 0) == 0)
 			index_searchwild__allvalues(node, out);
+	} else {
+		index_close(node);
 	}
 	
-	index_close(node);
 	buf_popchars(buf, pushed);
 }
 
@@ -797,4 +802,6 @@ static void index_searchwild__allvalues(struct index_node_f *node,
 	
 	for (v = node->values; v != NULL; v = v->next)
 		add_value(out, v->value, v->priority);
+
+	index_close(node);
 }
