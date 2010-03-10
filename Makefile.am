@@ -56,7 +56,7 @@ noinst_PROGRAMS=modindex
 noinst_LIBRARIES = libmodtools.a
 INSTALL = $(SHELL) $(top_srcdir)/install-with-care
 
-DIST_DIR := /home/rusty/devel/kernel/www/modules/
+DIST_DIR := /data/work/releases/module-init-tools/
 
 MAINTAINERCLEANFILES := $(man_MANS)
 
