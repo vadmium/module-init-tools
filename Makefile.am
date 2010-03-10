@@ -36,7 +36,7 @@ depmod_LDADD = $(LDADD) libmodtools.a
 modinfo_LDADD = $(LDADD) libmodtools.a
 modindex_LDADD = $(LDADD) libmodtools.a
 
-MAN5 = modprobe.conf.5 modules.dep.bin.5 modules.dep.5 depmod.conf.5 modprobe.d.5
+MAN5 = modprobe.conf.5 modules.dep.5 depmod.conf.5 modprobe.d.5
 MAN8 = depmod.8 insmod.8 lsmod.8 rmmod.8 modprobe.8 modinfo.8
 SGML = $(addprefix doc/,  $(MAN5:%.5=%.sgml) $(MAN8:%.8=%.sgml))
 dist_man_MANS = $(MAN5) $(MAN8)
