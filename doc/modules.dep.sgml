@@ -21,6 +21,8 @@
     <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
+    <refentrytitle>modules.dep.bin</refentrytitle>
+    <manvolnum>5</manvolnum>
     <refentrytitle>modules.dep</refentrytitle>
     <manvolnum>5</manvolnum>
   </refmeta>
