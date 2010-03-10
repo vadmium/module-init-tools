@@ -1701,7 +1701,8 @@ int do_modprobe(const char *modulename,
 		while (aliases) {
 			/* Add the options for this alias. */
 			char *opts;
-			opts = add_extra_options(modname, cmdline_opts, conf->options);
+			opts = add_extra_options(modname,
+						 cmdline_opts, conf->options);
 
 			read_depends(dirname, aliases->module, &list);
 			failed |= handle_module(aliases->module,
@@ -1720,6 +1721,7 @@ int do_modprobe(const char *modulename,
 		failed |= handle_module(modname, &list, newname, cmdline_opts,
 			cmdline_opts, conf, dirname, error, flags);
 	}
+
 out:
 	free(modname);
 	free_aliases(matching_aliases);
