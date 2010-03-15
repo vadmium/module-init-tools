@@ -95,7 +95,7 @@
 	    "pci:123...".  These "internal" aliases can be overridden
 	    by normal "alias" keywords, but there are cases where two
 	    or more modules both support the same devices, or a module
-	    invalidly claims to support a devicei that it does not: the
+	    invalidly claims to support a device that it does not: the
 	    <command>blacklist</command> keyword indicates that all of
 	    that particular module's internal aliases are to be ignored.
 	  </para>
