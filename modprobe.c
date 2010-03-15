@@ -1325,7 +1325,13 @@ static void do_softdep(const struct module_softdep *softdep,
 		       modprobe_flags_t flags)
 {
 	struct string_table *pre_modnames, *post_modnames;
+	modprobe_flags_t softdep_flags = flags;
 	int i, j;
+
+	softdep_flags &= ~mit_first_time;
+	softdep_flags &= ~mit_ignore_commands;
+	if (flags & mit_remove)
+		softdep_flags |= mit_quiet_inuse;
 
 	if (++recursion_depth >= MAX_RECURSION)
 		fatal("modprobe: softdep dependency loop encountered %s %s\n",
@@ -1348,7 +1354,7 @@ static void do_softdep(const struct module_softdep *softdep,
 		j = (flags & mit_remove) ? pre_modnames->cnt-1 - i : i;
 
 		do_modprobe(pre_modnames->str[j], NULL, "",
-			conf, dirname, warn, flags);
+			conf, dirname, warn, softdep_flags);
 	}
 
 	/* Modprobe main module, passing cmdline_opts, ignoring softdep */
@@ -1363,7 +1369,7 @@ static void do_softdep(const struct module_softdep *softdep,
 		j = (flags & mit_remove) ? post_modnames->cnt-1 - i : i;
 
 		do_modprobe(post_modnames->str[j], NULL, "", conf,
-			dirname, warn, flags);
+			dirname, warn, softdep_flags);
 	}
 }
 
@@ -1416,8 +1422,7 @@ static int insmod(struct list_head *list,
 
 	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
-		do_softdep(softdep, cmdline_opts, conf, dirname, 
-			   error, flags & (mit_remove | mit_dry_run));
+		do_softdep(softdep, cmdline_opts, conf, dirname, error, flags);
 		goto out;
 	}
 
@@ -1512,8 +1517,7 @@ static void rmmod(struct list_head *list,
 
 	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
-		do_softdep(softdep, cmdline_opts, conf, dirname,
-			   error, flags & (mit_remove | mit_dry_run));
+		do_softdep(softdep, cmdline_opts, conf, dirname, error, flags);
 		goto remove_rest;
 	}
 
