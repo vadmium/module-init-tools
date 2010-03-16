@@ -1532,18 +1532,10 @@ static int handle_module(const char *modname,
 			  modprobe_flags_t flags)
 {
 	if (list_empty(todo_list)) {
-		const struct module_softdep *softdep;
 		const char *command;
 
 		/* The dependencies have to be real modules, but
 		   handle case where the first is completely bogus. */
-
-		softdep = find_softdep(modname, conf->softdeps);
-		if (softdep && !(flags & mit_ignore_commands)) {
-			do_softdep(softdep, cmdline_opts, conf, dirname,
-				   error, flags & (mit_remove | mit_dry_run));
-			return 0;
-		}
 
 		command = find_command(modname, conf->commands);
 		if (command && !(flags & mit_ignore_commands)) {
