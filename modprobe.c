@@ -1894,7 +1894,7 @@ int main(int argc, char *argv[])
 	parse_toplevel_config(configname, &conf, dump_config, flags & mit_remove);
 
 	/* Read module options from kernel command line */
-	parse_kcmdline(1, &conf.options);
+	parse_kcmdline(dump_config, &conf.options);
 	
 	if (dump_config) {
 		char *aliasfilename, *symfilename;
@@ -1903,9 +1903,6 @@ int main(int argc, char *argv[])
 		nofail_asprintf(&aliasfilename, "%s/modules.alias", dirname);
 		nofail_asprintf(&symfilename, "%s/modules.symbols", dirname);
 
-		parse_toplevel_config(configname, &conf, 1, 0);
-		/* Read module options from kernel command line */
-		parse_kcmdline(1, &conf.options);
 		read_aliases(aliasfilename, "", 1, &conf.aliases);
 		read_aliases(symfilename, "", 1, &conf.aliases);
 
