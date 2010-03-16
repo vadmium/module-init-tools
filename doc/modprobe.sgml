@@ -37,7 +37,6 @@
       <arg><option>-i</option></arg>
       <arg><option>-q</option></arg>
       <arg><option>-b</option></arg>
-      <arg><option>-o</option> <replaceable>modulename</replaceable></arg>
       <arg><replaceable>modulename</replaceable></arg>
       <arg rep='repeat'><option><replaceable>module parameters</replaceable></option></arg>
     </cmdsynopsis>
@@ -305,20 +304,6 @@
 		useful for debugging problems. For historical reasons
 		both <option>--dry-run</option> and <option>--show</option>
 		actually mean the same thing and are interchangeable.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-o</option> <option>--name</option>
-        </term>
-        <listitem>
-          <para>
-	    This option tries to rename the module which is being
-	    inserted into the kernel.  Some testing modules can
-	    usefully be inserted multiple times, but the kernel
-	    refuses to have two modules of the same name.  Normally,
-	    modules should not require multiple insertions, as that
-	    would make them useless if there were no module support.
 	  </para>
         </listitem>
       </varlistentry>

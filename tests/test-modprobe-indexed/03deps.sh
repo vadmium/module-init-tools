@@ -81,25 +81,3 @@ DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
 [ "`modprobe -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: noexport_doubledep_$BITNESS EXCL 
 DELETE_MODULE: export_dep_$BITNESS EXCL 
 DELETE_MODULE: export_nodep_$BITNESS EXCL " ]
-
-# Removal with renaming.
-rm -rf tests/tmp/sys/module/*
-mkdir -p tests/tmp/sys/module/noexport_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_nodep_$BITNESS
-mkdir -p tests/tmp/sys/module/noexport_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/export_dep_$BITNESS
-mkdir -p tests/tmp/sys/module/newname
-echo live > tests/tmp/sys/module/noexport_nodep_$BITNESS/initstate
-echo live > tests/tmp/sys/module/export_nodep_$BITNESS/initstate
-echo live > tests/tmp/sys/module/noexport_dep_$BITNESS/initstate
-echo live > tests/tmp/sys/module/export_dep_$BITNESS/initstate
-echo live > tests/tmp/sys/module/newname/initstate
-echo 0 > tests/tmp/sys/module/noexport_nodep_$BITNESS/refcnt
-echo 0 > tests/tmp/sys/module/export_nodep_$BITNESS/refcnt
-echo 0 > tests/tmp/sys/module/noexport_dep_$BITNESS/refcnt
-echo 0 > tests/tmp/sys/module/export_dep_$BITNESS/refcnt
-echo 0 > tests/tmp/sys/module/newname/refcnt
-
-[ "`modprobe -o newname -r noexport_doubledep-$BITNESS 2>&1`" = "DELETE_MODULE: newname EXCL 
-DELETE_MODULE: export_dep_$BITNESS EXCL 
-DELETE_MODULE: export_nodep_$BITNESS EXCL " ]

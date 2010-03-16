@@ -291,47 +291,6 @@ static const char *remove_moderror(int err)
 	}
 }
 
-static void replace_modname(struct elf_file *module,
-			    void *mem, unsigned long len,
-			    const char *oldname, const char *newname)
-{
-	char *p;
-
-	/* 64 - sizeof(unsigned long) - 1 */
-	if (strlen(newname) > 55)
-		fatal("New name %s is too long\n", newname);
-
-	/* Find where it is in the module structure.  Don't assume layout! */
-	for (p = mem; p < (char *)mem + len - strlen(oldname); p++) {
-		if (memcmp(p, oldname, strlen(oldname)) == 0) {
-			strcpy(p, newname);
-			return;
-		}
-	}
-
-	warn("Could not find old name in %s to replace!\n", module->pathname);
-}
-
-static void rename_module(struct elf_file *module,
-			  const char *oldname,
-			  const char *newname)
-{
-	void *modstruct;
-	unsigned long len;
-
-	/* Old-style */
-	modstruct = module->ops->load_section(module,
-		".gnu.linkonce.this_module", &len);
-	/* New-style */
-	if (!modstruct)
-		modstruct = module->ops->load_section(module, "__module", &len);
-	if (!modstruct)
-		warn("Could not find module name to change in %s\n",
-		     module->pathname);
-	else
-		replace_modname(module, modstruct, len, oldname, newname);
-}
-
 static void clear_magic(struct elf_file *module)
 {
 	struct string_table *tbl;
@@ -1310,7 +1269,6 @@ out:
 
 /* Forward declaration */
 int do_modprobe(const char *modname,
-		const char *newname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
 		const char *dirname,
@@ -1353,13 +1311,13 @@ static void do_softdep(const struct module_softdep *softdep,
 		/* Reverse module order if removing. */
 		j = (flags & mit_remove) ? pre_modnames->cnt-1 - i : i;
 
-		do_modprobe(pre_modnames->str[j], NULL, "",
+		do_modprobe(pre_modnames->str[j], "",
 			conf, dirname, warn, softdep_flags);
 	}
 
 	/* Modprobe main module, passing cmdline_opts, ignoring softdep */
 
-	do_modprobe(softdep->modname, NULL, cmdline_opts,
+	do_modprobe(softdep->modname, cmdline_opts,
 		conf, dirname, warn, flags | mit_ignore_commands);
 
 	/* Modprobe post_modnames */
@@ -1368,7 +1326,7 @@ static void do_softdep(const struct module_softdep *softdep,
 		/* Reverse module order if removing. */
 		j = (flags & mit_remove) ? post_modnames->cnt-1 - i : i;
 
-		do_modprobe(post_modnames->str[j], NULL, "", conf,
+		do_modprobe(post_modnames->str[j], "", conf,
 			dirname, warn, softdep_flags);
 	}
 }
@@ -1376,7 +1334,6 @@ static void do_softdep(const struct module_softdep *softdep,
 /* Actually do the insert. */
 static int insmod(struct list_head *list,
 		   const char *optstring,
-		   const char *newname,
 		   const char *cmdline_opts,
 		   const struct modprobe_conf *conf,
 		   const char *dirname,
@@ -1400,8 +1357,7 @@ static int insmod(struct list_head *list,
 		modprobe_flags_t f = flags;
 		f &= ~mit_first_time;
 		f &= ~mit_ignore_commands;
-		if ((rc = insmod(list, "", NULL,
-		       "", conf, dirname, warn, f)) != 0)
+		if ((rc = insmod(list, "", "", conf, dirname, warn, f)) != 0)
 		{
 			error("Error inserting %s (%s): %s\n",
 				mod->modname, mod->filename,
@@ -1411,12 +1367,11 @@ static int insmod(struct list_head *list,
 	}
 
 	/* Don't do ANYTHING if already in kernel. */
-	already_loaded = module_in_kernel(newname ?: mod->modname, NULL);
+	already_loaded = module_in_kernel(mod->modname, NULL);
 
 	if (!(flags & mit_ignore_loaded) && already_loaded == 1) {
 		if (flags & mit_first_time)
-			error("Module %s already in kernel.\n",
-			      newname ?: mod->modname);
+			error("Module %s already in kernel.\n", mod->modname);
 		goto out;
 	}
 
@@ -1433,7 +1388,7 @@ static int insmod(struct list_head *list,
 				" and /proc/modules does not exist.\n");
 			warn("Ignoring install commands for %s"
 				" in case it is already loaded.\n",
-				newname ?: mod->modname);
+				mod->modname);
 		} else {
 			do_command(mod->modname, command, flags & mit_dry_run,
 				   error, "install", cmdline_opts);
@@ -1448,8 +1403,6 @@ static int insmod(struct list_head *list,
 				strerror(errno));
 		goto out;
 	}
-	if (newname)
-		rename_module(module, mod->modname, newname);
 	if (flags & mit_strip_modversion)
 		module->ops->strip_section(module, "__versions");
 	if (flags & mit_strip_vermagic)
@@ -1468,7 +1421,7 @@ static int insmod(struct list_head *list,
 		if (errno == EEXIST) {
 			if (flags & mit_first_time)
 				error("Module %s already in kernel.\n",
-				      newname ?: mod->modname);
+				      mod->modname);
 			goto out_elf_file;
 		}
 		/* don't warn noisely if we're loading multiple aliases. */
@@ -1489,7 +1442,6 @@ static int insmod(struct list_head *list,
 
 /* Do recursive removal. */
 static void rmmod(struct list_head *list,
-		  const char *name,
 		  const char *cmdline_opts,
 		  const struct modprobe_conf *conf,
 		  const char *dirname,
@@ -1505,11 +1457,8 @@ static void rmmod(struct list_head *list,
 	/* Take first one off the list. */
 	list_del(&mod->list);
 
-	if (!name)
-		name = mod->modname;
-
 	/* Don't do ANYTHING if not loaded. */
-	exists = module_in_kernel(name, &usecount);
+	exists = module_in_kernel(mod->modname, &usecount);
 	if (exists == 0)
 		goto nonexistent_module;
 
@@ -1538,7 +1487,7 @@ static void rmmod(struct list_head *list,
 
 	if (usecount != 0) {
 		if (!(flags & mit_quiet_inuse))
-			error("Module %s is in use.\n", name);
+			error("Module %s is in use.\n", mod->modname);
 		goto remove_rest;
 	}
 
@@ -1547,11 +1496,11 @@ static void rmmod(struct list_head *list,
 	if (flags & mit_dry_run)
 		goto remove_rest;
 
-	if (delete_module(name, O_EXCL) != 0) {
+	if (delete_module(mod->modname, O_EXCL) != 0) {
 		if (errno == ENOENT)
 			goto nonexistent_module;
 		error("Error removing %s (%s): %s\n",
-		      name, mod->filename,
+		      mod->modname, mod->filename,
 		      remove_moderror(errno));
 	}
 
@@ -1562,7 +1511,7 @@ static void rmmod(struct list_head *list,
 		flags &= ~mit_ignore_commands;
 		flags |= mit_quiet_inuse;
 
-		rmmod(list, NULL, "", conf, dirname, warn, flags);
+		rmmod(list, "", conf, dirname, warn, flags);
 	}
 	free_module(mod);
 	return;
@@ -1575,7 +1524,6 @@ nonexistent_module:
 
 static int handle_module(const char *modname,
 			  struct list_head *todo_list,
-			  const char *newname,
 			  const char *options,
 			  const char *cmdline_opts,
 			  const struct modprobe_conf *conf,
@@ -1610,10 +1558,10 @@ static int handle_module(const char *modname,
 	}
 
 	if (flags & mit_remove)
-		rmmod(todo_list, newname, cmdline_opts,
+		rmmod(todo_list, cmdline_opts,
 		      conf, dirname, error, flags);
 	else
-		insmod(todo_list, options, newname,
+		insmod(todo_list, options,
 		       cmdline_opts, conf, dirname, error, flags);
 
 	return 0;
@@ -1637,7 +1585,6 @@ int handle_builtin_module(const char *modname,
 }
 
 int do_modprobe(const char *modulename,
-		const char *newname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
 		const char *dirname,
@@ -1710,7 +1657,7 @@ int do_modprobe(const char *modulename,
 
 			read_depends(dirname, aliases->module, &list);
 			failed |= handle_module(aliases->module,
-				&list, newname, opts, cmdline_opts,
+				&list, opts, cmdline_opts,
 				conf, dirname, err, flags);
 
 			aliases = aliases->next;
@@ -1722,7 +1669,7 @@ int do_modprobe(const char *modulename,
 		    && find_blacklist(modname, conf->blacklist))
 			goto out;
 
-		failed |= handle_module(modname, &list, newname, cmdline_opts,
+		failed |= handle_module(modname, &list, cmdline_opts,
 			cmdline_opts, conf, dirname, error, flags);
 	}
 
@@ -1743,7 +1690,6 @@ static struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "dirname", 1, NULL, 'd' },
 				   { "set-version", 1, NULL, 'S' },
 				   { "config", 1, NULL, 'C' },
-				   { "name", 1, NULL, 'o' },
 				   { "remove", 0, NULL, 'r' },
 				   { "showconfig", 0, NULL, 'c' },
 				   { "list", 0, NULL, 'l' },
@@ -1773,7 +1719,6 @@ int main(int argc, char *argv[])
 	const char *configname = NULL;
 	char *basedir = "";
 	char *cmdline_opts = NULL;
-	char *newname = NULL;
 	char *dirname;
 	errfn_t error = fatal;
 	int failed = 0;
@@ -1786,7 +1731,7 @@ int main(int argc, char *argv[])
 	argv = merge_args(getenv("MODPROBE_OPTIONS"), argv, &argc);
 
 	uname(&buf);
-	while ((opt = getopt_long(argc, argv, "Vvqsnd:S:C:DRo:rclt:aibf", options, NULL)) != -1){
+	while ((opt = getopt_long(argc, argv, "Vvqsnd:S:C:DRrclt:aibf", options, NULL)) != -1){
 		switch (opt) {
 		case 'V':
 			puts(PACKAGE " version " VERSION);
@@ -1825,9 +1770,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'R':
 			flags |= mit_resolve_alias;
-			break;
-		case 'o':
-			newname = optarg;
 			break;
 		case 'r':
 			flags |= mit_remove;
@@ -1928,7 +1870,7 @@ int main(int argc, char *argv[])
 		if (dump_modver)
 			dump_modversions(modname, error);
 		else
-			failed |= do_modprobe(modname, newname, cmdline_opts,
+			failed |= do_modprobe(modname, cmdline_opts,
 				&conf, dirname, error, flags);
 
 	}
