@@ -901,10 +901,14 @@ static int parse_config_file(const char *filename,
 			struct string_table *post_modnames = NULL;
 			struct module_softdep *new;
 
-			modname = underscores(strsep_skipspace(&ptr, "\t "));
+			modname = strsep_skipspace(&ptr, "\t ");
 			if (!modname || !ptr)
 				goto syntax_error;
+			modname = underscores(modname);
+
 			while ((tk = strsep_skipspace(&ptr, "\t ")) != NULL) {
+				tk = underscores(tk);
+
 				if (streq(tk, "pre:")) {
 					pre = 1; post = 0;
 				} else if (streq(tk, "post:")) {
@@ -1576,20 +1580,16 @@ int handle_builtin_module(const char *modname,
 	return 0;
 }
 
-int do_modprobe(const char *modulename,
+int do_modprobe(const char *modname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
 		const char *dirname,
 		errfn_t error,
 		modprobe_flags_t flags)
 {
-	char *modname;
 	struct module_alias *matching_aliases;
 	LIST_HEAD(list);
 	int failed = 0;
-
-	/* Convert name we are looking for */
-	modname = underscores(NOFAIL(strdup(modulename)));
 
 	matching_aliases = find_aliases(conf->aliases, modname);
 
@@ -1666,7 +1666,6 @@ int do_modprobe(const char *modulename,
 	}
 
 out:
-	free(modname);
 	free_aliases(matching_aliases);
 	return failed;
 }
@@ -1859,6 +1858,10 @@ int main(int argc, char *argv[])
 		num_modules = 1;
 		cmdline_opts = gather_options(argv+optind+1);
 	}
+
+	/* Convert names we are looking for */
+	for (i = 0; i < num_modules; i++)
+		underscores(argv[optind + i]);
 
 	/* num_modules is always 1 except for -r or -a. */
 	for (i = 0; i < num_modules; i++) {
