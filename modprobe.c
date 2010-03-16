@@ -1828,6 +1828,11 @@ int main(int argc, char *argv[])
 	if (type)
 		fatal("-t only supported with -l");
 
+	if (dump_modver) {
+		dump_modversions(argv[optind], error);
+		goto out;
+	}
+
 	/* Read aliases, options etc. */
 	parse_toplevel_config(configname, &conf, dump_config, flags & mit_remove);
 
@@ -1859,12 +1864,8 @@ int main(int argc, char *argv[])
 	for (i = 0; i < num_modules; i++) {
 		char *modname = argv[optind + i];
 
-		if (dump_modver)
-			dump_modversions(modname, error);
-		else
-			failed |= do_modprobe(modname, cmdline_opts,
-				&conf, dirname, error, flags);
-
+		failed |= do_modprobe(modname, cmdline_opts,
+			&conf, dirname, error, flags);
 	}
 
 out:
