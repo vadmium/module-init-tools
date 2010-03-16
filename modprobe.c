@@ -1863,9 +1863,44 @@ int main(int argc, char *argv[])
 	for (i = 0; i < num_modules; i++)
 		underscores(argv[optind + i]);
 
+	/* If we have a list of modules to remove, try the unused ones first.
+	   Aliases and modules which don't seem to exist are handled later. */
+	if (flags & mit_remove) {
+		int progress;
+		do {
+			progress = 0;
+
+			for (i = 0; i < num_modules; i++) {
+				const char *modname;
+				unsigned usecount;
+				LIST_HEAD(list);
+
+				modname = argv[optind + i];
+				if (!modname)
+					continue;
+				if (module_in_kernel(modname, &usecount) != 1)
+					continue;
+				if (usecount != 0)
+					continue;
+
+				read_depends(dirname, modname, &list);
+
+				failed |= handle_module(modname, &list,
+					cmdline_opts, cmdline_opts,
+					&conf, dirname, error, flags);
+				progress++;
+				argv[optind + i] = NULL;
+				INIT_LIST_HEAD(&list);
+			}
+		} while (progress > 0);
+	}
+
 	/* num_modules is always 1 except for -r or -a. */
 	for (i = 0; i < num_modules; i++) {
-		char *modname = argv[optind + i];
+		const char *modname = argv[optind + i];
+
+		if (!modname)
+			continue;
 
 		failed |= do_modprobe(modname, cmdline_opts,
 			&conf, dirname, error, flags);
