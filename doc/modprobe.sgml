@@ -387,7 +387,7 @@
 	    of module filenames, one per line, each starting with
 	    "insmod" and is typically used by distributions to determine
 	    which modules to include when generating initrd/initramfs images.
-	    <command>Install</commnd> commands which apply are shown prefixed by
+	    <command>Install</command> commands which apply are shown prefixed by
 	    "install".  It does not run any of the install commands.  Note that
 	    <citerefentry><refentrytitle>modinfo</refentrytitle><manvolnum>8</manvolnum></citerefentry>
 	    can be used to extract dependencies of a module from the

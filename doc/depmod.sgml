@@ -76,8 +76,6 @@
       current kernel version (as returned by <command>uname -r</command>).
     </para>
     <para>
-      
-    <para>
       <command>depmod</command> will also generate various legacy map
       files in the output directory for use by the older hotplug
       infrastructure. These map files are largely deprecated.
