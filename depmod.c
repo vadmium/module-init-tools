@@ -979,6 +979,43 @@ static int output_softdeps(struct module *modules, FILE *out, char *dirname)
 	return 1;
 }
 
+static int output_devname(struct module *modules, FILE *out, char *dirname)
+{
+	struct module *m;
+
+	fprintf(out, "# Device nodes to trigger on-demand module loading.\n");
+	for (m = modules; m != NULL; m = m->next) {
+		struct string_table *tbl;
+		int i;
+		char type = '\0';
+		const char *devname = NULL;
+
+		tbl = m->file->ops->load_strings(m->file, ".modinfo", NULL);
+		for (i = 0; tbl && i < tbl->cnt; i++) {
+			const char *p = tbl->str[i];
+			unsigned int maj, min;
+
+			if (sscanf(p, "alias=char-major-%u-%u", &maj, &min) == 2)
+				type = 'c';
+			else if (sscanf(p, "alias=block-major-%u-%u", &maj, &min) == 2)
+				type = 'b';
+			else if (strstarts(p, "alias=devname:"))
+				devname = &p[strlen("alias=devname:")];
+
+			if (type && devname) {
+				char modname[strlen(m->pathname)+1];
+
+				filename2modname(modname, m->pathname);
+				fprintf(out, "%s %s %c%u:%u\n",
+					modname, devname, type, maj, min);
+				break;
+			}
+		}
+		strtbl_free(tbl);
+	}
+	return 1;
+}
+
 struct depfile {
 	char *name;
 	int (*func)(struct module *, FILE *, char *dirname);
@@ -1002,6 +1039,7 @@ static struct depfile depfiles[] = {
 	{ "modules.symbols", output_symbols, 0 },
 	{ "modules.symbols.bin", output_symbols_bin, 0 },
 	{ "modules.builtin.bin", output_builtin_bin, 0 },
+	{ "modules.devname", output_devname, 0 },
 };
 
 /* If we can't figure it out, it's safe to say "true". */
