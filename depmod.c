@@ -1,8 +1,9 @@
-/* New simplified depmod without backwards compat stuff and not
-   requiring ksyms.
-
-   (C) 2010 Jon Masters <jcm@jonmasters.org>, and others.
-   (C) 2002 Rusty Russell IBM Corporation
+/*
+ * New simplified depmod without backwards compat stuff and not
+ * requiring ksyms.
+ *
+ * (C) 2010 Jon Masters <jcm@jonmasters.org>, and others.
+ * (C) 2002 Rusty Russell IBM Corporation
  */
 #define _GNU_SOURCE /* asprintf */
 

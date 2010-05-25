@@ -9,6 +9,7 @@
 
 struct module;
 
+/* This is not the same as the module struct in the kernel built .ko files */
 struct module
 {
 	/* Next module in list of all modules */
@@ -27,6 +28,7 @@ struct module
 	/* Tables extracted from module by ops->fetch_tables(). */
 	struct module_tables tables;
 
+	/* Module operations, endian conversion required, etc. */
 	struct elf_file *file;
 
 	char *basename; /* points into pathname */
