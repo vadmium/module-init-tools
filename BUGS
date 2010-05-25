@@ -1,0 +1,11 @@
+Some BUGs, grouped by the individual utilty
+-------------------------------------------
+
+modprobe
+--------
+	* BUG: We don't output deps correctly when calling --show-depends (-D)
+	* REASON: show-depends sets a variety of individual flags but there's
+	  no easy way for handle_module->insmod to know the difference between
+	  these options or an actual "-D", so we skip out too early if we hit
+	  command entries when processing a module. RHEL has a temp fix that
+	  it will re-read the environment (which does have -D set) in insmod.
