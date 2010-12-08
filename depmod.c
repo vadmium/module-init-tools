@@ -222,7 +222,7 @@ static void load_module_symvers(const char *filename)
 	add_fake_syms();
 }
 
-static struct option options[] = { { "all", 0, NULL, 'a' },
+static const struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "quick", 0, NULL, 'A' },
 				   { "basedir", 1, NULL, 'b' },
 				   { "config", 1, NULL, 'C' },
@@ -1030,12 +1030,12 @@ static int output_devname(struct module *modules, FILE *out, char *dirname)
 }
 
 struct depfile {
-	char *name;
+	const char *name;
 	int (*func)(struct module *, FILE *, char *dirname);
 	int map_file;
 };
 
-static struct depfile depfiles[] = {
+static const struct depfile depfiles[] = {
 	{ "modules.dep", output_deps, 0 }, /* This is what we check for '-A'. */
 	{ "modules.dep.bin", output_deps_bin, 0 },
 	{ "modules.pcimap", output_pci_table, 1 },
@@ -1499,10 +1499,10 @@ int main(int argc, char *argv[])
 	list = sort_modules(dirname,list);
 	list = parse_modules(list);
 
-	for (i = 0; i < sizeof(depfiles)/sizeof(depfiles[0]); i++) {
+	for (i = 0; i < ARRAY_SIZE(depfiles); i++) {
 		FILE *out;
 		int res;
-		struct depfile *d = &depfiles[i];
+		const struct depfile *d = &depfiles[i];
 		char depname[strlen(dirname) + 1 + strlen(d->name) + 1];
 		char tmpname[strlen(dirname) + 1 + strlen(d->name) +
 						strlen(".temp") + 1];

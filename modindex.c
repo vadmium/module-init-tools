@@ -104,7 +104,7 @@ static void print_usage(const char *progname)
 	exit(1);
 }
 
-static struct option options[] = {
+static const struct option options[] = {
 	{ "output", 0, NULL, 'o' },
 	{ "dump", 0, NULL, 'd' },
 	{ "search", 1, NULL, 's' },

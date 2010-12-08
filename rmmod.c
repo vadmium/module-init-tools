@@ -130,7 +130,7 @@ static int rmmod(const char *path, int flags)
 	return ret;
 }
 
-static struct option options[] = { { "all", 0, NULL, 'a' },
+static const struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "force", 0, NULL, 'f' },
 				   { "help", 0, NULL, 'h' },
 				   { "syslog", 0, NULL, 's' },

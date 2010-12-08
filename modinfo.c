@@ -122,7 +122,7 @@ static void print_all(struct string_table *tags,
 	}
 }
 
-static struct option options[] =
+static const struct option options[] =
 {
 	{"author", 0, 0, 'a'},
 	{"description", 0, 0, 'd'},

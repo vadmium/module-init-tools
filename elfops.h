@@ -23,7 +23,7 @@ struct elf_file
 	char *pathname;
 
 	/* File operations */
-	struct module_ops *ops;
+	const struct module_ops *ops;
 
 	/* Convert endian? */
 	int conv;
@@ -76,7 +76,7 @@ struct module_ops
 	int (*dump_modvers)(struct elf_file *module);
 };
 
-extern struct module_ops mod_ops32, mod_ops64;
+extern const struct module_ops mod_ops32, mod_ops64;
 
 struct elf_file *grab_elf_file(const char *pathname);
 void release_elf_file(struct elf_file *file);

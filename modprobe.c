@@ -1670,7 +1670,7 @@ out:
 	return failed;
 }
 
-static struct option options[] = { { "version", 0, NULL, 'V' },
+static const struct option options[] = { { "version", 0, NULL, 'V' },
 				   { "verbose", 0, NULL, 'v' },
 				   { "quiet", 0, NULL, 'q' },
 				   { "syslog", 0, NULL, 's' },

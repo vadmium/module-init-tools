@@ -439,7 +439,7 @@ static int PERBIT(dump_modversions)(struct elf_file *module)
 	return n;
 }
 
-struct module_ops PERBIT(mod_ops) = {
+const struct module_ops PERBIT(mod_ops) = {
 	.load_section	= PERBIT(load_section),
 	.load_strings	= PERBIT(load_strings),
 	.load_symbols	= PERBIT(load_symbols),
