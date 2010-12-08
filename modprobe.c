@@ -49,14 +49,14 @@
 
 #include "testing.h"
 
-int use_binary_indexes = 1; /* default to enabled. */
+static int use_binary_indexes = 1; /* default to enabled. */
 
 /* Limit do_softdep/do_modprobe recursion.
  * This is a simple way to handle dependency loops
  * caused by poorly written softdep commands.
  */
 static int recursion_depth = 0;
-const int MAX_RECURSION = 50; /* Arbitrary choice */
+static const int MAX_RECURSION = 50; /* Arbitrary choice */
 
 extern long init_module(void *, unsigned long, const char *);
 extern long delete_module(const char *, unsigned int);
@@ -709,7 +709,7 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	return module_in_procfs(modname, usecount);
 }
 
-void dump_modversions(const char *filename, errfn_t error)
+static void dump_modversions(const char *filename, errfn_t error)
 {
 	struct elf_file *module;
 
@@ -1272,7 +1272,7 @@ out:
 }
 
 /* Forward declaration */
-int do_modprobe(const char *modname,
+static int do_modprobe(const char *modname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
 		const char *dirname,
@@ -1563,7 +1563,7 @@ static int handle_module(const char *modname,
 	return 0;
 }
 
-int handle_builtin_module(const char *modname,
+static int handle_builtin_module(const char *modname,
                           errfn_t error,
                           modprobe_flags_t flags)
 {
@@ -1580,7 +1580,7 @@ int handle_builtin_module(const char *modname,
 	return 0;
 }
 
-int do_modprobe(const char *modname,
+static int do_modprobe(const char *modname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
 		const char *dirname,

@@ -95,7 +95,7 @@ static const char *skip_symprefix(const char *symname)
 	return symname + (symname[0] == sym_prefix ? 1 : 0);
 }
 
-void add_symbol(const char *name, uint64_t ver, struct module *owner)
+static void add_symbol(const char *name, uint64_t ver, struct module *owner)
 {
 	unsigned int hash;
 	struct symbol *new = NOFAIL(malloc(sizeof *new + strlen(name) + 1));
@@ -111,7 +111,7 @@ void add_symbol(const char *name, uint64_t ver, struct module *owner)
 
 static int print_unknown, check_symvers;
 
-struct module *find_symbol(const char *name, uint64_t ver,
+static struct module *find_symbol(const char *name, uint64_t ver,
 		const char *modname, int weak)
 {
 	struct symbol *s;
@@ -138,7 +138,7 @@ struct module *find_symbol(const char *name, uint64_t ver,
 	return NULL;
 }
 
-void add_dep(struct module *mod, struct module *depends_on)
+static void add_dep(struct module *mod, struct module *depends_on)
 {
 	unsigned int i;
 
@@ -472,7 +472,7 @@ static int output_deps(struct module *modules,
 }
 
 /* warn whenever duplicate module aliases, deps, or symbols are found. */
-int warn_dups = 0;
+static int warn_dups = 0;
 
 static int output_deps_bin(struct module *modules,
 			FILE *out, char *dirname)
@@ -1349,9 +1349,9 @@ static void parse_toplevel_config(const char *filename,
 }
 
 /* Local to main, but not freed on exit.  Keep valgrind quiet. */
-struct module *list = NULL;
-struct module_search *search = NULL;
-struct module_overrides *overrides = NULL;
+static struct module *list = NULL;
+static struct module_search *search = NULL;
+static struct module_overrides *overrides = NULL;
 
 int main(int argc, char *argv[])
 {
