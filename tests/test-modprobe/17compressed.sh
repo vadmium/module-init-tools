@@ -20,7 +20,7 @@ gzip $MODULE_DIR/noexport_nodep-$BITNESS.ko
 echo "# A comment" > $MODULE_DIR/modules.dep
 echo "/lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko.gz:" >> $MODULE_DIR/modules.dep
 
-SIZE=`wc -c < tests/data/$BITNESS/normal/noexport_nodep-$BITNESS.ko`
+SIZE=`wc -c < tests/data/$BITNESS$ENDIAN/normal/noexport_nodep-$BITNESS.ko`
 
 # No args
 [ "`modprobe noexport_nodep-$BITNESS 2>&1`" = "INIT_MODULE: $SIZE " ]
