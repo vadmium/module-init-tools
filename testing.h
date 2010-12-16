@@ -41,6 +41,8 @@ __attribute__((unused));
 
 static int modtest_readlink(const char *path, char *buf, size_t bufsiz)
 __attribute__((unused));
+static int modtest_unlink(const char *path)
+__attribute__((unused));
 
 static int modtest_uname(struct utsname *buf)
 {
@@ -215,6 +217,14 @@ static int modtest_readlink(const char *path, char *buf, size_t bufsiz)
 	return readlink(path, buf, bufsiz);
 }
 
+static int modtest_unlink(const char *path)
+{
+	char path_buf[PATH_MAX];
+
+	path = modtest_mapname(path, path_buf, sizeof(path_buf));
+	return unlink(path);
+}
+
 #ifdef CONFIG_USE_ZLIB
 #include <zlib.h>
 static gzFile *modtest_gzopen(const char *path, const char *mode)
@@ -244,6 +254,7 @@ static gzFile *modtest_gzopen(const char *path, const char *mode)
 #define system modtest_system
 #define rename modtest_rename
 #define readlink modtest_readlink
+#define unlink modtest_unlink
 #define gzopen modtest_gzopen
 
 #endif /* JUST_TESTING */
