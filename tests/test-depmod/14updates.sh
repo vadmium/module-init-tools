@@ -21,6 +21,8 @@ mkdir -p $MODULE_DIR/updates
 ln tests/data/$BITNESS$ENDIAN/normal/export_nodep-$BITNESS.ko \
    $MODULE_DIR/updates
 
+touch tests/tmp/empty
+
 # First we try update which overrides, then not
 for iter in override not-override; do
 
@@ -78,13 +80,13 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e -A`" = "" ]
+[ "`depmod -e -F /empty -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -102,25 +104,25 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e --quick`" = "" ]
+[ "`depmod -e -F /empty --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms --quick`" = "" ]
+[ "`depmod --errsyms -F /empty --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod --errsyms -F /empty --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -142,7 +144,7 @@ depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -F /empty -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

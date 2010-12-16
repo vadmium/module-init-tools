@@ -16,6 +16,8 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
    tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
+touch tests/tmp/empty
+
 # Expect no output.
 [ "`depmod -b /BASEDIR 2>&1`" = "" ]
 
@@ -39,19 +41,19 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod -b /BASEDIR -e -A`" = "" ]
+[ "`depmod -b /BASEDIR -e -F /empty -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod -b /BASEDIR -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -b /BASEDIR -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod --basedir /BASEDIR -e -A $MODTEST_VERSION 2>&1`" = "" ]
+[ "`depmod --basedir /BASEDIR -e -F /empty -A $MODTEST_VERSION 2>&1`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod --basedir=/BASEDIR -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod --basedir=/BASEDIR -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
@@ -71,7 +73,7 @@ depmod -b /BASEDIR -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.a
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-depmod -b /BASEDIR -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -b /BASEDIR -e -F /empty -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

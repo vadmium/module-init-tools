@@ -16,6 +16,8 @@ ln tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
    tests/data/$BITNESS$ENDIAN/normal/noexport_doubledep-$BITNESS.ko \
    $MODULE_DIR
 
+touch tests/tmp/empty
+
 ALL="/lib/modules/$MODTEST_UNAME/export_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_dep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_nodep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/export_nodep-$BITNESS.ko /lib/modules/$MODTEST_UNAME/noexport_doubledep-$BITNESS.ko"
 
 # Expect no output.
@@ -47,25 +49,25 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e $ALL`" = "" ]
+[ "`depmod -e -F /empty $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e $MODTEST_VERSION $ALL`" = "" ]
+[ "`depmod -e -F /empty $MODTEST_VERSION $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms $ALL`" = "" ]
+[ "`depmod --errsyms -F /empty $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms $MODTEST_VERSION $ALL`" = "" ]
+[ "`depmod --errsyms -F /empty $MODTEST_VERSION $ALL`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -83,7 +85,7 @@ depmod -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-depmod -e -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -F /empty -n $MODTEST_VERSION $ALL | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

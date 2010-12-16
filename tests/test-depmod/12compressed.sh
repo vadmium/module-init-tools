@@ -19,6 +19,8 @@ cp tests/data/$BITNESS$ENDIAN/normal/export_dep-$BITNESS.ko \
    $MODULE_DIR
 gzip `find $MODULE_DIR -name '*.ko'`
 
+touch tests/tmp/empty
+
 # First time, there is no modules.dep, so it will be generated.
 # Expect no output.
 [ "`depmod -A 2>&1`" = "" ]
@@ -73,13 +75,13 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e -A`" = "" ]
+[ "`depmod -e -F /empty -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -97,25 +99,25 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e --quick`" = "" ]
+[ "`depmod -e -F /empty --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod -e --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms --quick`" = "" ]
+[ "`depmod --errsyms -F /empty --quick`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
 mv $MODULE_DIR/modules.symbols $MODULE_DIR/modules.symbols.old
 
-[ "`depmod --errsyms --quick $MODTEST_VERSION`" = "" ]
+[ "`depmod --errsyms -F /empty --quick $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep >/dev/null
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.symbols.old $MODULE_DIR/modules.symbols >/dev/null
@@ -137,7 +139,7 @@ depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -F /empty -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all >/dev/null
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 

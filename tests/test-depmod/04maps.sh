@@ -19,6 +19,8 @@ ln tests/data/$BITNESS$ENDIAN/map/ccw_map-$BITNESS.ko \
    tests/data/$BITNESS$ENDIAN/map/input_map_new-$BITNESS.ko \
    $MODULE_DIR
 
+touch tests/tmp/empty
+
 # Expect no output.
 [ "`depmod`" = "" ]
 
@@ -119,7 +121,7 @@ diff -u $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.isapnpmap
 diff -u $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.inputmap
 diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 
-[ "`depmod -e -A`" = "" ]
+[ "`depmod -e -F /empty -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -129,7 +131,7 @@ diff -u $MODULE_DIR/modules.isapnpmap.old $MODULE_DIR/modules.isapnpmap
 diff -u $MODULE_DIR/modules.inputmap.old $MODULE_DIR/modules.inputmap
 diff -u $MODULE_DIR/modules.ofmap.old $MODULE_DIR/modules.ofmap
 
-[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 diff -u $MODULE_DIR/modules.pcimap.old $MODULE_DIR/modules.pcimap
 diff -u $MODULE_DIR/modules.usbmap.old $MODULE_DIR/modules.usbmap
@@ -152,7 +154,7 @@ diff -u tests/tmp/out tests/tmp/stdout
 depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
 diff -u tests/tmp/out tests/tmp/stdout
 
-depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
+depmod -e -F /empty -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.dep
 diff -u tests/tmp/out tests/tmp/stdout
 
 done

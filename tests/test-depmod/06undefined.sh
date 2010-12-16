@@ -18,7 +18,7 @@ touch tests/tmp/empty
 [ "`depmod -F /empty 2>&1`" = "" ]
 
 # Without -F doesn't matter
-[ "`depmod -e 2>&1`" = "" ]
+[ "`depmod -e 2>&1`" = "WARNING: -e needs -E or -F" ]
 
 [ "`depmod -e -F /empty 2>&1`" = "WARNING: /lib/modules/$MODTEST_UNAME/unknown-$BITNESS.ko needs unknown symbol undefined" ]
 

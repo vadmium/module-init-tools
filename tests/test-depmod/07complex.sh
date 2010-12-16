@@ -22,6 +22,8 @@ ln tests/data/$BITNESS$ENDIAN/complex/complex_a-$BITNESS.ko \
    tests/data/$BITNESS$ENDIAN/complex/complex_e-$BITNESS.ko \
    $MODULE_DIR
 
+touch tests/tmp/empty
+
 # Expect no output.
 [ "`depmod 2>&1`" = "" ]
 
@@ -51,11 +53,11 @@ mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod -e -A`" = "" ]
+[ "`depmod -e -F /empty -A`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
-[ "`depmod -e -A $MODTEST_VERSION`" = "" ]
+[ "`depmod -e -F /empty -A $MODTEST_VERSION`" = "" ]
 diff -u $MODULE_DIR/modules.dep.old $MODULE_DIR/modules.dep
 mv $MODULE_DIR/modules.dep $MODULE_DIR/modules.dep.old
 
@@ -75,7 +77,7 @@ depmod -n -a $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
-depmod -e -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
+depmod -e -F /empty -n -A $MODTEST_VERSION | grep -v '^#' > $MODULE_DIR/modules.all
 diff -u $MODULE_DIR/modules.all.old $MODULE_DIR/modules.all
 mv $MODULE_DIR/modules.all $MODULE_DIR/modules.all.old
 
