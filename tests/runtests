@@ -101,6 +101,7 @@ for e in $TEST_ENDIAN; do
 	esac
 done
 TEST_ENDIAN="$_tmp"
+export TEST_ENDIAN
 
 : ${TEST_BITS:=32 64}
 for b in $TEST_BITS; do
@@ -112,6 +113,7 @@ for b in $TEST_BITS; do
 		exit 1
 	esac
 done
+export TEST_BITS
 
 for config in --enable-zlib --disable-zlib; do
     echo Building with $config...
