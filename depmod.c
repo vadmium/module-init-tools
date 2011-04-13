@@ -61,6 +61,7 @@ struct module_search
 	size_t len;
 };
 
+static char sym_prefix;
 static unsigned int skipchars;
 static unsigned int make_map_files = 1; /* default to on */
 static unsigned int force_map_files = 0; /* default to on */
@@ -89,6 +90,11 @@ static inline unsigned int tdb_hash(const char *name)
 	return (1103515243 * value + 12345);
 }
 
+static const char *skip_symprefix(const char *symname)
+{
+	return symname + (symname[0] == sym_prefix ? 1 : 0);
+}
+
 void add_symbol(const char *name, uint64_t ver, struct module *owner)
 {
 	unsigned int hash;
@@ -113,6 +119,7 @@ struct module *find_symbol(const char *name, uint64_t ver,
 	/* For our purposes, .foo matches foo.  PPC64 needs this. */
 	if (name[0] == '.')
 		name++;
+	name = skip_symprefix(name);
 
 	for (s = symbolhash[tdb_hash(name) % SYMBOL_HASH_SIZE]; s; s=s->next) {
 		if (streq(s->name, name))
@@ -165,6 +172,7 @@ static void load_system_map(const char *filename)
 	/* eg. c0294200 R __ksymtab_devfs_alloc_devnum */
 	while (fgets(line, sizeof(line)-1, system_map)) {
 		char *ptr;
+		const char *cptr;
 
 		/* Snip \n */
 		ptr = strchr(line, '\n');
@@ -175,9 +183,12 @@ static void load_system_map(const char *filename)
 		if (!ptr || !(ptr = strchr(ptr + 1, ' ')))
 			continue;
 
+		/* Skip the space before symbol name */
+		cptr = skip_symprefix(ptr + 1);
+
 		/* Covers gpl-only and normal symbols. */
-		if (strstarts(ptr+1, ksymstr))
-			add_symbol(ptr+1+ksymstr_len, 0, NULL);
+		if (strstarts(cptr, ksymstr))
+			add_symbol(cptr + ksymstr_len, 0, NULL);
 	}
 
 	fclose(system_map);
@@ -204,7 +215,7 @@ static void load_module_symvers(const char *filename)
 			continue;
 
 		if (streq(where, "vmlinux"))
-			add_symbol(sym, strtoull(ver, NULL, 16), NULL);
+			add_symbol(skip_symprefix(sym), strtoull(ver, NULL, 16), NULL);
 	}
 
 	fclose(module_symvers);
@@ -224,6 +235,7 @@ static struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "verbose", 0, NULL, 'v' },
 				   { "show", 0, NULL, 'n' },
 				   { "dry-run", 0, NULL, 'n' },
+				   { "symbol-prefix", 0, NULL, 'P' },
 				   { "help", 0, NULL, 'h' },
 				   { "version", 0, NULL, 'V' },
 				   { "warn", 0, NULL, 'w' },
@@ -275,6 +287,7 @@ static void print_usage(const char *name)
 	"\t-e, --errsyms        Report not supplied symbols\n"
 	"\t-m, --map            Create the legacy map files\n"
 	"\t-n, --show           Write the dependency file on stdout only\n"
+	"\t-P, --symbol-prefix  Architecture symbol prefix\n"
 	"\t-V, --version        Print the release version\n"
 	"\t-v, --verbose        Enable verbose mode\n"
 	"\t-w, --warn		Warn on duplicates\n"
@@ -748,7 +761,7 @@ static struct module *parse_modules(struct module *list)
 				check_symvers ? &symvers : NULL);
 		if (syms) {
 			for (j = 0; j < syms->cnt; j++)
-				add_symbol(syms->str[j],
+				add_symbol(skip_symprefix(syms->str[j]),
 					symvers ? symvers[j] : 0, i);
 			strtbl_free(syms);
 		}
@@ -1351,7 +1364,7 @@ int main(int argc, char *argv[])
 	if (native_endianness() == 0)
 		abort();
 
-	while ((opt = getopt_long(argc, argv, "aAb:C:E:F:euqrvnhVwm", options, NULL))
+	while ((opt = getopt_long(argc, argv, "aAb:C:E:F:euqrvnP:hVwm", options, NULL))
 	       != -1) {
 		switch (opt) {
 		case 'a':
@@ -1386,6 +1399,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'n':
 			doing_stdout = 1;
+			break;
+		case 'P':
+			if (optarg[1] != '\0')
+				fatal("-P only takes a single char\n");
+			sym_prefix = optarg[0];
 			break;
 		case 'h':
 			print_usage(argv[0]);
