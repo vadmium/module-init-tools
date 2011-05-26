@@ -1134,11 +1134,13 @@ static void parse_toplevel_config(const char *filename,
 }
 
 /* Read possible module arguments from the kernel command line. */
-static int parse_kcmdline(int dump_only, struct module_options **options)
+static int parse_kcmdline(int dump_only, struct modprobe_conf *conf)
 {
 	char *line;
 	unsigned int linenum = 0;
 	FILE *kcmdline;
+	struct module_options **options = &conf->options;
+	struct module_blacklist **blacklist = &conf->blacklist;
 
 	kcmdline = fopen("/proc/cmdline", "r");
 	if (!kcmdline)
@@ -1150,6 +1152,17 @@ static int parse_kcmdline(int dump_only, struct module_options **options)
 
 		while ((arg = strsep_skipspace(&ptr, "\t ")) != NULL) {
 			char *sep, *modname, *opt;
+
+			if (strstr(arg, "modprobe.blacklist=") != NULL) {
+				ptr = strchr(arg,'=') + 1;
+
+				while ((modname = strsep(&ptr, ",")) != NULL) {
+					if (dump_only)
+						printf("blacklist %s\n", modname);
+
+					*blacklist = add_blacklist(underscores(modname), *blacklist);
+				}
+			}
 
 			sep = strchr(arg, '.');
 			if (sep) {
@@ -1836,7 +1849,7 @@ int main(int argc, char *argv[])
 	parse_toplevel_config(configname, &conf, dump_config, flags & mit_remove);
 
 	/* Read module options from kernel command line */
-	parse_kcmdline(dump_config, &conf.options);
+	parse_kcmdline(dump_config, &conf);
 	
 	if (dump_config) {
 		char *aliasfilename, *symfilename;
