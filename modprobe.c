@@ -1050,6 +1050,13 @@ static int parse_config_scan(struct modprobe_conf *conf,
 	va_list filelist;
 	char *filename;
 	DIR *dir;
+	struct file_entry {
+		struct list_head node;
+		char *name;
+		char *path;
+	};
+	struct file_entry *fe, *fe_tmp;
+	LIST_HEAD(files_list);
 	int ret = 0;
 
 	va_start(filelist, removing);
@@ -1057,17 +1064,12 @@ static int parse_config_scan(struct modprobe_conf *conf,
 	while ((filename = va_arg(filelist, char*))) {
 		dir = opendir(filename);
 		if (dir) {
-			struct file_entry {
-				struct list_head node;
-				char name[];
-			};
-			LIST_HEAD(files_list);
-			struct file_entry *fe, *fe_tmp;
 			struct dirent *i;
 
-			/* sort files from directory into list */
+			/* sort files from directories into list, ignoring duplicates */
 			while ((i = readdir(dir)) != NULL) {
 				size_t len;
+				int cmp = -1;
 
 				if (i->d_name[0] == '.')
 					continue;
@@ -1081,36 +1083,53 @@ static int parse_config_scan(struct modprobe_conf *conf,
 					warn("All config files need .conf: %s/%s, "
 					     "it will be ignored in a future release.\n",
 					     filename, i->d_name);
-				fe = malloc(sizeof(struct file_entry) + len + 1);
+				fe = malloc(sizeof(struct file_entry));
 				if (fe == NULL)
 					continue;
-				strcpy(fe->name, i->d_name);
+
 				list_for_each_entry(fe_tmp, &files_list, node)
-					if (strcmp(fe_tmp->name, fe->name) >= 0)
+					if ((cmp = strcmp(fe_tmp->name, i->d_name)) >= 0)
 						break;
-				list_add_tail(&fe->node, &fe_tmp->node);
+
+				if (cmp != 0) {
+					fe->name = malloc(len + 1);
+					fe->path = malloc(strlen(filename) + 1);
+					strcpy(fe->name, i->d_name);
+					strcpy(fe->path, filename);
+
+					if (cmp < 0)
+						list_add_tail(&fe->node, &files_list);
+					else
+						list_add_tail(&fe->node, &fe_tmp->node);
+				} else
+					info("Ignoring config file %s/%s\n", filename, i->d_name);
+
 			}
 			closedir(dir);
-
-			/* parse list of files */
-			list_for_each_entry_safe(fe, fe_tmp, &files_list, node) {
-				char *cfgfile;
-
-				nofail_asprintf(&cfgfile, "%s/%s", filename, fe->name);
-				if (!parse_config_file(cfgfile, conf,
-						       dump_only, removing))
-					warn("Failed to open config file "
-					     "%s: %s\n", fe->name, strerror(errno));
-				free(cfgfile);
-				list_del(&fe->node);
-				free(fe);
-			}
 
 			ret = 1;
 		} else {
 			if (parse_config_file(filename, conf, dump_only, removing))
 				ret = 1;
 		}
+	}
+
+	/* parse list of files */
+	list_for_each_entry_safe(fe, fe_tmp, &files_list, node) {
+		char *cfgfile;
+
+		nofail_asprintf(&cfgfile, "%s/%s", fe->path, fe->name);
+		if (!parse_config_file(cfgfile, conf,
+				       dump_only, removing))
+			warn("Failed to open config file %s: %s\n",
+			     cfgfile, strerror(errno));
+		else
+			info("Parsing config file %s\n", cfgfile);
+		free(cfgfile);
+		list_del(&fe->node);
+		free(fe->name);
+		free(fe->path);
+		free(fe);
 	}
 
 	va_end(filelist);
