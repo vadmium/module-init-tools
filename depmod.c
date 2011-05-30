@@ -247,7 +247,7 @@ static int is_version_number(const char *version)
 {
 	unsigned int dummy;
 
-	return (sscanf(version, "%u.%u.%u", &dummy, &dummy, &dummy) == 3);
+	return (sscanf(version, "%u.%u", &dummy, &dummy) == 2);
 }
 
 static int old_module_version(const char *version)
