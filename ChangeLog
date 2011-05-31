@@ -1,3 +1,21 @@
+3.13 Version:
+o cleanups: localize various functions and variables avoiding export (Mike)
+o depmod: add support for --symbol-prefix (e.g. underscore on Blackfin) (Mike)
+o depmod: support x.y kernels rather than x.y.z (e.g. Linux 3.0) (Michal)
+o modprobe: blacklist modules on the kernel commandline (Tom)
+o modprobe: use more than one config directory (e.g. /run/modprobe.d) (Tom)
+o testsuite: correctly export TEST_ENDIAN and TEST_BITS (Keegan)
+
+3.12 Version:
+o build: fix for Makefile problems in ax_enable_builddir (Alan)
+o cleanups: various memory leak cleanups and additional leak tests (Alan)
+o depmod: create modules.devname containing module-provided devnames (Kay)
+o docs: fix SGML documentation build problems
+o modprobe: softdeps allow additional modules to be loaded (Andreas)
+o modprobe: ignore custom "install" commands if we can't detect sucess on load
+o modprobe: don't run remove commands for modules that are not loaded (Alan)
+o testsuite: various fixes for new features and cleanups (Alan)
+
 3.11 Version:
 o modinfo: Fix crash if module recently deleted from system (Ozan)
 o modprobe: Handle built-in modules (Michal)
