@@ -18,7 +18,7 @@
       <firstname>Jon</firstname>
       <surname>Masters</surname>
     </author>
-    <date>2010-03-01</date>
+    <date>2011-05-31</date>
   </refentryinfo>
   <refmeta>
     <refentrytitle>depmod</refentrytitle>
@@ -41,7 +41,7 @@
     <cmdsynopsis>
       <command>depmod</command>
       <arg><option>-e</option></arg>
-      <arg><option>-F<replaceable>System.map</replaceable></option></arg>
+      <arg><option>-F <replaceable>System.map</replaceable></option></arg>
       <arg><option>-n</option></arg>
       <arg><option>-v</option></arg>
       <arg><option><replaceable>version</replaceable></option></arg>
