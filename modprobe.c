@@ -1123,8 +1123,6 @@ static int parse_config_scan(struct modprobe_conf *conf,
 				       dump_only, removing))
 			warn("Failed to open config file %s: %s\n",
 			     cfgfile, strerror(errno));
-		else
-			info("Parsing config file %s\n", cfgfile);
 		free(cfgfile);
 		list_del(&fe->node);
 		free(fe->name);
