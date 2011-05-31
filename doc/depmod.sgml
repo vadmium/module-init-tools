@@ -71,6 +71,10 @@
       <command>depmod</command> also creates a list of symbols provided
       by modules in the file named <filename>modules.symbols</filename>
       and its binary hashed version, <filename>modules.symbols.bin</filename>.
+      Finally, <command>depmod</command> will output a file named
+      <filename>modules.devname</filename> if modules supply special
+      device names (devname) that should be populated in /dev on boot
+      (by a utility such as udev).
     </para>
     <para>
       If a <replaceable>version</replaceable> is provided, then that
