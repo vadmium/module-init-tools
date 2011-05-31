@@ -32,6 +32,7 @@
       <command>depmod</command>
       <arg><option>-b <replaceable>basedir</replaceable></option></arg>
       <arg><option>-e</option></arg>
+      <arg><option>-E <replaceable>Module.symvers</replaceable></option></arg>
       <arg><option>-F <replaceable>System.map</replaceable></option></arg>
       <arg><option>-n</option></arg>
       <arg><option>-v</option></arg>
@@ -41,6 +42,7 @@
     <cmdsynopsis>
       <command>depmod</command>
       <arg><option>-e</option></arg>
+      <arg><option>-E <replaceable>Module.symvers</replaceable></option></arg>
       <arg><option>-F <replaceable>System.map</replaceable></option></arg>
       <arg><option>-n</option></arg>
       <arg><option>-v</option></arg>
@@ -150,6 +152,18 @@
 	      correctly installed or were built incorrectly.
 	    </para>
 	  </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-E</option> <option>--symvers</option>
+        </term>
+          <listitem>
+            <para>
+              When combined with the <option>-e</option> option, this
+              reports any symbol versions supplied by modules that do
+              not match with the symbol versions provided by the
+              kernel in its <filename>Module.symvers</filename>.
+            </para>
+          </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-F</option> <option>--filesyms <replaceable>System.map</replaceable></option>
