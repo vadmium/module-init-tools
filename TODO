@@ -6,9 +6,17 @@ build
 	* Fix "make dist" to build documentation.
 	* Fix "make distcheck" at the same time.
 
+global
+------
+	* Unify implementations of grab_module into one (depmod/modinfo).
+
 depmod
 ------
 	* Fix use of special list handling (e.g. add_search) to use lists.
+	* Fix command line path and kernel version handling to detect files
+	  (fix warning on absolute paths, use file access to verify file).
+	* Convert functions do_module et al to use list functions as possible.
+	* Rework symbol version checks on load_symbols into generic function.
 	* Kill off the "map" files. They aren't really needed any more.
 
 modprobe
