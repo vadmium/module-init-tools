@@ -34,6 +34,7 @@
       <arg><option>-e</option></arg>
       <arg><option>-E <replaceable>Module.symvers</replaceable></option></arg>
       <arg><option>-F <replaceable>System.map</replaceable></option></arg>
+      <arg><option>-m</option></arg>
       <arg><option>-n</option></arg>
       <arg><option>-v</option></arg>
       <arg><option>-A</option></arg>
@@ -46,6 +47,7 @@
       <arg><option>-e</option></arg>
       <arg><option>-E <replaceable>Module.symvers</replaceable></option></arg>
       <arg><option>-F <replaceable>System.map</replaceable></option></arg>
+      <arg><option>-m</option></arg>
       <arg><option>-n</option></arg>
       <arg><option>-v</option></arg>
       <arg><option>-P <replaceable>prefix</replaceable></option></arg>
@@ -190,6 +192,17 @@
         <listitem>
           <para>
             Print the help message and exit.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-m</option>
+        </term>
+        <listitem>
+          <para>
+            This overrides any possible configuration file setting of
+            <option>make_map_files</option> and forces the generation
+            of legacy map files, such as <filename>modules.pcimap</filename>.
           </para>
         </listitem>
       </varlistentry>
