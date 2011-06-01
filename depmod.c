@@ -1,9 +1,23 @@
 /*
- * New simplified depmod without backwards compat stuff and not
- * requiring ksyms.
+ * depmod.c: generate module dependency meta-data (aliases, etc.)
  *
- * (C) 2010 Jon Masters <jcm@jonmasters.org>, and others.
  * (C) 2002 Rusty Russell IBM Corporation
+ * (C) 2006-2011 Jon Masters <jcm@jonmasters.org>, and others.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 #define _GNU_SOURCE /* asprintf */
 
@@ -435,6 +449,7 @@ static struct module *grab_module(const char *dirname, const char *filename)
 	return new;
 }
 
+/* We use this on-stack structure to track recursive calls to has_dep_loop */
 struct module_traverse
 {
 	struct module_traverse *prev;
@@ -1328,6 +1343,7 @@ struct depfile {
 	int map_file;
 };
 
+/* The possible output files - those with map_file unset typically not made */
 static const struct depfile depfiles[] = {
 	{ "modules.dep", output_deps, 0 }, /* This is what we check for '-A'. */
 	{ "modules.dep.bin", output_deps_bin, 0 },
