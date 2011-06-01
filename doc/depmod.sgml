@@ -172,6 +172,7 @@
               reports any symbol versions supplied by modules that do
               not match with the symbol versions provided by the
               kernel in its <filename>Module.symvers</filename>.
+              This option is mutually incompatible with <option>-F</option>.
             </para>
           </listitem>
       </varlistentry>
@@ -183,6 +184,7 @@
 	    Supplied with the <filename>System.map</filename> produced
 	    when the kernel was built, this allows the
 	    <option>-e</option> option to report unresolved symbols.
+	    This option is mutually incompatible with <option>-E</option>.
 	  </para>
         </listitem>
       </varlistentry>
