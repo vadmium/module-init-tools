@@ -42,6 +42,7 @@
 #define MODULE_BUILTIN_KEY "built-in"
 #endif
 
+/* used to replace one module with another based on conf override entries */
 struct module_overrides
 {
 	/* Next override */
@@ -51,6 +52,7 @@ struct module_overrides
 	char *modfile;
 };
 
+/* used to specify the order in which /lib/modules subdirs are searched */
 struct module_search
 {
 	/* Next search */
@@ -61,8 +63,8 @@ struct module_search
 	size_t len;
 };
 
-static char sym_prefix;
-static unsigned int skipchars;
+static char sym_prefix; /* used for -P option */
+static unsigned int skipchars; /* prefix target part of basedir to skip over */
 static unsigned int make_map_files = 1; /* default to on */
 static unsigned int force_map_files = 0; /* default to on */
 
@@ -77,7 +79,12 @@ struct symbol
 
 static struct symbol *symbolhash[SYMBOL_HASH_SIZE];
 
-/* This is based on the hash agorithm from gdbm, via tdb */
+/**
+ * tdb_hash - calculate hash entry for a symbol (algorithm from gdbm, via tdb)
+ *
+ * @name:	symbol name
+ *
+ */
 static inline unsigned int tdb_hash(const char *name)
 {
 	unsigned value;	/* Used to compute the hash value.  */
@@ -90,11 +97,25 @@ static inline unsigned int tdb_hash(const char *name)
 	return (1103515243 * value + 12345);
 }
 
+/**
+ * skip_symprefix - remove extraneous prefix character on some architectures
+ *
+ * @symname:	symbol name to process for prefix character removal
+ *
+ */
 static const char *skip_symprefix(const char *symname)
 {
 	return symname + (symname[0] == sym_prefix ? 1 : 0);
 }
 
+/**
+ * add_symbol - add a symbol to the symbol hash list
+ *
+ * @name:	symbol name
+ * @ver:	symbol version (checksum)
+ * @owner:	module owning this symbol
+ *
+ */
 static void add_symbol(const char *name, uint64_t ver, struct module *owner)
 {
 	unsigned int hash;
@@ -111,6 +132,19 @@ static void add_symbol(const char *name, uint64_t ver, struct module *owner)
 
 static int print_unknown, check_symvers;
 
+/**
+ * find_symbol - lookup module owning a symbol in the symbol hash list
+ *
+ * @name:	symbol name
+ * @ver:	symbol version
+ * @modname:	pathname of module requesting lookup (being processed)
+ * @weak:	whether the symbol is weakly defined or not
+ *
+ * This function is used during dependency calculation to match the
+ * dependencies a module says it requires with symbols we have seen.
+ * calculate_deps calls us after it has load_dep_syms on a module.
+ *
+ */
 static struct module *find_symbol(const char *name, uint64_t ver,
 		const char *modname, int weak)
 {
@@ -138,6 +172,13 @@ static struct module *find_symbol(const char *name, uint64_t ver,
 	return NULL;
 }
 
+/**
+ * add_dep - add a module dependency
+ *
+ * @mod:	module name
+ * @depends_on:	new module dependency
+ *
+ */
 static void add_dep(struct module *mod, struct module *depends_on)
 {
 	unsigned int i;
@@ -150,6 +191,12 @@ static void add_dep(struct module *mod, struct module *depends_on)
 	mod->deps[mod->num_deps++] = depends_on;
 }
 
+/**
+ * add_fake_syms - symbols not explicitly otherwise provided
+ *
+ * The kernel provides a few dependencies within the module loader.
+ *
+ */
 static void add_fake_syms(void)
 {
 	/* __this_module is magic inserted by kernel loader. */
@@ -158,6 +205,12 @@ static void add_fake_syms(void)
 	add_symbol("_GLOBAL_OFFSET_TABLE_", 0, NULL);
 }
 
+/**
+ * load_system_map - load list of symbols from the System.map
+ *
+ * @filename:	path to the System.map-like file
+ *
+ */
 static void load_system_map(const char *filename)
 {
 	FILE *system_map;
@@ -195,6 +248,12 @@ static void load_system_map(const char *filename)
 	add_fake_syms();
 }
 
+/**
+ * load_module_symvers - load list of symbol versions from the module.symvers
+ *
+ * @filename:	path to the module.symvers-like file
+ *
+ */
 static void load_module_symvers(const char *filename)
 {
 	FILE *module_symvers;
@@ -242,7 +301,12 @@ static const struct option options[] = { { "all", 0, NULL, 'a' },
 				   { "map", 0, NULL, 'm' },
 				   { NULL, 0, NULL, 0 } };
 
-/* Version number or module name?  Don't assume extension. */
+/**
+ * is_version_number - is the option a kernel version or module name
+ *
+ * @version:	possible version number
+ *
+ */
 static int is_version_number(const char *version)
 {
 	unsigned int dummy;
@@ -250,9 +314,15 @@ static int is_version_number(const char *version)
 	return (sscanf(version, "%u.%u", &dummy, &dummy) == 2);
 }
 
+/**
+ * old_module_version - is the kernel version too old for these tools
+ *
+ * @version:	version number
+ *
+ */
 static int old_module_version(const char *version)
 {
-	/* Expect three part version. */
+	/* Expect three part version (but won't fail it only two part). */
 	unsigned int major, sub, minor;
 
 	sscanf(version, "%u.%u.%u", &major, &sub, &minor);
@@ -269,6 +339,12 @@ static int old_module_version(const char *version)
 	return 1;
 }
 
+/**
+ * print_usage - output a list of all possible options
+ *
+ * @name: not currently used
+ *
+ */
 static void print_usage(const char *name)
 {
 	fprintf(stderr,
@@ -305,6 +381,13 @@ static void print_usage(const char *name)
 	"depmod", "depmod");
 }
 
+/**
+ * ends_in - check file extension
+ *
+ * @name:	filename
+ * @ext:	extension to check
+ *
+ */
 static int ends_in(const char *name, const char *ext)
 {
 	unsigned int namelen, extlen;
@@ -320,6 +403,13 @@ static int ends_in(const char *name, const char *ext)
 	return 0;
 }
 
+/**
+ * grab_module - open module ELF file and load symbol data
+ *
+ * @dirname:	path prefix
+ * @filename:	filename within path
+ *
+ */
 static struct module *grab_module(const char *dirname, const char *filename)
 {
 	struct module *new;
@@ -351,6 +441,13 @@ struct module_traverse
 	struct module *mod;
 };
 
+/**
+ * in_loop - determine if a module dependency loop exists
+ *
+ * @mod:	current module
+ * @traverse:	on-stack structure created as module deps were processed
+ *
+ */
 static int in_loop(struct module *mod, const struct module_traverse *traverse)
 {
 	const struct module_traverse *i;
@@ -362,7 +459,13 @@ static int in_loop(struct module *mod, const struct module_traverse *traverse)
 	return 0;
 }
 
-/* Assume we are doing all the modules, so only report each loop once. */
+/**
+ * report_loop - report (once) that a dependency loop exists for a module
+ *
+ * @mod:	module with dep loop
+ * @traverse:	on-stack structure created as module deps were processed
+ *
+ */
 static void report_loop(const struct module *mod,
 			const struct module_traverse *traverse)
 {
@@ -387,8 +490,20 @@ static void report_loop(const struct module *mod,
 	fprintf(stderr, "which needs %s again!\n", i->mod->basename);
 }
 
-/* This is damn slow, but loops actually happen, and we don't want to
-   just exit() and leave the user without any modules. */
+/**
+ * has_dep_loop - iterate over all module deps and check for loops
+ *
+ * @module:	module to process
+ * @prev:	previously processed dependency
+ *
+ * This function is called recursively, following every dep and creating
+ * a module_traverse on the stack describing each dependency encountered.
+ * Determining a loop is as simple (and slow) as finding repetitions.
+ *
+ * This is slow, but we can't leave the user without any modules, so we
+ * need to detect loops and just fail those modules that cause loops.
+ *
+ */
 static int has_dep_loop(struct module *module, struct module_traverse *prev)
 {
 	unsigned int i;
@@ -405,7 +520,16 @@ static int has_dep_loop(struct module *module, struct module_traverse *prev)
 	return 0;
 }
 
-/* Uniquifies and orders a dependency list. */
+/**
+ * order_dep_list - expand all module deps recursively and in order
+ *
+ * @start:	module being processed
+ * @mod:	recursive dep
+ *
+ * We expand all of the dependencies of the dependencies of a module
+ * and ensure that the lowest dependency is loaded first, etc.
+ *
+ */
 static void order_dep_list(struct module *start, struct module *mod)
 {
 	unsigned int i;
@@ -422,6 +546,13 @@ static void order_dep_list(struct module *start, struct module *mod)
 
 static struct module *deleted = NULL;
 
+/**
+ * del_module - remove from list of modules
+ *
+ * @modules:	list of modules
+ * @delme:	module to remove
+ *
+ */
 static void del_module(struct module **modules, struct module *delme)
 {
 	struct module **i;
@@ -439,7 +570,17 @@ static void del_module(struct module **modules, struct module *delme)
 	deleted = delme;
 }
 
-/* convert to relative path if possible */
+/**
+ * compress_path - strip out common path prefix for modules
+ *
+ * @path:	path to module
+ * @basedir:	top level modules directory
+ *
+ * Modules are typically located in /lib/modules. There is no need to
+ * store the same common path prefix for all modules - make paths
+ * relative to directory that contains the dep information files.
+ *
+ */
 static const char *compress_path(const char *path, const char *basedir)
 {
 	int len = strlen(basedir);
@@ -449,6 +590,14 @@ static const char *compress_path(const char *path, const char *basedir)
 	return path;
 }
 
+/**
+ * output_deps - create ascii text file representation of module deps
+ *
+ * @modules:	list of modules
+ * @out:	output file
+ * @dirname:	output directory
+ *
+ */
 static int output_deps(struct module *modules,
 			FILE *out, char *dirname)
 {
@@ -474,6 +623,17 @@ static int output_deps(struct module *modules,
 /* warn whenever duplicate module aliases, deps, or symbols are found. */
 static int warn_dups = 0;
 
+/**
+ * output_deps_bin - create binary trie representation of module deps
+ *
+ * @modules:	list of modules
+ * @out:	output binary file
+ * @dirname:	output directory
+ *
+ * This optimized dependency file contains an ordered structure that is
+ * more easily processed by modprobe in a time sensitive manner.
+ *
+ */
 static int output_deps_bin(struct module *modules,
 			FILE *out, char *dirname)
 {
@@ -515,7 +675,12 @@ static int output_deps_bin(struct module *modules,
 	return 1;
 }
 
-
+/**
+ * smells_like_module - detect common module extensions
+ *
+ * @name:	filename
+ *
+ */
 static int smells_like_module(const char *name)
 {
 	return ends_in(name,".ko") || ends_in(name, ".ko.gz");
@@ -527,6 +692,19 @@ typedef struct module *(*do_module_t)(const char *dirname,
 				      struct module_search *search,
 				      struct module_overrides *overrides);
 
+/**
+ * is_higher_priority - find modules replacing other modules
+ *
+ * @newpath:	new module path
+ * @oldpath:	old module path
+ * @search:	path search order
+ * @overrides:	module override directives
+ *
+ * Compares one module (path) to another module (path) and determines
+ * whether the new module should replace the existing module of the
+ * same name. Overriding is handled very coarsely for the moment.
+ *
+ */
 static int is_higher_priority(const char *newpath, const char *oldpath,
 			      struct module_search *search,
 			      struct module_overrides *overrides)
@@ -563,7 +741,16 @@ static int is_higher_priority(const char *newpath, const char *oldpath,
 	return prio_new > prio_old;
 }
 
-
+/**
+ * do_module - process a module file
+ *
+ * @dirname:	directory containing module
+ * @filename:	module disk file
+ * @list:	list of modules
+ * @search:	path search order
+ * @overrides:	module override directives
+ *
+ */
 static struct module *do_module(const char *dirname,
 				       const char *filename,
 				       struct module *list,
@@ -585,6 +772,8 @@ static struct module *do_module(const char *dirname,
 
 			sprintf(newpath, "%s/%s", dirname, filename);
 
+			/* if module matches an existing entry (name) but */
+			/* has a higher priority, replace existing entry. */
 			if (is_higher_priority(newpath, (*i)->pathname,search,
 					       overrides)) {
 				del_module(i, *i);
@@ -603,6 +792,16 @@ static struct module *do_module(const char *dirname,
 	return new;
 }
 
+/**
+ * grab_dir - process a directory of modules
+ *
+ * @dirname:	directory name
+ * @dir:	open directory reference
+ * @do_mod:	do_module function to use
+ * @search:	path search order
+ * @overrides:	module overrides directives
+ *
+ */
 static struct module *grab_dir(const char *dirname,
 			       DIR *dir,
 			       struct module *next,
@@ -636,6 +835,14 @@ static struct module *grab_dir(const char *dirname,
 	return next;
 }
 
+/**
+ * grab_basedir - top-level module processing
+ *
+ * @dirname:	top-level directory name
+ * @search:	path search order
+ * @overrides:	module overrides directives
+ *
+ */
 static struct module *grab_basedir(const char *dirname,
 				   struct module_search *search,
 				   struct module_overrides *overrides)
@@ -655,6 +862,17 @@ static struct module *grab_basedir(const char *dirname,
 	return list;
 }
 
+/**
+ * sort_modules - order modules in list on modules.order if available
+ *
+ * @dirname:	directory name
+ * @list:	module list
+ *
+ * Using the modules.order file (if available), give every module an index
+ * based on its position in the file, and order list based on the index. If
+ * no ordering data is available, fallback to existing unordered list.
+ *
+ */
 static struct module *sort_modules(const char *dirname, struct module *list)
 {
 	struct module *tlist = NULL, **tpos = &tlist;
@@ -706,7 +924,12 @@ static struct module *sort_modules(const char *dirname, struct module *list)
 	return tlist;
 }
 
-/* Calculate the dependencies for this module */
+/**
+ * calculate_deps - calculate deps for module
+ *
+ * @module:	module to process
+ *
+ */
 static void calculate_deps(struct module *module)
 {
 	unsigned int i;
@@ -747,6 +970,15 @@ static void calculate_deps(struct module *module)
 	free(symvers);
 }
 
+/**
+ * parse_modules - process the modules list
+ *
+ * @module:	module list
+ *
+ * Process each module in the (sorted by sort_modules) list for symbols,
+ * dependencies, and other meta-data that will be output later.
+ *
+ */
 static struct module *parse_modules(struct module *list)
 {
 	struct module *i;
@@ -786,7 +1018,17 @@ static struct module *parse_modules(struct module *list)
 	return list;
 }
 
-/* Simply dump hash table. */
+/**
+ * output_symbols - output symbol alias information
+ *
+ * @unused:	unused
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ * Output the symbol hash table, in the form of symbol alias entries, to
+ * an ascii text file of the form modules.symbols (depending on file).
+ *
+ */
 static int output_symbols(struct module *unused, FILE *out, char *dirname)
 {
 	unsigned int i;
@@ -807,6 +1049,17 @@ static int output_symbols(struct module *unused, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_symbols_bin - output symbol alias information in binary format
+ *
+ * @unused:	unused
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ * Output the symbol hash table, in the form of symbol alias entries, to
+ * a trie ordered output file e.g. of the form modules.symbols.bin.
+ *
+ */
 static int output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 {
 	struct index_node *index;
@@ -840,6 +1093,14 @@ static int output_symbols_bin(struct module *unused, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_builtin_bin - output list of built-in modules in binary format
+ *
+ * @unused:	unused
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ */
 static int output_builtin_bin(struct module *unused, FILE *out, char *dirname)
 {
 	struct index_node *index;
@@ -876,6 +1137,14 @@ static int output_builtin_bin(struct module *unused, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_aliases - output list of module aliases
+ *
+ * @modules:	list of modules
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ */
 static int output_aliases(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -909,6 +1178,14 @@ static int output_aliases(struct module *modules, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_aliases_bin - output list of module aliases in binary format
+ *
+ * @modules:	list of modules
+ * @out:	outout file reference
+ * @dirname:	output directory
+ *
+ */
 static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -963,6 +1240,14 @@ static int output_aliases_bin(struct module *modules, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_softdeps - output module softdeps (non-implicit dependencies)
+ *
+ * @modules:	list of modules
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ */
 static int output_softdeps(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *i;
@@ -992,6 +1277,14 @@ static int output_softdeps(struct module *modules, FILE *out, char *dirname)
 	return 1;
 }
 
+/**
+ * output_devname - output device names required by modules
+ *
+ * @modules:	list of modules
+ * @out:	output file reference
+ * @dirname:	output directory
+ *
+ */
 static int output_devname(struct module *modules, FILE *out, char *dirname)
 {
 	struct module *m;
@@ -1055,7 +1348,16 @@ static const struct depfile depfiles[] = {
 	{ "modules.devname", output_devname, 0 },
 };
 
-/* If we can't figure it out, it's safe to say "true". */
+/**
+ * any_modules_newer - determine if modules are newer than ref time
+ *
+ * @dirname:	directory to process
+ * @mtime:	comparison time
+ *
+ * The worst case is that we process modules we didn't need to. It is
+ * therefore safer to go with "true" if we can't figure it out.
+ *
+ */
 static int any_modules_newer(const char *dirname, time_t mtime)
 {
 	DIR *dir;
@@ -1092,6 +1394,14 @@ ret_true:
 	return 1;
 }
 
+/**
+ * depfile_out_of_date - check if module dep files are older than any modules
+ *
+ * @dirname:	directory to process
+ *
+ * Use any_modules_newer to determine if the dep files are up to date.
+ *
+ */
 static int depfile_out_of_date(const char *dirname)
 {
 	struct stat st;
@@ -1105,6 +1415,13 @@ static int depfile_out_of_date(const char *dirname)
 	return any_modules_newer(dirname, st.st_mtime);
 }
 
+/**
+ * strsep_skipspace - skip over delimitors in strings
+ *
+ * @string:	string to process
+ * @delim:	delimitor (e.g. ' ')
+ *
+ */
 static char *strsep_skipspace(char **string, char *delim)
 {
 	if (!*string)
@@ -1113,6 +1430,14 @@ static char *strsep_skipspace(char **string, char *delim)
 	return strsep(string, delim);
 }
 
+/**
+ * add_search - add a new module search path
+ *
+ * @search_path:	path to search
+ * @len:		length of path
+ * @search:		list of search paths
+ *
+ */
 static struct module_search *add_search(const char *search_path,
 					size_t len,
 					struct module_search *search)
@@ -1129,6 +1454,13 @@ static struct module_search *add_search(const char *search_path,
 	
 }
 
+/**
+ * add_override - add a new module override entry
+ *
+ * @modfile:	name of module file
+ * @overrides:	list of override entries
+ *
+ */
 static struct module_overrides *add_override(const char *modfile,
 					     struct module_overrides *overrides)
 {
@@ -1149,6 +1481,16 @@ static int parse_config_scan(const char *filename,
 			     struct module_search **search,
 			     struct module_overrides **overrides);
 
+/**
+ * parse_config_file - process an individual configuration file
+ *
+ * @filename:		name of config file
+ * @basedir:		module base directory
+ * @kernelversion:	kernel version to process
+ * @search:		search path order
+ * @overrides:		module override entries
+ *
+ */
 static int parse_config_file(const char *filename,
 			     const char *basedir,
 			     const char *kernelversion,
@@ -1255,6 +1597,16 @@ static int parse_config_file(const char *filename,
         return 1;
 }
 
+/**
+ * parse_config_scan - handle a directory of config files
+ *
+ * @filename:		name of directory
+ * @basedir:		module base directory
+ * @kernelversion:	kernel version to process
+ * @search:		search path order
+ * @overrides:		module override entries
+ *
+ */
 static int parse_config_scan(const char *filename,
 			     const char *basedir,
 			     const char *kernelversion,
@@ -1323,6 +1675,16 @@ static int parse_config_scan(const char *filename,
 	return ret;
 }
 
+/**
+ * parse_toplevel_config - handle top-level depmod.conf, depmod.d
+ *
+ * @filename:		possibly overridden config
+ * @basedir:		module base directory
+ * @kernelversion:	kernel version to process
+ * @search:		search path order
+ * @overrides:		module override entries
+ *
+ */
 static void parse_toplevel_config(const char *filename,
 				  const char *basedir,
 				  const char *kernelversion,
