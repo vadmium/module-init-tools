@@ -8,6 +8,7 @@ build
 
 depmod
 ------
+	* Fix use of special list handling (e.g. add_search) to use lists.
 	* Kill off the "map" files. They aren't really needed any more.
 
 modprobe
