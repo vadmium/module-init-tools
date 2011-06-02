@@ -52,6 +52,7 @@
 
 #include "testing.h"
 
+/* NOTE: in the future, binary indexes will always be used */
 static int use_binary_indexes = 1; /* default to enabled. */
 
 /* Limit do_softdep/do_modprobe recursion.
@@ -89,6 +90,12 @@ typedef enum
 #define MODULE_DIR "/lib/modules"
 #endif
 
+/**
+ * print_usage - output the prefered program usage
+ *
+ * @progname:	binary name invoked
+ *
+ */
 static void print_usage(const char *progname)
 {
 	fprintf(stderr,
@@ -99,6 +106,13 @@ static void print_usage(const char *progname)
 	exit(1);
 }
 
+/**
+ * find_module - search module list for module name
+ *
+ * @filename:	module file name
+ * @list:	module list
+ *
+ */
 static struct module *find_module(const char *filename, struct list_head *list)
 {
 	struct module *i;
@@ -110,6 +124,13 @@ static struct module *find_module(const char *filename, struct list_head *list)
 	return NULL;
 }
 
+/**
+ * add_module - add a module to the global module list
+ *
+ * @filename:	module file name
+ * @list:	module list
+ *
+ */
 static void add_module(char *filename, int namelen, struct list_head *list)
 {
 	struct module *mod;
@@ -131,13 +152,26 @@ static void add_module(char *filename, int namelen, struct list_head *list)
 	list_add_tail(&mod->list, list);
 }
 
+/**
+ * free_module - de-allocate module structure
+ *
+ * @mod:	module structure
+ *
+ */
 static void free_module(struct module *mod)
 {
 	free(mod->modname);
 	free(mod);
 }
 
-/* Compare len chars of a to b, with _ and - equivalent. */
+/**
+ * modname_equal - compare module names (up to len), with '_' and '-' equal
+ *
+ * @a:		first module name
+ * @b:		second module name
+ * @len:	length to compare
+ *
+ */
 static int modname_equal(const char *a, const char *b, unsigned int len)
 {
 	unsigned int i;
@@ -155,7 +189,16 @@ static int modname_equal(const char *a, const char *b, unsigned int len)
 	return 1;
 }
 
-/* Fills in list of modules if this is the line we want. */
+/**
+ * add_modules_dep_line - parse a dep line from the module.dep[.bin] file
+ *
+ * @line:	input file line
+ * @name:	module name
+ * @list:	list of modules
+ * @dirname:	module directory
+ *
+ * Add dependency information if this line of the dep file matches mod name
+ */
 static int add_modules_dep_line(char *line,
 				const char *name,
 				struct list_head *list,
@@ -197,6 +240,10 @@ static int add_modules_dep_line(char *line,
 			break;
 		dep_start = ptr;
 		ptr += strcspn(ptr, " \t");
+
+		/* We handle deps in two possible ways. Either they have */
+		/* an absolute path, or a relative path (to toplevel moddir). */
+
 		if ('/' == dep_start[0]) {	/* old style deps */
 			add_module(dep_start, ptr - dep_start, list);
 		} else {
@@ -209,6 +256,14 @@ static int add_modules_dep_line(char *line,
 	return 1;
 }
 
+/**
+ * read_depends_file - import the modules.dep.bin file
+ *
+ * @dirname:	module directory
+ * @start_name:	initial module name to search
+ * @list:	list of modules
+ *
+ */
 static int read_depends_file(const char *dirname,
 			     const char *start_name,
 			     struct list_head *list)
@@ -238,6 +293,14 @@ static int read_depends_file(const char *dirname,
 	return 1;
 }
 
+/**
+ * read_depends - import the modules.dep[.bin] file
+ *
+ * @dirname:	module directory
+ * @start_name:	initial module name to search
+ * @list:	list of modules
+ *
+ */
 static void read_depends(const char *dirname,
 			 const char *start_name,
 			 struct list_head *list)
@@ -267,7 +330,12 @@ static void read_depends(const char *dirname,
 	free(modules_dep_name);
 }
 
-/* We use error numbers in a loose translation... */
+/**
+ * insert_moderror - convert standard insert error numbers into error messages
+ *
+ * @err:	error number
+ *
+ */
 static const char *insert_moderror(int err)
 {
 	switch (err) {
@@ -282,6 +350,12 @@ static const char *insert_moderror(int err)
 	}
 }
 
+/**
+ * remove_moderror - convert standard remove error numbers into error messages
+ *
+ * @err:	error number
+ *
+ */
 static const char *remove_moderror(int err)
 {
 	switch (err) {
@@ -293,7 +367,12 @@ static const char *remove_moderror(int err)
 		return strerror(err);
 	}
 }
-
+/**
+ * clear_magic - strip any versioning information from the module
+ *
+ * @module:	mapped module file
+ *
+ */
 static void clear_magic(struct elf_file *module)
 {
 	struct string_table *tbl;
@@ -313,6 +392,7 @@ static void clear_magic(struct elf_file *module)
 	}
 }
 
+/* keep track of module options from config file(s) */
 struct module_options
 {
 	struct module_options *next;
@@ -320,6 +400,7 @@ struct module_options
 	char *options;
 };
 
+/* keep track of module install commands from config file(s) */
 struct module_command
 {
 	struct module_command *next;
@@ -327,6 +408,7 @@ struct module_command
 	char *command;
 };
 
+/* keep track of module aliases added in the config file(s) */
 struct module_alias
 {
 	struct module_alias *next;
@@ -334,12 +416,14 @@ struct module_alias
 	char *module;
 };
 
+/* keep track of modules blacklisted in the config file(s) */
 struct module_blacklist
 {
 	struct module_blacklist *next;
 	char *modulename;
 };
 
+/* keep track of module softdeps added in the config file(s) */
 struct module_softdep
 {
 	struct module_softdep *next;
@@ -350,6 +434,7 @@ struct module_softdep
 	struct string_table *post;
 };
 
+/* keep track of all config options */
 struct modprobe_conf
 {
 	struct module_options *options;
@@ -359,7 +444,14 @@ struct modprobe_conf
 	struct module_softdep *softdeps;
 };
 
-/* Link in a new option line from the config file. */
+/**
+ * add_options - module options added in the config file(s)
+ *
+ * @modname:	module name
+ * @option:	options string
+ * @options:	list of options
+ *
+ */
 static struct module_options *
 add_options(const char *modname,
 	    const char *option,
@@ -378,7 +470,14 @@ add_options(const char *modname,
 	return new;
 }
 
-/* Link in a new install line from the config file. */
+/**
+ * add_command - module install commands added in the config file(s)
+ *
+ * @modname:	module name
+ * @command:	command string
+ * @commands:	list of commands
+ *
+ */
 static struct module_command *
 add_command(const char *modname,
 	       const char *command,
@@ -393,7 +492,14 @@ add_command(const char *modname,
 	return new;
 }
 
-/* Link in a new alias line from the config file. */
+/**
+ * add_alias - module aliases added in the config file(s)
+ *
+ * @aliasname:	alias string
+ * @modname:	module name
+ * @aliases:	list of aliases
+ *
+ */
 static struct module_alias *
 add_alias(const char *aliasname, const char *modname, struct module_alias *aliases)
 {
@@ -407,7 +513,13 @@ add_alias(const char *aliasname, const char *modname, struct module_alias *alias
 }
 
 
-/* Return a list of matching aliases */
+/**
+ * find_aliases - find aliases for a module
+ *
+ * @aliases:	list of aliases
+ * @name:	module name
+ *
+ */
 static struct module_alias *
 find_aliases(const struct module_alias *aliases,
 	     const char *name)
@@ -423,6 +535,12 @@ find_aliases(const struct module_alias *aliases,
 	return result;
 }
 
+/**
+ * free_aliases - de-allocate the aliases list
+ *
+ * @alias_list:	list of aliases
+ *
+ */
 static void free_aliases(struct module_alias *alias_list)
 {
 	while (alias_list) {
@@ -437,7 +555,13 @@ static void free_aliases(struct module_alias *alias_list)
 	}
 }
 
-/* Link in a new blacklist line from the config file. */
+/**
+ * add_blacklist - blacklist modules in config file(s)
+ *
+ * @modname:	module name
+ * @blacklist	list of blacklisted module names
+ *
+ */
 static struct module_blacklist *
 add_blacklist(const char *modname, struct module_blacklist *blacklist)
 {
@@ -449,7 +573,13 @@ add_blacklist(const char *modname, struct module_blacklist *blacklist)
 	return new;
 }
 
-/* Find blacklist commands if any. */
+/**
+ * find_blacklist - lookup any potentially blacklisted module
+ *
+ * @modname:	module name
+ * @blacklist:	list of blacklisted module names
+ *
+ */
 static int
 find_blacklist(const char *modname, const struct module_blacklist *blacklist)
 {
@@ -461,7 +591,13 @@ find_blacklist(const char *modname, const struct module_blacklist *blacklist)
 	return 0;
 }
 
-/* delete backlisted elems from a list of aliases */
+/**
+ * apply_blacklist - remove blacklisted modules from alias list
+ *
+ * @aliases:	module alias list
+ * @blacklist:	list of blacklisted module names
+ *
+ */
 static void
 apply_blacklist(struct module_alias **aliases,
 		const struct module_blacklist *blacklist)
@@ -478,7 +614,13 @@ apply_blacklist(struct module_alias **aliases,
 	*aliases = result;
 }
 
-/* Find install commands if any. */
+/**
+ * find_command - lookup any install commands for a module
+ *
+ * @modname:	module name
+ * @commands:	list of install commands
+ *
+ */
 static const char *find_command(const char *modname,
 				const struct module_command *commands)
 {
@@ -490,7 +632,13 @@ static const char *find_command(const char *modname,
 	return NULL;
 }
 
-/* Find soft dependencies, if any. */
+/**
+ * find_softdep - lookup any softdeps for a module
+ *
+ * @modname:	module name
+ * @softdeps:	list of module softdeps
+ *
+ */
 static const struct module_softdep *
 find_softdep(const char *modname, const struct module_softdep *softdeps)
 {
@@ -502,6 +650,14 @@ find_softdep(const char *modname, const struct module_softdep *softdeps)
 	return NULL;
 }
 
+/**
+ * append_option - add further options to modules (tail)
+ *
+ * @options:	existing option string
+ * @newoption:	additional option string
+ *
+ * options supplied on the command line
+ */
 static char *append_option(char *options, const char *newoption)
 {
 	options = NOFAIL(realloc(options, strlen(options) + 1
@@ -511,6 +667,14 @@ static char *append_option(char *options, const char *newoption)
 	return options;
 }
 
+/**
+ * prepend_option - add further options to modules (head)
+ *
+ * @options:	existing option string
+ * @newoption:	additional option string
+ *
+ * options supplied in the config file(s)
+ */
 static char *prepend_option(char *options, const char *newoption)
 {
 	size_t l1, l2;
@@ -531,7 +695,14 @@ static char *prepend_option(char *options, const char *newoption)
 	return options;
 }
 
-/* Add to options */
+/**
+ * add_extra_options - add any relevant options from the config file(s)
+ *
+ * @modname:	module name
+ * @optstring:	options
+ * @options:	list of options
+ *
+ */
 static char *add_extra_options(const char *modname,
 			       const char *optstring,
 			       const struct module_options *options)
@@ -546,8 +717,12 @@ static char *add_extra_options(const char *modname,
 	return opts;
 }
 
-/* Is module in /proc/modules?  If so, fill in usecount if not NULL.
-   0 means no, 1 means yes, -1 means unknown.
+/**
+ * module_in_procfs - check if module is known to be loaded already
+ *
+ * @modname:	module name
+ * @usecount:	update usecount if possible (-1 if unknown)
+ *
  */
 static int module_in_procfs(const char *modname, unsigned int *usecount)
 {
@@ -599,9 +774,13 @@ again:
 	return 0;
 }
 
-/* Read sysfs attribute into a buffer.
- * returns: 1 = ok, 0 = attribute missing,
- * -1 = file error (or empty file, but we don't care).
+/**
+ * read_attribute - read sysfs file attributes into a buffer
+ *
+ * @filename:	name of sysfs file
+ * @buf:	buffer
+ * @buflen:	size of buffer
+ *
  */
 static int read_attribute(const char *filename, char *buf, size_t buflen)
 {
@@ -614,11 +793,17 @@ static int read_attribute(const char *filename, char *buf, size_t buflen)
 	s = fgets(buf, buflen, file);
 	fclose(file);
 
+	/* return -1 if any problems */
+
 	return (s == NULL) ? -1 : 1;
 }
 
-/* is this a built-in module?
- * 0: no, 1: yes, -1: don't know
+/**
+ * module_builtin - try to determine whether a module is built-in
+ *
+ * @dirname:	module directory
+ * @modname:	name of module
+ *
  */
 static int module_builtin(const char *dirname, const char *modname)
 {
@@ -628,15 +813,22 @@ static int module_builtin(const char *dirname, const char *modname)
 	nofail_asprintf(&filename, "%s/modules.builtin.bin", dirname);
 	index = index_file_open(filename);
 	free(filename);
+
+	/* return -1 if no builtin list available (modern depmod file) */
 	if (!index)
 		return -1;
+
 	value = index_search(index, modname);
 	free(value);
 	return value ? 1 : 0;
 }
 
-/* Is module in /sys/module?  If so, fill in usecount if not NULL.
-   0 means no, 1 means yes, -1 means unknown.
+/**
+ * module_in_sysfs - try to determine if module has a sysfs entry
+ *
+ * @modname:	module name
+ * @usecount:	update use count if possible (-1 if unknown)
+ *
  */
 static int module_in_sysfs(const char *modname, unsigned int *usecount)
 {
@@ -696,8 +888,12 @@ static int module_in_sysfs(const char *modname, unsigned int *usecount)
 	return 1;
 }
 
-/* Is module loaded?  If so, fill in usecount if not NULL. 
-   0 means no, 1 means yes, -1 means unknown.
+/**
+ * module_in_kernel - try to determine if the module is loaded (sysfs,procfs)
+ *
+ * @modname:	name of module
+ * @usecount:	update module use count (-1 if unknown)
+ *
  */
 static int module_in_kernel(const char *modname, unsigned int *usecount)
 {
@@ -712,6 +908,13 @@ static int module_in_kernel(const char *modname, unsigned int *usecount)
 	return module_in_procfs(modname, usecount);
 }
 
+/**
+ * dump_modversions - output list of module version checksums
+ *
+ * @filename:	module file name
+ * @error:	error function to use
+ *
+ */
 static void dump_modversions(const char *filename, errfn_t error)
 {
 	struct elf_file *module;
@@ -726,7 +929,14 @@ static void dump_modversions(const char *filename, errfn_t error)
 	release_elf_file(module);
 }
 
-/* Does path contain directory(s) subpath? */
+/**
+ * type_matches - constrain wildcard module matching to subdirectory
+ *
+ * @path:	path string
+ * @subpath:	search path for subpath
+ *
+ * Legacy function used to support deprecated option
+ */
 static int type_matches(const char *path, const char *subpath)
 {
 	char *subpath_with_slashes;
@@ -739,7 +949,14 @@ static int type_matches(const char *path, const char *subpath)
 	return ret;
 }
 
-
+/**
+ * do_wildcard - match modules (possibly in directory names containing "type")
+ *
+ * @dirname:	module directory
+ * @type:	possible subdirectory limiting
+ * @wildcard:	what to match
+ *
+ */
 static int do_wildcard(const char *dirname,
 		       const char *type,
 		       const char *wildcard)
@@ -784,6 +1001,13 @@ static int do_wildcard(const char *dirname,
 	return 0;
 }
 
+/**
+ * strsep_skipspace - ignore certain delimitor characters in strings
+ *
+ * @string:	what to search
+ * @delim:	delimitor string
+ *
+ */
 static char *strsep_skipspace(char **string, char *delim)
 {
 	if (!*string)
@@ -796,6 +1020,15 @@ static int parse_config_scan(struct modprobe_conf *conf,
 			     int dump_only,
 			     int removing, ...);
 
+/**
+ * parse_config_file - read in configuration file options
+ *
+ * @filename:	name of file
+ * @conf:	config options lists
+ * @dump_only:	print out config
+ * @removing:	determine whether to run install/softdep/etc.
+ *
+ */
 static int parse_config_file(const char *filename,
 			    struct modprobe_conf *conf,
 			    int dump_only,
@@ -818,6 +1051,7 @@ static int parse_config_file(const char *filename,
 		char *ptr = line;
 		char *cmd, *modname;
 
+		/* output configuration */
 		if (dump_only)
 			printf("%s\n", line);
 
@@ -936,6 +1170,7 @@ static int parse_config_file(const char *filename,
 			conf->softdeps = new;
 
 			line = NULL; /* Don't free() this line. */
+				     /* allocated in buf above */
 
 		} else if (streq(cmd, "config")) {
 			char *tmp = strsep_skipspace(&ptr, "\t ");
@@ -960,7 +1195,15 @@ syntax_error:
 	return 1;
 }
 
-/* Read binary index file containing aliases only */
+/**
+ * read_aliases_file - process binary module aliases file
+ *
+ * @filename:	alias file
+ * @name:	module name
+ * @dump_only:	dump aliases only
+ * @aliases:	list of aliases
+ *
+ */
 static int read_aliases_file(const char *filename,
 			     const char *name,
 			     int dump_only,
@@ -995,7 +1238,15 @@ static int read_aliases_file(const char *filename,
 	return 1;
 }
 
-/* fallback to plain-text aliases file if necessary */
+/**
+ * read_aliases - process module aliases file
+ *
+ * @filename:	alias file
+ * @name:	module name
+ * @dump_only:	dump aliases only
+ * @aliases:	list of aliases
+ *
+ */
 static int read_aliases(const char *filename,
 			const char *name,
 			int dump_only,
@@ -1005,6 +1256,7 @@ static int read_aliases(const char *filename,
 	unsigned int linenum = 0;
 	FILE *cfile;
 
+	/* prefer the binary version if available and configured */
 	if (use_binary_indexes)
 		if (read_aliases_file(filename, name, dump_only, aliases))
 			return 1;
@@ -1046,6 +1298,14 @@ syntax_error:
 	return 1;
 }
 
+/**
+ * parse_config_scan - process a directory of configuration files
+ *
+ * @conf:	config options lists
+ * @dump_only:	print out config
+ * @removing:	determine whether to run install/softdep/etc.
+ *
+ */
 static int parse_config_scan(struct modprobe_conf *conf,
 			     int dump_only,
 			     int removing, ...)
@@ -1137,6 +1397,15 @@ static int parse_config_scan(struct modprobe_conf *conf,
 	return ret;
 }
 
+/**
+ * parse_toplevel_config - search configuration directories
+ *
+ * @filename:	specified on command line
+ * @conf:	config options lists
+ * @dump_only:	print out config
+ * @removing:	determine whether to run install/softdep/etc.
+ *
+ */
 static void parse_toplevel_config(const char *filename,
 				  struct modprobe_conf *conf,
 				  int dump_only,
@@ -1162,7 +1431,13 @@ static void parse_toplevel_config(const char *filename,
 			  "/lib/modprobe.d", NULL);
 }
 
-/* Read possible module arguments from the kernel command line. */
+/**
+ * parse_kcmdline - process configuration options on kernel boot line
+ *
+ * @dump_only:	print out config
+ * @conf:	config options lists
+ *
+ */
 static int parse_kcmdline(int dump_only, struct modprobe_conf *conf)
 {
 	char *line;
@@ -1215,6 +1490,12 @@ static int parse_kcmdline(int dump_only, struct modprobe_conf *conf)
 	return 1;
 }
 
+/**
+ * add_to_env_var - set environment variables
+ *
+ * @option:	variable to set
+ *
+ */
 static void add_to_env_var(const char *option)
 {
 	const char *oldenv;
@@ -1228,7 +1509,14 @@ static void add_to_env_var(const char *option)
 		setenv("MODPROBE_OPTIONS", option, 1);
 }
 
-/* Prepend options from environment. */
+/**
+ * merge_args - load options from the environment (head)
+ *
+ * @args:	list of arguments
+ * @argv:	program arguments
+ * @argc:	argument count
+ *
+ */
 static char **merge_args(char *args, char *argv[], int *argc)
 {
 	char *arg, *argstring;
@@ -1259,6 +1547,12 @@ static char **merge_args(char *args, char *argv[], int *argc)
 	return newargs;
 }
 
+/**
+ * gather_options - load options from command line
+ *
+ * @argv:	program arguments
+ *
+ */
 static char *gather_options(char *argv[])
 {
 	char *optstring = NOFAIL(strdup(""));
@@ -1280,7 +1574,17 @@ static char *gather_options(char *argv[])
 	return optstring;
 }
 
-/* Do an install/remove command: replace $CMDLINE_OPTS if it's specified. */
+/**
+ * do_command - execute a module install or remove command
+ *
+ * @modname:		module name
+ * @command:		command string
+ * @dry_run:		possibly do nothing
+ * @error:		error function
+ * @type:		install or remove
+ * @cmdline_opts:	substitute for $CMDLINE_OPTS
+ *
+ */
 static void do_command(const char *modname,
 		       const char *command,
 		       int dry_run,
@@ -1321,6 +1625,17 @@ static int do_modprobe(const char *modname,
 		errfn_t error,
 		modprobe_flags_t flags);
 
+/**
+ * do_softdep - load or unload module soft dependencies
+ *
+ * @softdep:		soft dependency module(s)
+ * @cmdline_opts:	command line options
+ * @conf:		config options lists
+ * @dirname:		module directory
+ * @error:		error function
+ * @flags:		general flags
+ *
+ */
 static void do_softdep(const struct module_softdep *softdep,
 		       const char *cmdline_opts,
 		       const struct modprobe_conf *conf,
@@ -1377,7 +1692,18 @@ static void do_softdep(const struct module_softdep *softdep,
 	}
 }
 
-/* Actually do the insert. */
+/**
+ * insmod - load a module(s)
+ *
+ * @list:		list of modules
+ * @optstring:		module options
+ * @cmdline_opts:	command line options
+ * @conf:		config options lists
+ * @dirname:		module directory
+ * @error:		error function
+ * @flags:		general flags
+ *
+ */
 static int insmod(struct list_head *list,
 		   const char *optstring,
 		   const char *cmdline_opts,
@@ -1421,12 +1747,14 @@ static int insmod(struct list_head *list,
 		goto out;
 	}
 
+	/* load any soft dependency modules */
 	softdep = find_softdep(mod->modname, conf->softdeps);
 	if (softdep && !(flags & mit_ignore_commands)) {
 		do_softdep(softdep, cmdline_opts, conf, dirname, error, flags);
 		goto out;
 	}
 
+	/* run any install commands for this module */
 	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
 		if (already_loaded == -1) {
@@ -1442,6 +1770,7 @@ static int insmod(struct list_head *list,
 		}
 	}
 
+	/* open the module */
 	module = grab_elf_file(mod->filename);
 	if (!module) {
 		error("Could not read '%s': %s\n", mod->filename,
@@ -1462,6 +1791,7 @@ static int insmod(struct list_head *list,
 	if (flags & mit_dry_run)
 		goto out_elf_file;
 
+	/* request kernel linkage */
 	ret = init_module(module->data, module->len, opts);
 	if (ret != 0) {
 		if (errno == EEXIST) {
@@ -1486,7 +1816,17 @@ static int insmod(struct list_head *list,
 	return rc;
 }
 
-/* Do recursive removal. */
+/**
+ * rmmod - unload a module(s)
+ *
+ * @list:		list of modules
+ * @cmdline_opts:	command line options
+ * @conf:		config options lists
+ * @dirname:		module directory
+ * @error:		error function
+ * @flags:		general flags
+ *
+ */
 static void rmmod(struct list_head *list,
 		  const char *cmdline_opts,
 		  const struct modprobe_conf *conf,
@@ -1516,6 +1856,7 @@ static void rmmod(struct list_head *list,
 		goto remove_rest;
 	}
 
+	/* run any remove commands for this module */
 	command = find_command(mod->modname, conf->commands);
 	if (command && !(flags & mit_ignore_commands)) {
 		if (exists == -1) {
@@ -1531,6 +1872,7 @@ static void rmmod(struct list_head *list,
 		}
 	}
 
+	/* abort if use count is not zero */
 	if (usecount != 0) {
 		if (!(flags & mit_quiet_inuse))
 			error("Module %s is in use.\n", mod->modname);
@@ -1542,6 +1884,7 @@ static void rmmod(struct list_head *list,
 	if (flags & mit_dry_run)
 		goto remove_rest;
 
+	/* request kernel unlinkage */
 	if (delete_module(mod->modname, O_EXCL) != 0) {
 		if (errno == ENOENT)
 			goto nonexistent_module;
@@ -1568,6 +1911,19 @@ nonexistent_module:
 	goto remove_rest;
 }
 
+/**
+ * handle_module - load or unload a module(s)
+ *
+ * @modname:		module requested
+ * @todo_list:		dependency list
+ * @options:		module options
+ * @cmdline_opts:	options passed on command line
+ * @conf:		config options lists
+ * @dirname:		module directory
+ * @error:		error function
+ * @flags:		general flags
+ *
+ */
 static int handle_module(const char *modname,
 			  struct list_head *todo_list,
 			  const char *options,
@@ -1605,6 +1961,14 @@ static int handle_module(const char *modname,
 	return 0;
 }
 
+/**
+ * handle_builtin_module - report built-in modules
+ *
+ * @modname:	module name
+ * @error:	error function
+ * @flags:	general flags
+ *
+ */
 static int handle_builtin_module(const char *modname,
                           errfn_t error,
                           modprobe_flags_t flags)
@@ -1622,6 +1986,17 @@ static int handle_builtin_module(const char *modname,
 	return 0;
 }
 
+/**
+ * do_modprobe - find a module by name or alias and load or unload
+ *
+ * @modname:		module name
+ * @cmdline_opts:	command line options
+ * @conf:		config options lists
+ * @dirname:		module directory
+ * @error:		error function
+ * @flags:		general flags
+ *
+ */
 static int do_modprobe(const char *modname,
 		const char *cmdline_opts,
 		const struct modprobe_conf *conf,
@@ -1668,7 +2043,9 @@ static int do_modprobe(const char *modname,
 		}
 	}
 
+	/* only load blacklisted modules with specific request (no alias) */
 	apply_blacklist(&matching_aliases, conf->blacklist);
+
 	if(flags & mit_resolve_alias) {
 		struct module_alias *aliases = matching_aliases;
 
@@ -1879,7 +2256,8 @@ int main(int argc, char *argv[])
 
 	/* Read module options from kernel command line */
 	parse_kcmdline(dump_config, &conf);
-	
+
+	/* report config only? */	
 	if (dump_config) {
 		char *aliasfilename, *symfilename;
 		struct modprobe_conf conf = {};
