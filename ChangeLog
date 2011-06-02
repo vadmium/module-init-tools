@@ -1,3 +1,6 @@
+3.16 Version:
+o build: missed a top-level cached copy of modprobe.d.5 which broke builds
+
 3.15 Version:
 o build: properly fix man page creation symlink handling
 o doc: remove invalid multiple output files from docbook markup
