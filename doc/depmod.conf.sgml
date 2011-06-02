@@ -21,8 +21,6 @@
     <date>2010-03-01</date>
   </refentryinfo>
   <refmeta>
-    <refentrytitle>depmod.d</refentrytitle>
-    <manvolnum>5</manvolnum>
     <refentrytitle>depmod.conf</refentrytitle>
     <manvolnum>5</manvolnum>
   </refmeta>

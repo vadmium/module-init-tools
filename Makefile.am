@@ -36,7 +36,8 @@ depmod_LDADD = $(LDADD) libmodtools.a
 modinfo_LDADD = $(LDADD) libmodtools.a
 modindex_LDADD = $(LDADD) libmodtools.a
 
-MAN5 = modprobe.conf.5 modules.dep.5 depmod.conf.5 modprobe.d.5
+MAN5 = depmod.conf.5 depmod.d.5 modprobe.conf.5 modprobe.d.5 \
+	modules.dep.5 modules.dep.bin.5
 MAN8 = depmod.8 insmod.8 lsmod.8 rmmod.8 modprobe.8 modinfo.8
 SGML = $(addprefix doc/,  $(MAN5:%.5=%.sgml) $(MAN8:%.8=%.sgml))
 dist_man_MANS = $(MAN5) $(MAN8)
@@ -68,14 +69,16 @@ MAINTAINERCLEANFILES := $(man_MANS)
 # docbook2man writes file itself, doesn't do stdout.
 %.8: doc/%.sgml
 	if [ "$(DOCBOOKTOMAN)" = "docbook2man" ]; then                     \
-	    $(DOCBOOKTOMAN) $< > /dev/null 2>&1;                       \
+	    $(DOCBOOKTOMAN) $< > /dev/null 2>&1;                           \
 	else                                                               \
 	    $(DOCBOOKTOMAN) $< 2>&1 > $@ | sed 's/^[^:]*://';              \
 	fi
 
 %.5: doc/%.sgml
-	if [ "$(DOCBOOKTOMAN)" = "docbook2man" ]; then                     \
-	    $(DOCBOOKTOMAN) $< > /dev/null 2>&1;                       \
+	if [ -h $< ]; then                                                 \
+	    ln -s $$(basename $$(readlink $<) .sgml).5 $@;                 \
+	elif [ "$(DOCBOOKTOMAN)" = "docbook2man" ]; then                   \
+	    $(DOCBOOKTOMAN) $< > /dev/null 2>&1;                           \
 	else                                                               \
 	    $(DOCBOOKTOMAN) $< 2>&1 > $@ | sed 's/^[^:]*://';              \
 	fi
