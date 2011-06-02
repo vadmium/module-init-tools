@@ -1,3 +1,7 @@
+3.15 Version:
+o build: properly fix man page creation symlink handling
+o doc: remove invalid multiple output files from docbook markup
+
 3.14 Version:
 o build: fix the build process to be more modern
 o cleanup: code formatting, documentation, and FSF mailing address corrections
