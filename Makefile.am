@@ -58,6 +58,11 @@ INSTALL = $(SHELL) $(top_srcdir)/install-with-care
 
 DIST_DIR := /data/work/releases/module-init-tools/
 
+GIT_RELEASE_REMOTE := origin
+GIT_RELEASE_BRANCH := master
+SCP_RELEASE_URL := "jcm@master.kernel.org:/pub/linux/utils/kernel/module-init-tools/"
+
+
 MAINTAINERCLEANFILES := $(man_MANS)
 
 # docbook2man writes file itself, doesn't do stdout.
@@ -83,8 +88,27 @@ killbuildmanpages:
 
 tarball: $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz
 
-$(DIST_DIR)/module-init-tools-$(VERSION).tar.gz: dist
-	mv module-init-tools-$(VERSION).tar.gz $@
+#$(DIST_DIR)/module-init-tools-$(VERSION).tar.gz: dist
+#	mv module-init-tools-$(VERSION).tar.gz $@
+
+# git based version
+$(DIST_DIR)/module-init-tools-$(VERSION).tar.gz:
+	cd $$(git rev-parse --show-toplevel) && git archive --format=tar --prefix=module-init-tools-$(VERSION)/ v$(VERSION) | (cd $(DIST_DIR) && tar xv)
+	cd $(DIST_DIR)/module-init-tools-$(VERSION) && aclocal -I m4 && automake --add-missing --copy && autoconf
+	cd $(DIST_DIR) && tar cvfz module-init-tools-$(VERSION).tar.gz module-init-tools-$(VERSION)
+
+$(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz:
+	mkdir -p $(DIST_DIR)/.pushed
+	ln -s $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz $(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz
+
+gpg-tarball: $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz.sign
+
+$(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz.sign:
+	mkdir -p $(DIST_DIR)/.pushed
+	ln -s $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz.sign $(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz.sign
+
+$(DIST_DIR)/module-init-tools-$(VERSION).tar.gz.sign: tarball
+	cd $(DIST_DIR) && gpg -a -b -s -o module-init-tools-$(VERSION).tar.gz.sign module-init-tools-$(VERSION).tar.gz
 
 srpm: $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz
 	ln -sf $(DIST_DIR)/module-init-tools-$(VERSION).tar.gz /usr/src/rpm/SOURCES/
@@ -111,4 +135,31 @@ $(DIST_DIR)/module-init-tools-testsuite-$(VERSION).tar.gz:
 	cd /tmp && tar --exclude '*~' -c -z -f $@ module-init-tools-$(VERSION)/tests
 	rm /tmp/module-init-tools-$(VERSION)
 
-release: check clean tarball
+old-release: check clean tarball
+
+# git based release
+git-clean:
+	git gc
+	git prune
+
+git-tag:
+	if [ "xv$(VERSION)" != x$$(git tag -l v$(VERSION)) ]; \
+	then \
+		git tag v$(VERSION); \
+	fi
+
+git-push:
+	git push $(GIT_RELEASE_REMOTE) $(GIT_RELEASE_BRANCH) --tags
+
+scp-tarball: $(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz $(DIST_DIR)/.pushed/module-init-tools-$(VERSION).tar.gz.sign
+	cd $(DIST_DIR) && scp -C module-init-tools-$(VERSION).tar.gz module-init-tools-$(VERSION).tar.gz.sign $(SCP_RELEASE_URL)
+
+git-release: git-clean git-tag
+
+release: git-release
+
+sign-release: git-release gpg-tarball
+
+push-release: sign-release git-push scp-tarball
+
+push: push-release
