@@ -1,3 +1,11 @@
+3.14 Version:
+o build: fix the build process to be more modern
+o cleanup: code formatting, documentation, and FSF mailing address corrections
+o depmod: fix code documentation for various functions
+o doc: various cleanups to documentation for depmod
+o modprobe: fix code documentation for various functions
+o todo: update various todo items for depmod and modprobe, and overall also
+
 3.13 Version:
 o cleanups: localize various functions and variables avoiding export (Mike)
 o depmod: add support for --symbol-prefix (e.g. underscore on Blackfin) (Mike)
